@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Dependency Injection related packages -->
+        <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
+        <!-- EntityFrameworkCore Database Persistence related packages -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational.Design" Version="1.1.6" />
+        <!-- PostgreSQL Database Persistence related packages -->
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <!-- Audit Trails related packages -->
+        <PackageReference Include="EntityFrameworkCore.CreatedUpdatedDate" Version="8.0.0" />
+        <!-- Naming convention conversion related packages -->
+        <PackageReference Include="Humanizer" Version="2.14.1" />
+        <!-- OpenAPI documentation related packages -->
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.6.0" />
+        <!-- BCrypt Encription related packages -->
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <!-- JSON Web Token related packages -->
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.12.0" />
+        <PackageReference Include="Stripe.net" Version="48.3.0" />
+
+        <PackageReference Include="Cortex.Mediator" Version="1.6.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Analytics\Application\" />
+      <Folder Include="Analytics\Domain\" />
+      <Folder Include="Analytics\Infrastructure\" />
+      <Folder Include="Analytics\Interface\" />
+      <Folder Include="Assets\Application\Internal\OutboundServices\" />
+      <Folder Include="Planning\Application\" />
+      <Folder Include="Planning\Domain\" />
+      <Folder Include="Planning\Infrastructure\" />
+      <Folder Include="Planning\Interface\" />
+        <Folder Include="Subscriptions\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Profiles\.DS_Store" />
+    </ItemGroup>
+
+</Project>
