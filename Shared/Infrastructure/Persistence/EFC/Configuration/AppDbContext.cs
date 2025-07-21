@@ -13,7 +13,7 @@ using Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Configuratio
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Planning.API.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 
