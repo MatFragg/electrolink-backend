@@ -13,7 +13,8 @@ _ReSharper.Caches/
 *.nupkg
 
 # App settings and config files
-appsettings*.json
+appsettings.json
+appsettings.Development.jsonappsettings.json
 
 # User-specific and temp files
 *.user
