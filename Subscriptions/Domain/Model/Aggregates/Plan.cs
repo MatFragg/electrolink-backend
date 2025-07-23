@@ -1,6 +1,6 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 
 public class Plan
 {

@@ -1,11 +1,11 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Repository;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Application.Internal;
+namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal;
 
 public class PlanCommandService(IPlanRepository _planRepository, IUnitOfWork unitOfWork) : IPlanCommandService
 {

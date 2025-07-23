@@ -2,10 +2,10 @@ using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configura
 
 
 using EntityFrameworkCore.CreatedUpdatedDate.Extensions;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Configuration.Extensions;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Configuration.Extensions;

@@ -1,4 +1,4 @@
-namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
 
 public class BoostActivation
 {

@@ -1,17 +1,17 @@
-using Hamcoders.Electrolink.API.Monitoring.Application.ACL;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Services;
-using Hamcoders.Electrolink.API.Monitoring.Interfaces.ACL;
-using Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
-using Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Interfaces.REST;
+namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.REST;
 
 [ApiController]
 [Route("api/v1/[controller]")]

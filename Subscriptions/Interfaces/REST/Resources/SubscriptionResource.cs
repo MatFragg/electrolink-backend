@@ -1,4 +1,4 @@
-namespace Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
 public record SubscriptionResource(
     Guid Id,

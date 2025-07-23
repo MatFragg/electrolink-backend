@@ -1,9 +1,9 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Configuration.Extensions;
+namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 
 public static class ModelBuilderExtensions

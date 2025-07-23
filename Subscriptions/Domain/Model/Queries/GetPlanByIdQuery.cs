@@ -1,3 +1,3 @@
-namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
 
 public record GetPlanByIdQuery(Guid PlanId);

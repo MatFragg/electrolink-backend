@@ -1,8 +1,8 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
-using Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
+namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 
 public static class CreatePlanCommandFromResourceAssembler
 {

@@ -1,6 +1,6 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
 public class Rating
 {

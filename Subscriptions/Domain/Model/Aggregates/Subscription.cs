@@ -1,8 +1,8 @@
 using EntityFrameworkCore.CreatedUpdatedDate.Contracts;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 using EntityFrameworkCore.CreatedUpdatedDate.Contracts;
 
 public class Subscription : IEntityWithCreatedUpdatedDate

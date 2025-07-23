@@ -1,10 +1,10 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Repository;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
+namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
 
 public class ReportRepository(AppDbContext context)
     : BaseRepository<Report>(context), IReportRepository

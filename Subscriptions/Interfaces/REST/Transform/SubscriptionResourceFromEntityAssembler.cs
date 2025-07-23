@@ -1,6 +1,6 @@
-using Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
+namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 
 public static class SubscriptionResourceFromEntityAssembler
 {

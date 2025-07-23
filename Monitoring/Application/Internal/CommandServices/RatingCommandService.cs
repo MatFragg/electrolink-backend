@@ -1,11 +1,11 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
+namespace Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
 
 public class RatingCommandService(
     IRatingRepository _repository,

@@ -1,10 +1,10 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
+namespace Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
 
 public class ServiceOperationQueryService(
     IServiceOperationRepository repo

@@ -1,9 +1,9 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Configuration.Extensions;
+namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 public static class ModelBuilderExtensions
 {
