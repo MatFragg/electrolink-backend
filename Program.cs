@@ -94,7 +94,7 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
 
     // JWT Bearer
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    /*options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In            = ParameterLocation.Header,
         Description   = "Ingrese el token JWT",
@@ -102,9 +102,9 @@ builder.Services.AddSwaggerGen(options =>
         Type          = SecuritySchemeType.Http,
         Scheme        = "bearer",
         BearerFormat  = "JWT"
-    });
+    });*/
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    /*options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -117,7 +117,7 @@ builder.Services.AddSwaggerGen(options =>
             },
             Array.Empty<string>()
         }
-    });
+    });*/
 
     /* // Servidor local de desarrollo
     options.AddServer(new OpenApiServer
