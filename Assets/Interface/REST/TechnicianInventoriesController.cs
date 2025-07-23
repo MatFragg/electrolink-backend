@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
@@ -23,7 +24,7 @@ namespace Hampcoders.Electrolink.API.Assets.Interface.REST;
 /// Query service for components.
 /// </param>
 [ApiController]
-[Route("api/v1/technicians")]
+[Route("api/v1/inventories")]
 [SwaggerTag("Technician Inventory Endpoints")]
 public class TechnicianInventoriesController(
     ITechnicianInventoryCommandService inventoryCommandService,

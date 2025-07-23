@@ -1,4 +1,5 @@
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
 
 namespace Hampcoders.Electrolink.API.Assets.Interface.REST.Transform;
 

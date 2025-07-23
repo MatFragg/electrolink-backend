@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Assets.Interface.REST.Resources;
 
-public record CreateComponentResource(string Name, string Description, int ComponentTypeId);
+public record CreateComponentResource(string Name, string Description, bool IsActive , int ComponentTypeId);
