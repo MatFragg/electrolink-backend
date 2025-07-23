@@ -1,14 +1,28 @@
-﻿bin/
+﻿# Build folders
+bin/
 obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+
+# Rider and IDE files
 .idea/
-.idea.Hampcoders.Electrolink.API/
-/.idea
-appsettings.Development.json
-appsettings.json
+.idea.*
+*.iml
+_ReSharper.Caches/
+
+# NuGet
+/packages/
+*.nupkg
+
+# App settings and config files
+appsettings*.json
+
+# User-specific and temp files
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+
+# VS folders
+.vs/
+
+# Cache folders
+*.cache
