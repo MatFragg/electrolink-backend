@@ -23,9 +23,9 @@ namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Confi
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     
-    public DbSet<Rating> Ratings { get; set; }
-    public DbSet<Report> Reports { get; set; }
-    public DbSet<ServiceOperation> ServiceOperations { get; set; }
+    //public DbSet<Rating> Ratings { get; set; }
+    //public DbSet<Report> Reports { get; set; }
+    //public DbSet<ServiceOperation> ServiceOperations { get; set; }
     
     public DbSet<Property> Properties { get; set; }
     public DbSet<TechnicianInventory> TechnicianInventories { get; set; }
@@ -33,7 +33,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ComponentType> ComponentTypes { get; set; }
     public DbSet<ComponentStock> ComponentStocks { get; set; }
     
-    public DbSet<Profile> Profiles { get; set; }
+    //public DbSet<Profile> Profiles { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
@@ -47,12 +47,13 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         base.OnModelCreating(builder);
         
 
-        builder.ApplyIamConfiguration();
-        builder.ApplyProfilesConfiguration();
+        //builder.ApplyIamConfiguration();
+        //builder.ApplyProfilesConfiguration();
         builder.ApplyAssetsConfiguration();
-        builder.ApplyMonitoringConfiguration();
-        builder.ApplyServiceDesignAndPlanningConfiguration();
-        builder.ApplySubscriptionsConfiguration();
+        //builder.ApplyMonitoringConfiguration();
+        //builder.ApplyServiceDesignAndPlanningConfiguration();
+        //builder.ApplySubscriptionsConfiguration();
+        
         builder.UseSnakeCaseNamingConvention();
 
     }
