@@ -11,7 +11,6 @@ public class ComponentStock
     public int QuantityAvailable { get; private set; }
     public int AlertThreshold { get; private set; }
     public DateTime LastUpdated { get; private set; }
-    
     public TechnicianInventory TechnicianInventory { get; private set; } = null!;
 
 
