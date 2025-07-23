@@ -1,52 +1,20 @@
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
 public partial class Property
 {
-    //public EPropertyStatus Status { get; private set; }
-    //public PropertyPhoto? Photo { get; private set; } // Puede ser nulo
-
-
     public Property()
     {
 
     }
-
-    /// <summary>
-    /// Establece o elimina la foto de la propiedad.
-    /// </summary>
-    /// <param name="photoUrl">La URL de la nueva foto, o null para eliminar la existente.</param>
-    
-    /*public void SetPhoto(string? photoUrl)
-    {
-        if (string.IsNullOrWhiteSpace(photoUrl))
-        {
-            Photo = null;
-            return;
-        }
-        Photo = new PropertyPhoto(photoUrl);
-    }*/
     
     private void UpdateAddress(Address newAddress)
     {
-        /*if (Status == EPropertyStatus.Inactive)
-            throw new InvalidOperationException("Cannot update the address of an inactive property.");*/
         Address = newAddress;
     }
-    
-    /*private void Deactivate()
-    {
-        if (Status == EPropertyStatus.Inactive) return;
-        Status = EPropertyStatus.Inactive;
-    }*/
-
-    /*public void Handle(AddPhotoToPropertyCommand command)
-    {
-        if(command.Id == Id.Id)
-            SetPhoto(command.PhotoUrl);
-    }*/
     
     public void Handle(UpdatePropertyAddressCommand command)
     {
@@ -54,19 +22,9 @@ public partial class Property
             UpdateAddress(command.NewAddress);
     }
     
-    /*public void Handle(DeactivatePropertyCommand command)
-    {
-        if (command.Id == Id.Id)
-            Deactivate();
-    }*/
-    
     public void Handle(UpdatePropertyCommand command)
     {
         if (command.Id != Id.Id) return;
-
-        // Verificar que la propiedad esté activa
-        //if (Status == EPropertyStatus.Inactive)
-        ////  throw new InvalidOperationException("No se puede actualizar una propiedad inactiva.");
 
         // Convertir Guid a OwnerId
         OwnerId = new OwnerId(command.OwnerId);
@@ -77,5 +35,30 @@ public partial class Property
         // Crear objetos Region y District con los 2 parámetros requeridos
         Region = new Region(command.RegionName);
         District = new District(command.DistrictName);
+    }
+    
+    public void DeactivateProperty()
+    {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException($"Property {Id.Id} is already deactivated.");
+        }
+        IsActive = false;
+        _domainEvents.Add(new PropertyDeactivatedEvent(Id, DateTime.UtcNow));
+    }
+
+    public void ActivateProperty()
+    {
+        if (IsActive)
+        {
+            throw new InvalidOperationException($"Property {Id.Id} is already activated.");
+        }
+        IsActive = true;
+        _domainEvents.Add(new PropertyActivatedEvent(Id, DateTime.UtcNow));
+    }
+
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
     }
 }
