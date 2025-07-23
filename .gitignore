@@ -8,3 +8,7 @@ riderModule.iml
 /.idea
 appsettings.Development.json
 appsettings.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
