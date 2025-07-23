@@ -93,7 +93,6 @@ builder.Services.AddSwaggerGen(options =>
 
     options.EnableAnnotations();
 
-    // JWT Bearer
     /*options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In            = ParameterLocation.Header,
