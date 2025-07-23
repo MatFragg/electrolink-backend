@@ -1,3 +1,3 @@
-namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+namespace Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
 
 public record DeletePropertyCommand(Guid Id);

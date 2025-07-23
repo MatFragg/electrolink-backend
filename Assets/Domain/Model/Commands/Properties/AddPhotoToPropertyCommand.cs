@@ -1,3 +1,2 @@
-namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-
+namespace Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
 public record AddPhotoToPropertyCommand(Guid Id, string? PhotoUrl);
