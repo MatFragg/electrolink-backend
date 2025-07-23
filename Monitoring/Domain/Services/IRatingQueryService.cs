@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Domain.Services;
+namespace Hamcoders.Electrolink.API.Monitoring.Domain.Services;
 
 public interface IRatingQueryService
 {

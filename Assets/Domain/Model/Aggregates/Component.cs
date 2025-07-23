@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Components;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
@@ -5,43 +6,26 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
 public class Component
 {
-    public ComponentId Id { get; private set; } 
-    public string Name { get; private set; } = string.Empty;
-    public string Description { get; private set; } = string.Empty;
-    public bool IsActive { get; private set; } = false;
-    public ComponentTypeId TypeId { get; private set; } 
-
-    public Component() {}
+    public ComponentId Id { get; private set; }
+    public string Name { get; private set; }
+    public string Description { get; private set; }
+    public bool IsActive { get; private set; }
     
-    public Component(string name, string description, bool isActive, ComponentTypeId typeId) : this()
+    public ComponentTypeId TypeId { get; private set; }
+
+    public Component(CreateComponentCommand command) : this()
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be null or empty.", nameof(name));
-        
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException("Description cannot be null or empty.", nameof(description));
-        
-        if (typeId == null || typeId.Id <= 0)
-            throw new ArgumentException("TypeId must be a valid ComponentTypeId.", nameof(typeId));
-        
         Id = ComponentId.NewId();
-        Name = name;
-        Description = description;
-        IsActive = isActive;
-        TypeId = typeId;
-    }
-    
-    public Component(CreateComponentCommand command) : this(command.Name, command.Description,command.IsActive  , new ComponentTypeId(command.ComponentTypeId))
-    {
-
+        Name = command.Name;
+        Description = command.Description;
+        TypeId = new ComponentTypeId(command.ComponentTypeId);
+        IsActive = true;
     }
 
     public void UpdateInfo(UpdateComponentCommand command)
     {
         Name = command.Name;
         Description = command.Description;
-        TypeId = new ComponentTypeId(command.TypeId);
-        IsActive = command.IsActive;
     }
 
     public void Deactivate()
@@ -49,5 +33,12 @@ public class Component
         IsActive = false;
     }
     
-
+    private Component() 
+    {
+        
+        Name = string.Empty;
+        Description = string.Empty;
+        TypeId = new ComponentTypeId(0);
+        IsActive = false;
+    }
 }

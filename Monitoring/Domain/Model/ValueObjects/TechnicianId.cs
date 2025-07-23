@@ -1,4 +1,4 @@
-namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
 
 public record TechnicianId(int Value)

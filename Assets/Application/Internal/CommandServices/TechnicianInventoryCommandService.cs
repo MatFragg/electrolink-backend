@@ -1,20 +1,17 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Cortex.Mediator;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
 public class TechnicianInventoryCommandService(
     ITechnicianInventoryRepository inventoryRepository, 
     IComponentRepository componentRepository, // Necesario para validaciones
-    IUnitOfWork unitOfWork,
-    IMediator mediator)
+    IUnitOfWork unitOfWork)
     : ITechnicianInventoryCommandService
 {
     public async Task<TechnicianInventory?> Handle(CreateTechnicianInventoryCommand command)
@@ -40,18 +37,29 @@ public class TechnicianInventoryCommandService(
         if (inventory is null) throw new ArgumentException("Technician inventory not found.");
 
         // En lugar de usar inventory.Handle(command), crearemos directamente el ComponentStock
-        inventory.Handle(command);
+        var componentId = new ComponentId(command.ComponentId);
     
-        inventoryRepository.Update(inventory);
+        // Verificar si ya existe el stock
+        if (inventory.StockItems.Any(s => s.ComponentId == componentId)) // <-- CORREGIDO
+        {
+            throw new InvalidOperationException($"Stock for component {componentId.Id} already exists.");
+        }
+    
+        // Crear nuevo stock item como una operación independiente
+        var newStockItem = new ComponentStock(
+            inventory.Id,
+            componentId,
+            command.Quantity,
+            command.AlertThreshold);
+    
+        // Añadir directamente al repositorio (necesitas crear este método)
+        await inventoryRepository.AddComponentStockAsync(newStockItem);
+    
+        // Finalizar la transacción
         await unitOfWork.CompleteAsync();
     
-        foreach (var domainEvent in inventory.DomainEvents)
-        {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
-        }
-        inventory.ClearDomainEvents();
         // Recargar el inventario completo para tener los datos actualizados
-        return inventory;
+        return await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
     }
 
     public async Task<TechnicianInventory?> Handle(UpdateComponentStockCommand command)
@@ -63,17 +71,13 @@ public class TechnicianInventoryCommandService(
         var stockItem = inventory.StockItems.FirstOrDefault(s => s.ComponentId == componentId);
         if (stockItem == null) throw new KeyNotFoundException("Componente no encontrado en inventario.");
         
-        inventoryRepository.Update(inventory);
+        await inventoryRepository.UpdateComponentStockAsync(
+            stockItem.Id,
+            command.NewQuantity,
+            command.NewAlertThreshold);
 
         await unitOfWork.CompleteAsync();
-        
-        foreach (var domainEvent in inventory.DomainEvents)
-        {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None); // <--- ¡CAMBIO AQUÍ: PublishAsync!
-        }
-        inventory.ClearDomainEvents();
-        
-        return inventory;
+        return await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
     }
     
     public async Task<bool> Handle(RemoveComponentStockCommand command)

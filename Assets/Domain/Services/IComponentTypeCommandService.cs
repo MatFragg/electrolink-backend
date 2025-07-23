@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Services;

@@ -1,4 +1,4 @@
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 public record SubscriptionId(Guid Value)
 {

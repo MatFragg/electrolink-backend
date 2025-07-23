@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
 using Hampcoders.Electrolink.API.Assets.Interface.REST.Resources;
 
@@ -14,8 +15,7 @@ public static class UpdateComponentStockCommandFromResourceAssembler
             technicianId,
             componentId,
             resource.NewQuantity,
-            resource.NewAlertThreshold
-            );
+            resource.NewAlertThreshold);
     }
 
 }

@@ -1,17 +1,17 @@
 using Cortex.Mediator.DependencyInjection;
-using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
-using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
-using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
-using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
-using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
-using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Subscriptions.Application.Internal;
-using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
-using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
+using Hamcoders.Electrolink.API.Monitoring.Application.ACL;
+using Hamcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
+using Hamcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Repository;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hamcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
+using Hamcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
+using Hamcoders.Electrolink.API.Monitoring.Interfaces.ACL;
+using Hamcoders.Electrolink.API.Subscriptions.Application.Internal;
+using Hamcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Repository;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
+using Hamcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Assets.Application.ACL;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
@@ -39,13 +39,13 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.API.Application.Internal.CommandServices;
-using Hampcoders.Electrolink.API.Planning.API.Application.Internal.QueryServices;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Repositories;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Services;
-using Hampcoders.Electrolink.API.Planning.API.Infrastructure.Persistence.EFC.Repositories;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.Application.ACL;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Application.ACL;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Application.Internal.QueryServices;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Domain.Repositories;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Domain.Services;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Infrastructure.Persistence.EFC.Repositories;
+using Hampcoders.Electrolink.API.ServiceDesignAndPlanning.API.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces.ASP.Configuration;
@@ -93,7 +93,8 @@ builder.Services.AddSwaggerGen(options =>
 
     options.EnableAnnotations();
 
-    /*options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // JWT Bearer
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In            = ParameterLocation.Header,
         Description   = "Ingrese el token JWT",
@@ -101,9 +102,9 @@ builder.Services.AddSwaggerGen(options =>
         Type          = SecuritySchemeType.Http,
         Scheme        = "bearer",
         BearerFormat  = "JWT"
-    });*/
+    });
 
-    /*options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -116,7 +117,7 @@ builder.Services.AddSwaggerGen(options =>
             },
             Array.Empty<string>()
         }
-    });*/
+    });
 
     /* // Servidor local de desarrollo
     options.AddServer(new OpenApiServer
@@ -167,7 +168,7 @@ builder.Services.AddScoped<IRequestQueryService, RequestQueryService>();
 builder.Services.AddScoped<IScheduleCommandService, ScheduleCommandService>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IMonitoringContextFacade, MonitoringContextFacade>();
-builder.Services.AddScoped<ISDPContextFacade, SdpContextFacade>();
+builder.Services.AddScoped<ISDPContextFacade, SDPContextFacade>();
 
 // Profiles
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();

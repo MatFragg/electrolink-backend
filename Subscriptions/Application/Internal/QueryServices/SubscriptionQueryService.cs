@@ -1,10 +1,10 @@
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Repository;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
 
-namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
+namespace Hamcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 
 public class SubscriptionQueryService(ISubscriptionRepository _subscriptionRepository) : ISubscriptionQueryService
 {

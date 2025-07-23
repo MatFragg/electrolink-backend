@@ -1,8 +1,8 @@
-using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+using Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Domain.Services;
+namespace Hamcoders.Electrolink.API.Monitoring.Domain.Services;
 
 public interface IReportQueryService
 {

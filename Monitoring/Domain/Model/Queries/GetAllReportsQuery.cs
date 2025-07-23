@@ -1,3 +1,3 @@
-namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
 
 public record GetAllReportsQuery();

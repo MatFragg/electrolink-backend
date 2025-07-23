@@ -1,6 +1,6 @@
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
 public record CreatePlanCommand(
     string Name,

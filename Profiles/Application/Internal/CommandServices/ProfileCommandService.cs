@@ -43,13 +43,12 @@ public class ProfileCommandService(
       }
 
       await profileRepository.AddAsync(profile);
+      await unitOfWork.CompleteAsync();
       
       if (command.Role == Role.Technician && profile.Technician != null)
       {
         await externalAssetService.CreateTechnicianInventoryAsync(profile.Technician.Id);
       }
-      
-      await unitOfWork.CompleteAsync();
       return profile;
     }
     catch (Exception)

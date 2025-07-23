@@ -1,6 +1,6 @@
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
 
 public interface ISubscriptionCommandService
 {

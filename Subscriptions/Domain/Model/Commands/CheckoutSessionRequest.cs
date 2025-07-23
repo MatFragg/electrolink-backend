@@ -1,4 +1,4 @@
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
 public class CheckoutSessionRequest
 {

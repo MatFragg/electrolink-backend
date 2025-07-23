@@ -24,7 +24,7 @@ namespace Hampcoders.Electrolink.API.Assets.Interface.REST;
 /// Query service for components.
 /// </param>
 [ApiController]
-[Route("api/v1/inventories")]
+[Route("api/v1/technicians")]
 [SwaggerTag("Technician Inventory Endpoints")]
 public class TechnicianInventoriesController(
     ITechnicianInventoryCommandService inventoryCommandService,

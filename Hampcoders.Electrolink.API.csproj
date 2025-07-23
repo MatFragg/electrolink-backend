@@ -49,13 +49,14 @@
       <Folder Include="Analytics\Infrastructure\" />
       <Folder Include="Analytics\Interface\" />
       <Folder Include="Assets\Application\Internal\OutboundServices\" />
+      <Folder Include="Planning\Application\" />
+      <Folder Include="Planning\Domain\" />
+      <Folder Include="Planning\Infrastructure\" />
+      <Folder Include="Planning\Interface\" />
         <Folder Include="Subscriptions\" />
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
       <Content Include="Profiles\.DS_Store" />
     </ItemGroup>
 

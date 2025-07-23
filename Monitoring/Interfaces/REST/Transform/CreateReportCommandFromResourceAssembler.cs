@@ -1,8 +1,8 @@
-using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
+namespace Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
 
-using Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
+using Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
 
 public static class CreateReportCommandFromResourceAssembler
 {

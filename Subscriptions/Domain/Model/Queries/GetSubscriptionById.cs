@@ -1,3 +1,3 @@
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
 
 public record GetSubscriptionByIdQuery(Guid SubscriptionId);

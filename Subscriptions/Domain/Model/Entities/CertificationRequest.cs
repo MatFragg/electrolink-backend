@@ -1,4 +1,4 @@
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
+namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Entities;
 
 public class CertificationRequest
 {
