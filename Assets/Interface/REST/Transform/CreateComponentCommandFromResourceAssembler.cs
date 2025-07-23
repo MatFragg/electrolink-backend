@@ -10,3 +10,5 @@ public static class CreateComponentCommandFromResourceAssembler
         return new CreateComponentCommand(resource.Name, resource.Description, resource.IsActive , resource.ComponentTypeId);
     }
 }
+
+/*fasfsa*/
