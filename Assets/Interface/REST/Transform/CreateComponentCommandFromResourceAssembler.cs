@@ -8,7 +8,7 @@ public static class CreateComponentCommandFromResourceAssembler
 {
     public static CreateComponentCommand ToCommandFromResource(CreateComponentResource resource)
     {
-        return new CreateComponentCommand(resource.Name, resource.Description,resource.ComponentTypeId);
+        return new CreateComponentCommand(resource.Name, resource.Description,resource.IsActive,resource.ComponentTypeId);
     }
 }
 
