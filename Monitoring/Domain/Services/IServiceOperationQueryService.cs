@@ -1,8 +1,8 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Services;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 
 
 public interface IServiceOperationQueryService

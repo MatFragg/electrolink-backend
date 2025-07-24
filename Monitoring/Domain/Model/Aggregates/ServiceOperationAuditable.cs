@@ -1,4 +1,4 @@
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
 using System.ComponentModel.DataAnnotations.Schema;
 using EntityFrameworkCore.CreatedUpdatedDate.Contracts;

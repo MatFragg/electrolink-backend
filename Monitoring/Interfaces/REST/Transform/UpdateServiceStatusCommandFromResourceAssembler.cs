@@ -1,8 +1,8 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
-using Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Resources;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
+namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.REST.Transform;
 
 public static class UpdateServiceStatusCommandFromResourceAssembler
 {

@@ -30,7 +30,7 @@ public class ProfileRepository(AppDbContext context)
 
   public async Task<Profile?> FindByProfileIdAsync(int id)
   {
-    return await Context.Profiles
+    return await Context.Set<Profile>()
       .Include(p => p.HomeOwner)  // Cargar HomeOwner si existe
       .Include(p => p.Technician) // Cargar Technician si existe
       .FirstOrDefaultAsync(p => p.Id == id);

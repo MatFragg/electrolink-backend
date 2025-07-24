@@ -1,4 +1,4 @@
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
 public enum ServiceStatus
 {

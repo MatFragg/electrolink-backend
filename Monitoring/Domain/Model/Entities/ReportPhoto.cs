@@ -1,4 +1,4 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
 public class ReportPhoto
 {

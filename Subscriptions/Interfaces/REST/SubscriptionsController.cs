@@ -1,8 +1,8 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
-using Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
-using Hamcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
+using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
 using Stripe.Checkout;

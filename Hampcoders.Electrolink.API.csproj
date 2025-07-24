@@ -52,7 +52,6 @@
       <Folder Include="Planning\Application\" />
       <Folder Include="Planning\Domain\" />
       <Folder Include="Planning\Infrastructure\" />
-      <Folder Include="Planning\Interface\" />
         <Folder Include="Subscriptions\" />
     </ItemGroup>
 

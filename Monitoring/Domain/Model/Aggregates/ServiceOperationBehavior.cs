@@ -1,9 +1,9 @@
 using System.Linq;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
 public partial class ServiceOperation
 { public void Handle(UpdateServiceStatusCommand command)

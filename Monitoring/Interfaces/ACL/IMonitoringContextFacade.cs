@@ -1,4 +1,4 @@
-namespace Hamcoders.Electrolink.API.Monitoring.Interfaces.ACL;
+namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
 
 /// <summary>
 /// Punto de acceso que Monitoring ofrece a otras capas/BC

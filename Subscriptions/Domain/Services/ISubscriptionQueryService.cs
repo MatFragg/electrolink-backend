@@ -1,7 +1,7 @@
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
-using Hamcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
 
-namespace Hamcoders.Electrolink.API.Subscriptions.Domain.Services;
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 
 public interface ISubscriptionQueryService
 {

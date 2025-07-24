@@ -1,5 +1,5 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 
 public record UpdateServiceStatusCommand(Guid RequestId, ServiceStatus NewStatus);

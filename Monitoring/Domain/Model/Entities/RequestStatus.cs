@@ -1,6 +1,6 @@
-using Hamcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-namespace Hamcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
 
 public class RequestStatus
 {
