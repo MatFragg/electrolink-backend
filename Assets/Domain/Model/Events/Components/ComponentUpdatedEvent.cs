@@ -7,8 +7,7 @@ public record ComponentUpdatedEvent(
     ComponentId ComponentId,
     string NewName,
     string NewDescription,
-    string NewManufacturer,
-    decimal NewUnitCost,
+    int TypeId,
     DateTime OccurredOn
 ) : IEvent
 {
