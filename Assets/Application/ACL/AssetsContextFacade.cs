@@ -3,7 +3,7 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventor
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Interface.ACL;
-using CreateTechnicianInventoryCommand = Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.CreateTechnicianInventoryCommand;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.ACL;
 
