@@ -1,19 +1,22 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
 public partial class Property
 {
-    //public EPropertyStatus Status { get; private set; }
-    //public PropertyPhoto? Photo { get; private set; } // Puede ser nulo
+    private readonly List<IEvent> _domainEvents = new();
+    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
 
 
     public Property()
     {
 
     }
+    
+    
 
     /// <summary>
     /// Establece o elimina la foto de la propiedad.
