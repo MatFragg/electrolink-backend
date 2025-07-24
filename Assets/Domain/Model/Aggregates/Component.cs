@@ -14,7 +14,7 @@ public class Component
     public string Description { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
     public ComponentTypeId TypeId { get; private set; } 
-    private readonly List<IEvent> _domainEvents = new(); // CAMBIO: Lista de eventos
+    private readonly List<IEvent> _domainEvents = new(); 
     public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly(); 
     
     public Component() {}
