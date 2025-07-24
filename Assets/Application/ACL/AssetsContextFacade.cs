@@ -12,7 +12,6 @@ public class AssetsContextFacade(ITechnicianInventoryCommandService technicianIn
 {
     public async Task<Guid> CreateTechnicianInventory(Guid technicianId)
     {
-        // Traducción de primitivo a Comando
         var command = new CreateTechnicianInventoryCommand(technicianId);
         var inventory = await technicianInventoryCommandService.Handle(command);
         return inventory!.Id;
@@ -20,7 +19,6 @@ public class AssetsContextFacade(ITechnicianInventoryCommandService technicianIn
 
     public async Task<bool> ExistsInventoryForTechnician(Guid technicianProfileId)
     {
-        // Traducción de primitivo a Query
         var query = new GetInventoryByTechnicianIdQuery(technicianProfileId);
         var inventory = await technicianInventoryQueryService.Handle(query);
         return inventory != null;
