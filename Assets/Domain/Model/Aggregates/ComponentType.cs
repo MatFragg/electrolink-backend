@@ -20,16 +20,14 @@ public class ComponentType
     }
     public ComponentType( ComponentTypeId id, string name, string description)
     {
-        // Validaciones
         if (id == null || id.Id <= 0) throw new ArgumentException("Id must be a valid ComponentTypeId.", nameof(id));
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be null or empty.", nameof(name));
         if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("Description cannot be null or empty.", nameof(description));
         
-        Id = id; // El ID se pasa, generado en el Command Service (o por DB)
+        Id = id; 
         Name = name;
         Description = description;
 
-        // CAMBIO: Registrar evento de creación
         _domainEvents.Add(new ComponentTypeCreatedEvent(Id, Name, DateTime.UtcNow));
     }
     public ComponentType(CreateComponentTypeCommand command) : this(
@@ -43,7 +41,7 @@ public class ComponentType
     {
         Name = command.Name;
         Description = command.Description;
-        _domainEvents.Add(new ComponentTypeUpdatedEvent(Id, Name, Description, DateTime.UtcNow)); // Define ComponentTypeUpdatedEvent
+        _domainEvents.Add(new ComponentTypeUpdatedEvent(Id, Name, Description, DateTime.UtcNow)); 
 
     }
     
