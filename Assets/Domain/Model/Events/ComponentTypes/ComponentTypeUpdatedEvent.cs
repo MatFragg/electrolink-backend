@@ -3,8 +3,9 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events.ComponentTypes;
 
-public record ComponentTypeDescriptionUpdatedEvent(
+public record ComponentTypeUpdatedEvent(
     ComponentTypeId ComponentTypeId,
+    string NewName,
     string NewDescription,
     DateTime OccurredOn
 ) : IEvent
