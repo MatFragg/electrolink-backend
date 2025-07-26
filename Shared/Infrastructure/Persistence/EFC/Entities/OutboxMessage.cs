@@ -1,4 +1,4 @@
-﻿namespace Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
+﻿namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
 
 public class OutboxMessage
 {
