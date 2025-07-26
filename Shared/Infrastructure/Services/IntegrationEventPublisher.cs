@@ -1,10 +1,10 @@
 ﻿using System.Text.Json;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Shared.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
 
-namespace Hampcoders.Electrolink.API.Shared.Application.Internal.EventPublisher;
+namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Services;
 
 public class IntegrationEventPublisher : IIntegrationEventPublisher
 {
@@ -18,7 +18,7 @@ public class IntegrationEventPublisher : IIntegrationEventPublisher
     public async Task PublishAsync<TIntegrationEvent>(TIntegrationEvent integrationEvent, CancellationToken cancellationToken = default)
         where TIntegrationEvent : IIntegrationEvent
     {
-        var outboxMessage = new OutboxMessage
+        var outboxMessage = new OutboxMessage()
         {
             Id = integrationEvent.EventId,
             OccurredOnUtc = integrationEvent.OccurredOn,
