@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
@@ -6,13 +7,14 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
 public class TechnicianInventoryCommandService(
     ITechnicianInventoryRepository inventoryRepository, 
     IComponentRepository componentRepository, // Necesario para validaciones
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher)
     : ITechnicianInventoryCommandService
 {
     public async Task<TechnicianInventory?> Handle(CreateTechnicianInventoryCommand command)
@@ -25,6 +27,12 @@ public class TechnicianInventoryCommandService(
         var inventory = new TechnicianInventory(command);
         await inventoryRepository.AddAsync(inventory);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
         return inventory;
     }
 
@@ -37,30 +45,22 @@ public class TechnicianInventoryCommandService(
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
         if (inventory is null) throw new ArgumentException("Technician inventory not found.");
 
-        // En lugar de usar inventory.Handle(command), crearemos directamente el ComponentStock
-        var componentId = new ComponentId(command.ComponentId);
+        inventory.Handle(command);
     
-        // Verificar si ya existe el stock
-        if (inventory.StockItems.Any(s => s.ComponentId == componentId)) // <-- CORREGIDO
-        {
-            throw new InvalidOperationException($"Stock for component {componentId.Id} already exists.");
-        }
-    
-        // Crear nuevo stock item como una operación independiente
-        var newStockItem = new ComponentStock(
-            inventory.Id,
-            componentId,
-            command.Quantity,
-            command.AlertThreshold);
-    
-        // Añadir directamente al repositorio (necesitas crear este método)
-        await inventoryRepository.AddComponentStockAsync(newStockItem);
+        inventoryRepository.Update(inventory); 
+        await unitOfWork.CompleteAsync();
     
         // Finalizar la transacción
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
     
         // Recargar el inventario completo para tener los datos actualizados
-        return await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
+        return inventory;
     }
 
     public async Task<TechnicianInventory?> Handle(UpdateComponentStockCommand command)
@@ -68,29 +68,37 @@ public class TechnicianInventoryCommandService(
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
         if (inventory is null) throw new ArgumentException("Technician inventory not found.");
         
-        var componentId = new ComponentId(command.ComponentId);
-        var stockItem = inventory.StockItems.FirstOrDefault(s => s.ComponentId == componentId);
-        if (stockItem == null) throw new KeyNotFoundException("Componente no encontrado en inventario.");
-        
-        await inventoryRepository.UpdateComponentStockAsync(
-            stockItem.Id,
-            command.NewQuantity,
-            command.NewAlertThreshold);
+        inventory.Handle(command);
 
+        inventoryRepository.Update(inventory);
         await unitOfWork.CompleteAsync();
-        return await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
+
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
+
+        return inventory;
     }
     
     public async Task<bool> Handle(RemoveComponentStockCommand command)
     {
-        var result = await inventoryRepository.RemoveComponentStockAsync(
-            command.TechnicianId,
-            command.ComponentId);
+        var inventory = await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
+        if (inventory is null) throw new ArgumentException("Technician inventory not found.");
 
-        if (result)
-            await unitOfWork.CompleteAsync();
+        inventory.Handle(command); 
 
-        return result;
+        inventoryRepository.Update(inventory); 
+        await unitOfWork.CompleteAsync();
+
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
+
+        return true;
     }
     
     /// <summary>
@@ -106,6 +114,13 @@ public class TechnicianInventoryCommandService(
 
         inventory.Handle(command);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
+        
         return inventory;
     }
 
@@ -116,6 +131,13 @@ public class TechnicianInventoryCommandService(
 
         inventory.Handle(command);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
+        
         return inventory;
     }
 }
