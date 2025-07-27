@@ -1,20 +1,30 @@
+using Cortex.Mediator;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class PropertyCommandService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork) : IPropertyCommandService
+public class PropertyCommandService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher) : IPropertyCommandService
 {
     public async Task<Property?> Handle(CreatePropertyCommand command)
     {
         var property = new Property(command);
         await propertyRepository.AddAsync(property);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in property.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        property.ClearDomainEvents();
+        
         return property;
     }
 
@@ -38,25 +48,50 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
 
         property.Handle(command);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in property.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        property.ClearDomainEvents();
         return property;
     }
 
-    /*public async Task<Property?> Handle(DeactivatePropertyCommand command)
+    public async Task<Property?> Handle(DeactivatePropertyCommand command)
     {
-        // Para que sea seguro, el comando también debería tener el OwnerId
-        // Por ahora, usamos el método inseguro, pero lo ideal es validar el dueño
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.Id));
-            
+        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.PropertyId));
         if (property == null) return null;
 
-        // Le decimos al Agregado que ejecute su lógica interna
-        property.Handle(command);
+        property.Handle(command); // El AR registra PropertyDeactivatedEvent
+        await unitOfWork.CompleteAsync();
             
-        // Guardamos los cambios a través de la Unit of Work
-        await unitOfWork.CompleteAsync(); // Usamos unitOfWork, no el Context directamente
+        // Publicar eventos de dominio
+        foreach (var domainEvent in property.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        property.ClearDomainEvents();
             
         return property;
-    }*/
+    }
+    
+    public async Task<Property?> Handle(ActivatePropertyCommand command)
+    {
+        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.PropertyId));
+        if (property == null) return null;
+
+        property.Handle(command); // El AR registra PropertyActivatedEvent
+        await unitOfWork.CompleteAsync();
+            
+        // Publicar eventos de dominio
+        foreach (var domainEvent in property.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        property.ClearDomainEvents();
+            
+        return property;
+    }
     
     public async Task<Property?> Handle(UpdatePropertyCommand command)
     {
@@ -70,6 +105,12 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         property.Handle(command);
 
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in property.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        property.ClearDomainEvents();
         
         return property;
     }

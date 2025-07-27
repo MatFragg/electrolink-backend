@@ -1,3 +1,4 @@
+using Cortex.Mediator;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
@@ -5,10 +6,11 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork) : IComponentTypeCommandService
+public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher) : IComponentTypeCommandService
 {
     public async Task<ComponentType?> Handle(CreateComponentTypeCommand command)
     {
@@ -18,6 +20,12 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
         var componentType = new ComponentType(command);
         await componentTypeRepository.AddAsync(componentType);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in componentType.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        componentType.ClearDomainEvents();
         return componentType;
     }
 
@@ -30,6 +38,13 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
 
         componentType.Update(command);
         await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in componentType.DomainEvents)
+        {
+            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+        }
+        componentType.ClearDomainEvents();
+        
         return componentType;
     }
 
