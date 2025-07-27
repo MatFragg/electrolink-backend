@@ -8,9 +8,6 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
 public partial class Property
 {
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-
     private void UpdateAddress(Address newAddress)
     {
         if (newAddress == null) throw new ArgumentNullException(nameof(newAddress));

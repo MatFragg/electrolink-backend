@@ -2,6 +2,7 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Properties;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
@@ -13,6 +14,9 @@ public partial class Property
     public Region Region { get; private set; }
     public District District { get; private set; }
     public bool IsActive { get; private set; } = true;
+    
+    private readonly List<IEvent> _domainEvents = new();
+    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
     public Property()
     {
 
@@ -37,6 +41,7 @@ public partial class Property
     
      public void Handle(UpdatePropertyAddressCommand command)
     {
+        
         if (command.Id != Id.Id) 
             throw new InvalidOperationException($"Command ID {command.Id} does not match Property ID {Id.Id}.");
 
@@ -49,6 +54,10 @@ public partial class Property
 
         // Validaciones de negocio (ej. si la propiedad debe estar activa para actualizar)
         // if (!IsActive) throw new InvalidOperationException("No se puede actualizar una propiedad inactiva.");
+        if (command.OwnerId == Guid.Empty) throw new ArgumentException("New Owner ID must be valid.", nameof(command.OwnerId));
+        if (command.Address == null) throw new ArgumentNullException(nameof(command.Address));
+        if (command.RegionName == null) throw new ArgumentNullException(nameof(command.RegionName));
+        if (command.DistrictName == null) throw new ArgumentNullException(nameof(command.DistrictName));
 
         OwnerId = new OwnerId(command.OwnerId);
 
@@ -72,5 +81,10 @@ public partial class Property
         if (command.PropertyId != Id.Id) return; 
 
         Activate(); 
+    }
+    
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using EntityFrameworkCore.CreatedUpdatedDate.Contracts;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.ComponentTypes;
@@ -6,17 +8,20 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
-public class ComponentType
+public class ComponentType : IEntityWithCreatedUpdatedDate
 {
     public ComponentTypeId Id { get; private set; }
-    public string Name { get; private set; }
-    public string Description { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
     private readonly List<IEvent> _domainEvents = new(); 
     public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-    private ComponentType() 
+    
+    [Column("CreatedAt")] public DateTimeOffset? CreatedDate { get; set; }
+    [Column("UpdatedAt")] public DateTimeOffset? UpdatedDate { get; set; }
+    
+    
+    public ComponentType() 
     {
-        Name = string.Empty;
-        Description = string.Empty;
     }
     public ComponentType( ComponentTypeId id, string name, string description)
     {
