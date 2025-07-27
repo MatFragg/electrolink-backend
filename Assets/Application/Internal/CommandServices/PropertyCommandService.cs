@@ -89,7 +89,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
             await mediator.PublishAsync(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
-            
+                
         return property;
     }
     
