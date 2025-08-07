@@ -1,4 +1,4 @@
-using Cortex.Mediator;
+using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
@@ -30,7 +30,7 @@ public class TechnicianInventoryCommandService(
         
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
         return inventory;
@@ -42,25 +42,27 @@ public class TechnicianInventoryCommandService(
         var component = await componentRepository.FindByIdAsync(new ComponentId(command.ComponentId));
         if (component is null) throw new ArgumentException($"Component with id {command.ComponentId} not found in catalog.");
     
+        // Es CRUCIAL que FindByTechnicianIdAsync incluya StockItems (ya lo tienes implementado).
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
         if (inventory is null) throw new ArgumentException("Technician inventory not found.");
 
-        inventory.Handle(command);
+        // El Aggregate Root es responsable de gestionar sus entidades internas.
+        // Esto añade el ComponentStock a la colección _stockItems del inventario trackeado.
+        inventory.Handle(command); 
     
-        inventoryRepository.Update(inventory); 
-        await unitOfWork.CompleteAsync();
-    
-        // Finalizar la transacción
-        await unitOfWork.CompleteAsync();
+        // CAMBIO CLAVE: EF Core detectará automáticamente la adición del ComponentStock
+        // porque 'inventory' ya está trackeado y su colección _stockItems ha sido modificada.
+        // NO se necesita inventoryRepository.Update(inventory); aquí.
         
+        await unitOfWork.CompleteAsync(); // Esto guardará el nuevo ComponentStock y los cambios en el AR
+
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
-    
-        // Recargar el inventario completo para tener los datos actualizados
-        return inventory;
+
+        return inventory; // Retornar el inventario actualizado
     }
 
     public async Task<TechnicianInventory?> Handle(UpdateComponentStockCommand command)
@@ -70,12 +72,16 @@ public class TechnicianInventoryCommandService(
         
         inventory.Handle(command);
 
-        inventoryRepository.Update(inventory);
+        // CAMBIO CLAVE: Eliminar esta línea.
+        // Si el AR solo modifica entidades hijas y no sus propias propiedades escalares,
+        // esta llamada a Update(inventory) es redundante y puede causar el error.
+        // EF Core detectará los cambios en las entidades hijas.
+        // inventoryRepository.Update(inventory); 
         await unitOfWork.CompleteAsync();
 
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
 
@@ -89,24 +95,21 @@ public class TechnicianInventoryCommandService(
 
         inventory.Handle(command); 
 
-        inventoryRepository.Update(inventory); 
+        // CAMBIO CLAVE: Eliminar esta línea.
+        // Similar al UpdateComponentStockCommand, si el AR solo modifica entidades hijas,
+        // esta llamada a Update(inventory) es redundante.
+        // inventoryRepository.Update(inventory);
         await unitOfWork.CompleteAsync();
 
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
 
-        return true;
+        return true; 
     }
     
-    /// <summary>
-    /// Maneja la actualización del umbral de alerta para un item específico en el inventario.
-    /// </summary>
-    /// <summary>
-    /// Maneja el comando para actualizar el umbral de alerta de un item.
-    /// </summary>
     public async Task<TechnicianInventory?> Handle(IncreaseStockCommand command)
     {
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId));
@@ -114,13 +117,13 @@ public class TechnicianInventoryCommandService(
 
         inventory.Handle(command);
         await unitOfWork.CompleteAsync();
-        
+
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
-        
+
         return inventory;
     }
 
@@ -131,13 +134,13 @@ public class TechnicianInventoryCommandService(
 
         inventory.Handle(command);
         await unitOfWork.CompleteAsync();
-        
+
         foreach (var domainEvent in inventory.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         inventory.ClearDomainEvents();
-        
+
         return inventory;
     }
 }
