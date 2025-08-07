@@ -1,4 +1,4 @@
-using Cortex.Mediator;
+using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
@@ -23,7 +23,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
         
         foreach (var domainEvent in componentType.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         componentType.ClearDomainEvents();
         return componentType;
@@ -41,7 +41,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
         
         foreach (var domainEvent in componentType.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         componentType.ClearDomainEvents();
         
