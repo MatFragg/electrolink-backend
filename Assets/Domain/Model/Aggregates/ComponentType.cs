@@ -23,23 +23,19 @@ public class ComponentType : IEntityWithCreatedUpdatedDate
     public ComponentType() 
     {
     }
-    public ComponentType( ComponentTypeId id, string name, string description)
+    public ComponentType(string name, string description)
     {
-        if (id == null || id.Id <= 0) throw new ArgumentException("Id must be a valid ComponentTypeId.", nameof(id));
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be null or empty.", nameof(name));
         if (string.IsNullOrWhiteSpace(description)) throw new ArgumentException("Description cannot be null or empty.", nameof(description));
         
-        Id = id; 
         Name = name;
         Description = description;
 
         _domainEvents.Add(new ComponentTypeCreatedEvent(Id, Name, DateTime.UtcNow));
     }
     public ComponentType(CreateComponentTypeCommand command) : this(
-        null!,
         command.Name, 
-        command.Description)
-    {
+        command.Description) {
     }
     
     public void Update(UpdateComponentTypeCommand command)
