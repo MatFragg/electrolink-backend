@@ -8,10 +8,9 @@ public record ComponentCreatedIntegrationEvent(
     ComponentId ComponentId,
     ComponentTypeId ComponentTypeId,
     string ComponentName,
-    DateTime OccurredOn
+    DateTime OccurredOn,
+    Guid EventId
 ) : IIntegrationEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
-    public string EventType { get; } = nameof(ComponentCreatedIntegrationEvent);
-    public string Payload { get; init; } = JsonSerializer.Serialize(new { ComponentId = ComponentId.Id, ComponentTypeId = ComponentTypeId.Id, ComponentName, OccurredOn });
 };

@@ -11,6 +11,4 @@ public record ComponentStockLowIntegrationEvent(
 ) : IIntegrationEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
-    public string EventType { get; } = nameof(ComponentStockLowIntegrationEvent);
-    public string Payload { get; init; } = JsonSerializer.Serialize(new { ComponentId = ComponentId.Id, CurrentQuantity, OccurredOn });
 };

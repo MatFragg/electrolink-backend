@@ -12,6 +12,4 @@ public record PropertyCreatedIntegrationEvent(
 ) : IIntegrationEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
-    public string EventType { get; } = nameof(PropertyCreatedIntegrationEvent);
-    public string Payload { get; init; } = JsonSerializer.Serialize(new { PropertyId = PropertyId.Id, OwnerId = OwnerId.Id, PropertyName, OccurredOn });
 };
