@@ -1,4 +1,4 @@
-﻿using Cortex.Mediator.Notifications;
+﻿using MediatR;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Shared.Application.Internal.EventHandler;

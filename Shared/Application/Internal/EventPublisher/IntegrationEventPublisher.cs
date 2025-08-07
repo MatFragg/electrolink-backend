@@ -4,7 +4,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
 
-namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Services;
+namespace Hampcoders.Electrolink.API.Shared.Application.Internal.EventPublisher;
 
 public class IntegrationEventPublisher : IIntegrationEventPublisher
 {
@@ -22,7 +22,7 @@ public class IntegrationEventPublisher : IIntegrationEventPublisher
         {
             Id = integrationEvent.EventId,
             OccurredOnUtc = integrationEvent.OccurredOn,
-            Type = integrationEvent.GetType().Name, // O el nombre completo del tipo
+            Type = integrationEvent.GetType().AssemblyQualifiedName!,  // O el nombre completo del tipo
             Content = JsonSerializer.Serialize((object)integrationEvent), // Serializar el evento a JSON
             ProcessedOnUtc = null,
             Error = null
@@ -31,5 +31,6 @@ public class IntegrationEventPublisher : IIntegrationEventPublisher
         _context.Set<OutboxMessage>().Add(outboxMessage);
         // NOTA: No llamamos a SaveChanges aquí. Esto lo hará la UnitOfWork del Command Service.
         // El OutboxMessage se guardará en la misma transacción que los cambios del Aggregate Root.
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

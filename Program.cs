@@ -1,4 +1,6 @@
-using Cortex.Mediator.DependencyInjection;
+using System.Reflection;
+// using Cortex.Mediator.DependencyInjection;
+// using Cortex.Mediator.Notifications;
 using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
@@ -14,7 +16,9 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Assets.Application.ACL;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Components;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
@@ -45,13 +49,20 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Shared.Application.Internal.EventPublisher;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.BackgroundServices;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Mediator.Cortex.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using MediatR; 
+using System.Reflection; // Necesario para Assembly.GetExecutingAssembly()
+using Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -201,13 +212,28 @@ builder.Services.AddScoped<IComponentTypeQueryService, ComponentTypeQueryService
 builder.Services.AddScoped<IAssetsContextFacade, AssetsContextFacade>();
 builder.Services.AddScoped<ExternalAssetService>(); 
 
+builder.Services.AddScoped<IIntegrationEventPublisher, IntegrationEventPublisher>();
+builder.Services.AddHostedService<OutboxProcessorBackgroundService>();
+
+
 // Add Cortex Mediator for Event Handling
-builder.Services.AddCortexMediator(
-    configuration: builder.Configuration,
-    handlerAssemblyMarkerTypes: new[] { typeof(Program) }, configure: options =>
-    {
-        options.AddOpenCommandPipelineBehavior(typeof(LoggingCommandBehavior<>));
-    });
+builder.Services.AddMediatR(cfg => {
+        // Opcional: Si tienes comportamientos de pipeline (LoggingCommandBehavior), configúralos aquí.
+        // MediatR tiene su propia interfaz IPipelineBehavior.
+        // cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingCommandBehavior<,>)); 
+    }, 
+    // Escanear el ensamblado actual (donde está Program.cs) para comandos, queries y manejadores.
+    Assembly.GetExecutingAssembly(), 
+    
+    // Escanear el ensamblado de Assets.Application para Event Handlers.
+    // Asegúrate de que Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers.ComponentCreatedEventHandler
+    // sea un tipo que exista en ese ensamblado.
+    typeof(Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers.ComponentCreatedEventHandler).Assembly
+    
+    // Si tienes otros ensamblados con comandos/queries/eventos/manejadores, añádelos aquí:
+    // typeof(SomeOtherAssemblyMarkerClass).Assembly
+);
+
 var app = builder.Build();
 
 // DB Init

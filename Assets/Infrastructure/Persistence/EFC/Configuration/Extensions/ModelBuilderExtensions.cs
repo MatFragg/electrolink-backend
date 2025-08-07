@@ -92,7 +92,7 @@ public static class ModelBuilderExtensions
         {
             b.ToTable("component_stocks");
             b.HasKey(cs => cs.Id);
-
+            b.Property(cs => cs.Id).IsRequired().ValueGeneratedNever();
             b.Property(cs => cs.ComponentId)
                 .HasConversion(id => id.Id, value => new ComponentId(value))
                 .HasColumnName("component_id")

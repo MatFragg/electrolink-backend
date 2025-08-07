@@ -14,6 +14,7 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Hampcoders.Electrolink.API.Planning.API.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
 
 namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -28,6 +29,7 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     //public DbSet<ServiceOperation> ServiceOperations { get; set; }
     
     public DbSet<Property> Properties { get; set; }
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<TechnicianInventory> TechnicianInventories { get; set; }
     public DbSet<Component> Components { get; set; }
     public DbSet<ComponentType> ComponentTypes { get; set; }
