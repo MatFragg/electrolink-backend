@@ -1,4 +1,4 @@
-using Cortex.Mediator;
+using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.Properties;
@@ -21,7 +21,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         
         foreach (var domainEvent in property.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
         
@@ -51,7 +51,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         
         foreach (var domainEvent in property.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
         return property;
@@ -68,7 +68,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         // Publicar eventos de dominio
         foreach (var domainEvent in property.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
             
@@ -86,7 +86,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         // Publicar eventos de dominio
         foreach (var domainEvent in property.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
                 
@@ -108,7 +108,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         
         foreach (var domainEvent in property.DomainEvents)
         {
-            await mediator.PublishAsync(domainEvent, CancellationToken.None);
+            await mediator.Publish(domainEvent, CancellationToken.None);
         }
         property.ClearDomainEvents();
         
