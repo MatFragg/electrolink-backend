@@ -1,0 +1,42 @@
+﻿# <type>(<bounded-context>[:<layer>|:<scope>])!: <subject>
+# 
+# TYPES (choose one):
+#   feat     → a new feature
+#   fix      → a bug fix
+#   refactor → code change that neither fixes a bug nor adds a feature
+#   perf     → performance improvements
+#   docs     → documentation only
+#   test     → adding or fixing tests
+#   chore    → maintenance, tooling, config changes
+#   build    → build system or dependency changes
+#   ci       → continuous integration changes
+#   revert   → revert a previous commit
+#
+# BOUNDED CONTEXTS (example set — replace with yours):
+#  assets-and-resources-management | dashboard-and-analytics | identity-and-access-management | profiles-and-preferences-management | service-design-and-planning | service-operation-and-monitoring | subscriptions-and-payments-management
+#
+# LAYERS (for layered architecture):
+#   domain | application | infrastructure | interfaces 
+#
+# SUBJECT RULES:
+#   - Use imperative mood (e.g., "add", "fix", "create" not "added", "fixed", "created")
+#   - Max 72 characters, no period at the end
+#   - Scope example: feat(users:domain): add Email VO with corporate domain validation
+#
+# BODY (optional):
+#   - Explain WHAT and WHY, not HOW
+#   - Wrap lines at ~100-120 characters
+#   - Leave one blank line between subject and body
+#
+# FOOTER (optional):
+#   - Issue references: Closes #123, Relates-To #456
+#   - Breaking changes: start with "BREAKING CHANGE:" followed by description and migration steps
+#
+# ------------------------------------------------------------------------
+# Example:
+# feat(users:application): implement RegisterUserCommandHandler with OTP
+#
+# Added a handler to register users with email-based OTP verification.
+# Includes expiration policy of 10 minutes and domain validation.
+#
+# Closes #45
