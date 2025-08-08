@@ -1,3 +1,9 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Integration;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
-public record ComponentUpdatedIntegrationEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Integration;
+
+public record ComponentUpdatedIntegrationEvent(ComponentId ComponentId, string ComponentName, DateTime OccurredOn) : IIntegrationEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+};
