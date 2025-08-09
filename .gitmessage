@@ -1,42 +1,65 @@
 ﻿# <type>(<bounded-context>[:<layer>|:<scope>])!: <subject>
-# 
-# TYPES (choose one):
-#   feat     → a new feature
-#   fix      → a bug fix
-#   refactor → code change that neither fixes a bug nor adds a feature
-#   perf     → performance improvements
-#   docs     → documentation only
-#   test     → adding or fixing tests
-#   chore    → maintenance, tooling, config changes
-#   build    → build system or dependency changes
-#   ci       → continuous integration changes
-#   revert   → revert a previous commit
 #
-# BOUNDED CONTEXTS (example set — replace with yours):
-#  assets-and-resources-management | dashboard-and-analytics | identity-and-access-management | profiles-and-preferences-management | service-design-and-planning | service-operation-and-monitoring | subscriptions-and-payments-management
+# TYPES — choose based on PURPOSE of the change, not the file modified:
+#   feat      → new business capability (was not possible before)
+#   fix       → bug fix (incorrect behavior → now correct)
+#   refactor  → code changes without altering behavior (cleanup, reorg)
+#   perf      → performance improvements (faster, less memory, less DB calls)
+#   docs      → documentation only (README, ADRs, API docs)
+#   test      → add or adjust tests only
+#   chore     → maintenance, config, scripts, formatting (no behavior change)
+#   build     → build system or dependencies (csproj, package.json, Dockerfile)
+#   ci        → continuous integration / pipeline changes
+#   revert    → revert a previous commit
 #
-# LAYERS (for layered architecture):
-#   domain | application | infrastructure | interfaces 
+# BOUNDED CONTEXTS (remove 'feature/' from branch name when using in commits):
+#   assets-and-resources-management
+#   dashboard-and-analytics
+#   identity-and-access-management
+#   profiles-and-preferences-management
+#   service-design-and-planning
+#   service-operation-and-monitoring
+#   subscriptions-and-payments-management
+#
+# LAYERS (Layered Architecture):
+#   domain         → Entities, Value Objects, Domain Events, Aggregates
+#   application    → Use Cases, Command/Query Handlers, Application Events
+#   infrastructure → Persistence, Messaging, External Service Implementations
+#   interfaces     → API endpoints, Controllers, UI integration
 #
 # SUBJECT RULES:
-#   - Use imperative mood (e.g., "add", "fix", "create" not "added", "fixed", "created")
-#   - Max 72 characters, no period at the end
-#   - Scope example: feat(users:domain): add Email VO with corporate domain validation
+#   - Imperative mood (e.g., "add", "fix", "create" — NOT "added", "fixed")
+#   - ≤72 characters, no period at the end
+#   - Format: type(bc:layer): short description
+#   - Example: feat(assets-and-resources-management:domain): add AssetCreatedEvent
 #
-# BODY (optional):
-#   - Explain WHAT and WHY, not HOW
+# BODY (optional but recommended for clarity):
+#   Context: what was wrong or missing
+#   Decision: what was changed and why
+#   Impact: risks, side effects, migrations
+#   Tests: coverage or verification steps
 #   - Wrap lines at ~100-120 characters
 #   - Leave one blank line between subject and body
 #
 # FOOTER (optional):
-#   - Issue references: Closes #123, Relates-To #456
-#   - Breaking changes: start with "BREAKING CHANGE:" followed by description and migration steps
+#   - Closes #123  (issues this commit closes)
+#   - Relates-To #456 (related issues/tickets)
+#   - BREAKING CHANGE: describe the change and migration steps
 #
 # ------------------------------------------------------------------------
-# Example:
-# feat(users:application): implement RegisterUserCommandHandler with OTP
+# Example — Feature:
+# feat(assets-and-resources-management:application): handle stock threshold update
 #
-# Added a handler to register users with email-based OTP verification.
-# Includes expiration policy of 10 minutes and domain validation.
+# Context: thresholds weren't recalculated when component type changed.
+# Decision: trigger recalculation in ComponentTypeUpdatedEventHandler.
+# Impact: consistent thresholds after type updates.
+# Tests: added unit specs for type change + threshold recompute.
 #
-# Closes #45
+# Closes #214
+#
+# Example — Refactor:
+# refactor(assets-and-resources-management:domain): align integration event records
+#
+# Context: naming and payloads inconsistent across asset events.
+# Decision: standardized event names, payload shape, and timestamp usage.
+# Impact: no behavior change, easier downstream consumption.
