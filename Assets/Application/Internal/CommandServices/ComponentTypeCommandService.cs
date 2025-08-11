@@ -2,6 +2,7 @@ using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.ComponentTypes;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
@@ -10,21 +11,28 @@ using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher) : IComponentTypeCommandService
+public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher,ILogger<ComponentTypeCommandService> logger) : IComponentTypeCommandService
 {
     public async Task<ComponentType?> Handle(CreateComponentTypeCommand command)
     {
         if (await componentTypeRepository.ExistsByNameAsync(command.Name))
+        {
+            logger.LogWarning($"[Assets BC] Intento de crear tipo de componente con nombre duplicado: {command.Name}.");
             throw new ArgumentException($"A component type with the name {command.Name} already exists.");
+        }
 
         var componentType = new ComponentType(command);
         await componentTypeRepository.AddAsync(componentType);
         await unitOfWork.CompleteAsync();
+        var createdEvent = new ComponentTypeCreatedEvent(
+            componentType.Id,          
+            componentType.Name,       
+            DateTime.UtcNow
+        );
         
-        foreach (var domainEvent in componentType.DomainEvents)
-        {
-            await mediator.Publish(domainEvent, CancellationToken.None);
-        }
+        logger.LogInformation($"[Assets BC] Publicando evento de dominio ComponentTypeCreatedEvent (ID: {createdEvent.EventId}) para TipoComponenteId: {createdEvent.ComponentTypeId.Id}");
+        await mediator.Publish(createdEvent, CancellationToken.None);
+
         componentType.ClearDomainEvents();
         return componentType;
     }
