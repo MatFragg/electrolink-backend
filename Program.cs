@@ -104,7 +104,7 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
 
     // JWT Bearer
-    /*options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In            = ParameterLocation.Header,
         Description   = "Ingrese el token JWT",
@@ -112,9 +112,9 @@ builder.Services.AddSwaggerGen(options =>
         Type          = SecuritySchemeType.Http,
         Scheme        = "bearer",
         BearerFormat  = "JWT"
-    });*/
+    });
 
-    /*options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -127,14 +127,14 @@ builder.Services.AddSwaggerGen(options =>
             },
             Array.Empty<string>()
         }
-    });*/
+    });
 
     /* // Servidor local de desarrollo
     options.AddServer(new OpenApiServer
     {
         Url         = "http://localhost:5055",
         Description = "Development Server"
-    });*/ 
+    });*/
 });
 
 
@@ -217,22 +217,16 @@ builder.Services.AddHostedService<OutboxProcessorBackgroundService>();
 
 
 // Add Cortex Mediator for Event Handling
-builder.Services.AddMediatR(cfg => {
-        // Opcional: Si tienes comportamientos de pipeline (LoggingCommandBehavior), configúralos aquí.
-        // MediatR tiene su propia interfaz IPipelineBehavior.
-        // cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingCommandBehavior<,>)); 
-    }, 
-    // Escanear el ensamblado actual (donde está Program.cs) para comandos, queries y manejadores.
-    Assembly.GetExecutingAssembly(), 
-    
-    // Escanear el ensamblado de Assets.Application para Event Handlers.
-    // Asegúrate de que Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers.ComponentCreatedEventHandler
-    // sea un tipo que exista en ese ensamblado.
-    typeof(Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers.ComponentCreatedEventHandler).Assembly
-    
-    // Si tienes otros ensamblados con comandos/queries/eventos/manejadores, añádelos aquí:
-    // typeof(SomeOtherAssemblyMarkerClass).Assembly
-);
+var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+    .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
+    .ToArray();
+
+// O, si quieres cargar también los que aún no estén cargados pero están en la carpeta bin
+// var assemblies = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll")
+//     .Select(Assembly.LoadFrom)
+//     .ToArray();
+
+builder.Services.AddMediatR(cfg => { }, assemblies);
 
 var app = builder.Build();
 
@@ -245,18 +239,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Middleware
-/* if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     // Uncomment the following lines to enable Swagger in development
     app.UseSwagger();
     app.UseSwaggerUI();
-} */
-
-app.UseSwagger();
-app.UseSwaggerUI();
+} 
 
 app.UseCors("AllowAllPolicy");
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

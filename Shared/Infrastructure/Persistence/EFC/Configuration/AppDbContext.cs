@@ -35,11 +35,10 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ComponentType> ComponentTypes { get; set; }
     public DbSet<ComponentStock> ComponentStocks { get; set; }
     
-    // DbSet<Profile> Profiles { get; set; }
+    public DbSet<Profile> Profiles { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
-        // Add the created and updated interceptor
         builder.AddCreatedUpdatedInterceptor();
         base.OnConfiguring(builder);
     }
@@ -47,10 +46,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        
 
-        //builder.ApplyIamConfiguration();
-       // builder.ApplyProfilesConfiguration();
+        builder.ApplyIamConfiguration();
+       builder.ApplyProfilesConfiguration();
         builder.ApplyAssetsConfiguration();
       //  builder.ApplyMonitoringConfiguration();
       //  builder.ApplyServiceDesignAndPlanningConfiguration();

@@ -4,6 +4,8 @@ using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Services;
+using MediatR;
 
 namespace Hampcoders.Electrolink.API.IAM.Application.Internal.CommandServices;
 
@@ -19,7 +21,10 @@ public class UserCommandService(
     IUserRepository userRepository,
     ITokenService tokenService,
     IHashingService hashingService,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IMediator mediator, 
+    IIntegrationEventPublisher integrationEventPublisher,
+    ILogger<UserCommandService> logger)
     : IUserCommandService
 {
     /**
@@ -68,5 +73,44 @@ public class UserCommandService(
         {
             throw new Exception($"An error occurred while creating user: {e.Message}");
         }
+    }
+    
+    public async Task<bool> Handle(UpdateUsernameCommand command)
+    {
+        var user = await userRepository.FindByIdAsync(command.UserId); 
+        if (user == null) throw new ArgumentException("User not found.");
+
+        user.UpdateUsername(command.NewUsername); 
+        await unitOfWork.CompleteAsync();
+
+        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después de actualizar username.");
+        foreach (var domainEvent in user.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+        user.ClearDomainEvents();
+
+        logger.LogInformation($"[IAM BC] Username del usuario {command.UserId} actualizado a {command.NewUsername}.");
+        return true;
+    }
+
+    public async Task<bool> Handle(UpdatePasswordCommand command)
+    {
+        var user = await userRepository.FindByIdAsync(command.UserId); 
+        if (user == null) throw new ArgumentException("User not found.");
+
+        var newHashedPassword = hashingService.HashPassword(command.NewPassword);
+        user.UpdatePasswordHash(newHashedPassword);
+        await unitOfWork.CompleteAsync();
+
+        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después de actualizar contraseña.");
+        foreach (var domainEvent in user.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+        user.ClearDomainEvents();
+
+        logger.LogInformation($"[IAM BC] Contraseña del usuario {command.UserId} actualizada.");
+        return true;
     }
 }
