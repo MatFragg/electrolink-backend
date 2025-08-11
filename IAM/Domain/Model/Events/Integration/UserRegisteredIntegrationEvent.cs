@@ -1,3 +1,12 @@
-﻿namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Integration;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
-public record UserRegisteredIntegrationEvent();
+namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Integration;
+
+public record UserRegisteredIntegrationEvent(
+    int UserId,
+    string Username,
+    DateTime OccurredOn
+) : IIntegrationEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+};
