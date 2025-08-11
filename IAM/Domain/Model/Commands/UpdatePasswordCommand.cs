@@ -1,3 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
 
-public record UpdatePasswordCommand();
+public record UpdatePasswordCommand(int UserId, string NewPassword);
