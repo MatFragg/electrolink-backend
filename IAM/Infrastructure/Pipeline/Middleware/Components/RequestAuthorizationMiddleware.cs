@@ -18,11 +18,8 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
         IUserQueryService userQueryService,
         ITokenService tokenService)
     {
-        Console.WriteLine("Entering InvokeAsync");
-
         var allowAnonymous = context.Request.HttpContext.GetEndpoint()!.Metadata
             .Any(m => m.GetType() == typeof(AllowAnonymousAttribute));
-        Console.WriteLine($"Allow Anonymous is {allowAnonymous}");
         if (allowAnonymous)
         {
             Console.WriteLine("Skipping authorization");
@@ -30,7 +27,6 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
             return;
         }
 
-        // EXCEPCIÓN TEMPORAL: permitir crear perfil sin token
         var path = context.Request.Path.Value?.ToLower();
         var method = context.Request.Method.ToUpper();
         if (path == "/api/v1/profiles" && method == "POST")
@@ -40,10 +36,14 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
             return;
         }
 
-        Console.WriteLine("Entering authorization");
-
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        if (token == null) throw new Exception("Null or invalid token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("Unauthorized: Missing token");
+            return;
+        }
 
         var userId = await tokenService.ValidateToken(token);
         if (userId == null) throw new Exception("Invalid token");
@@ -51,10 +51,8 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
         var getUserByIdQuery = new GetUserByIdQuery(userId.Value);
         var user = await userQueryService.Handle(getUserByIdQuery);
 
-        Console.WriteLine("Successful authorization. Updating Context...");
         context.Items["User"] = user;
 
-        Console.WriteLine("Continuing with Middleware Pipeline");
         await next(context);
     }
 }
