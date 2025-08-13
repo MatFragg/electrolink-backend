@@ -1,6 +1,7 @@
 using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
@@ -43,6 +44,17 @@ public class UserCommandService(
 
         var token = tokenService.GenerateToken(user);
 
+        user.RecordSignIn();
+
+        // 2. Publicar eventos de dominio registrados por el AR
+        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del inicio de sesión.");
+        foreach (var domainEvent in user.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+        user.ClearDomainEvents(); // Limpiar eventos después de publicar
+
+        logger.LogInformation($"[IAM BC] Usuario {command.Username} inició sesión exitosamente.");
         return (user, token);
     }
 
@@ -68,6 +80,17 @@ public class UserCommandService(
         
             await userRepository.AddAsync(user);
             await unitOfWork.CompleteAsync();
+            
+            var userRegisteredEvent = new UserRegisteredEvent(
+                user.Id,
+                user.Username,
+                DateTime.UtcNow
+            );
+            logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del registro de usuario.");
+            
+            await mediator.Publish(userRegisteredEvent, CancellationToken.None);
+            
+            logger.LogInformation($"[IAM BC] Usuario {command.Username} registrado exitosamente con ID: {user.Id}.");
         }
         catch (Exception e)
         {
