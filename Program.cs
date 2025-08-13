@@ -1,6 +1,3 @@
-using System.Reflection;
-// using Cortex.Mediator.DependencyInjection;
-// using Cortex.Mediator.Notifications;
 using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
@@ -16,9 +13,7 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Assets.Application.ACL;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
-using Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers;
 using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.Components;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
@@ -56,22 +51,17 @@ using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces.ASP.Configurat
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.BackgroundServices;
-using Hampcoders.Electrolink.API.Shared.Infrastructure.Mediator.Cortex.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MediatR; 
-using System.Reflection; // Necesario para Assembly.GetExecutingAssembly()
-using Hampcoders.Electrolink.API.Assets.Application.Internal.EventHandlers;
+using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensions;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// General Config
-// Add services to the container.
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllers(options => options.Conventions.Add(new KebabCaseRouteNamingConvention()));
 
-// Connection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (connectionString == null) throw new InvalidOperationException("Connection string not found");
 
@@ -87,11 +77,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
 
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    // Documento principal
+
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title       = "Hampcoders.ElectrolinkPlatform.API",
@@ -221,11 +210,6 @@ var assemblies = AppDomain.CurrentDomain.GetAssemblies()
     .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
     .ToArray();
 
-// O, si quieres cargar también los que aún no estén cargados pero están en la carpeta bin
-// var assemblies = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll")
-//     .Select(Assembly.LoadFrom)
-//     .ToArray();
-
 builder.Services.AddMediatR(cfg => { }, assemblies);
 
 var app = builder.Build();
@@ -248,6 +232,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAllPolicy");
 app.UseHttpsRedirection();
+app.UseRequestAuthorization();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
