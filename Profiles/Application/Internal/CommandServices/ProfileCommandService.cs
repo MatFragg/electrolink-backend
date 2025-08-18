@@ -5,56 +5,144 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using MediatR;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.CommandServices;
 
 public class ProfileCommandService(
   IProfileRepository profileRepository,
   ExternalAssetService externalAssetService,
-  IUnitOfWork unitOfWork)
+  IUnitOfWork unitOfWork,
+  IMediator mediator,
+  ILogger<ProfileCommandService> logger)
   : IProfileCommandService
 {
   public async Task<Profile?> Handle(CreateProfileCommand command)
-  {
-    var profile = new Profile(
-      command.FirstName,
-      command.LastName,
-      command.Email,
-      command.Street,
-      command.Number,
-      command.City,
-      command.PostalCode,
-      command.Country,
-      command.Role
-    );
-
-    try
-    {
-      if (command.Role == Role.HomeOwner)
-      {
-        profile.AssignHomeOwnerInfo(command.Dni ?? string.Empty);
-      }
-      else if (command.Role == Role.Technician)
-      {
-        profile.AssignTechnicianInfo(
-          command.LicenseNumber ?? string.Empty,
-          command.Specialization ?? string.Empty
-        );
-      }
-
-      await profileRepository.AddAsync(profile);
-      await unitOfWork.CompleteAsync();
+  { 
       
-      if (command.Role == Role.Technician && profile.Technician != null)
+      
+      var emailAddress = new EmailAddress(command.Email); 
+      var existingProfile = await profileRepository.FindByEmailAsync(emailAddress.Address);
+
+      if (existingProfile != null)
       {
-        await externalAssetService.CreateTechnicianInventoryAsync(profile.Technician.Id);
+          logger.LogWarning("[ProfileCommandService] Attempt to create profile with duplicate email: {Email}", command.Email);
+          throw new InvalidOperationException($"A profile with the email {command.Email} already exists.");
+      } 
+      
+      var profile = new Profile(command); 
+      await profileRepository.AddAsync(profile); 
+      await unitOfWork.CompleteAsync(); 
+      
+      profile.SetIdAfterPersistence(profile.Id);
+      
+      if (profile.Role == Role.Technician && profile.Technician != null)
+      {
+          await externalAssetService.CreateTechnicianInventoryAsync(profile.Technician.Id);
+          logger.LogInformation("[ProfileCommandService] Created inventory for new technician: {TechnicianId}", profile.Technician.Id);
       }
+      
+      foreach (var domainEvent in profile.DomainEvents)
+      {
+          logger.LogInformation("[ProfileCommandService] Publishing domain event: {EventType} (ID: {EventId})", 
+              domainEvent.GetType().Name, domainEvent.EventId);
+          await mediator.Publish(domainEvent, CancellationToken.None);
+      }
+      profile.ClearDomainEvents();
+    
+      logger.LogInformation("[ProfileCommandService] Successfully created profile for email: {Email} with ID: {ProfileId}", 
+          command.Email, profile.Id);
       return profile;
-    }
-    catch (Exception)
-    {
-      return null;
-    }
+  }
+  public async Task<bool> Handle(UpdateProfileCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      profile.UpdateProfileInfo(command.FirstName, command.LastName, command.Email, command.Street, command.Number, command.City, command.PostalCode, command.Country);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+
+  public async Task<bool> Handle(AssignHomeOwnerInfoCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      if (profile.Role != Role.HomeOwner) throw new InvalidOperationException("Profile is not a HomeOwner.");
+      profile.AssignHomeOwnerInfo(command.Dni);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+
+  public async Task<bool> Handle(AssignTechnicianInfoCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
+      profile.AssignTechnicianInfo(command.LicenseNumber, command.Specialization);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+
+  public async Task<bool> Handle(UpdateTechnicianCoverageCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
+      profile.UpdateTechnicianCoverageArea(command.NewCoverageAreaDetails);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+
+  public async Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
+      profile.UpdateTechnicianSpecialties(command.NewSpecialties);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+  public async Task<Guid> Handle(AddPortfolioItemCommand command)
+  {
+    var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId); 
+    if (profile is null) throw new ArgumentException("Profile not found.");
+    var newPortfolioItem = profile.AddPortfolioItemToTechnician(command.Title, command.Description, command.ImageUrl);
+    await unitOfWork.CompleteAsync();
+    foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+    profile.ClearDomainEvents();
+    return newPortfolioItem.WorkId;
+  }
+
+  public async Task<bool> Handle(UpdatePortfolioItemDetailsCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      profile.UpdateTechnicianPortfolioItemDetails(command.WorkId, command.NewTitle, command.NewDescription, command.NewImageUrl);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
+  }
+
+  public async Task<bool> Handle(RemovePortfolioItemCommand command)
+  {
+      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
+      if (profile is null) throw new ArgumentException("Profile not found.");
+      profile.RemoveTechnicianPortfolioItem(command.WorkId);
+      await unitOfWork.CompleteAsync();
+      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
+      profile.ClearDomainEvents();
+      return true;
   }
 }
 
