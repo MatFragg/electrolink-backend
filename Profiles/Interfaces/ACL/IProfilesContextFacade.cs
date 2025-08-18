@@ -20,13 +20,12 @@ public interface IProfilesContextFacade
         string postalCode,
         string country,
         string role,
-        string? preferredContactTime,
         string? dni,
         string? licenseNumber,
         string? specialization);
 
     /// <summary>
-    /// Fetch the profile id by email
+    /// Fetch the profile id by email   
     /// </summary>
     Task<int> FetchProfileIdByEmail(string email);
     

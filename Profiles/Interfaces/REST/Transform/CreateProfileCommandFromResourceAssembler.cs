@@ -18,7 +18,7 @@ public static class CreateProfileCommandFromResourceAssembler
       ? role
       : throw new ArgumentException($"Invalid role: {resource.Role}");
 
-    return new CreateProfileCommand(
+    return new CreateProfileCommand(0,
       resource.FirstName,
       resource.LastName,
       resource.Email,
@@ -28,7 +28,6 @@ public static class CreateProfileCommandFromResourceAssembler
       resource.PostalCode,
       resource.Country,
       roleParsed,
-      resource.PreferredContactTime,
       resource.Dni,
       resource.LicenseNumber,
       resource.Specialization
