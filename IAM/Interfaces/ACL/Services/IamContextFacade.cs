@@ -28,4 +28,10 @@ public class IamContextFacade(IUserCommandService userCommandService, IUserQuery
         var result = await userQueryService.Handle(getUserByIdQuery);
         return result?.Username ?? string.Empty;
     }
+    
+    public async Task<bool> UserExistsAsync(int userId) {
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
+        var user = await userQueryService.Handle(getUserByIdQuery);
+        return user != null;
+    }
 }
