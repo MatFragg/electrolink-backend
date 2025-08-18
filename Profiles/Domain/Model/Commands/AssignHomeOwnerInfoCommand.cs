@@ -1,3 +1,6 @@
 ﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
 
-public record AssignHomeOwnerInfoCommand();
+public record AssignHomeOwnerInfoCommand(
+    int ProfileId,
+    string Dni
+    );

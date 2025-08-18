@@ -3,7 +3,7 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
 
 public record CreateProfileCommand(
-
+  int UserId,
   string FirstName,
   string LastName,
   string Email,
@@ -12,13 +12,8 @@ public record CreateProfileCommand(
   string City,
   string PostalCode,
   string Country,
-  Role Role, // <- HomeOwner o Technician
-
-  // Campos exclusivos para HomeOwner
-  string? PreferredContactTime,
+  Role Role, 
   string? Dni,
-
-  // Campos exclusivos para Technician
   string? LicenseNumber,
   string? Specialization
 );

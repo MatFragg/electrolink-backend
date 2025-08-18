@@ -1,3 +1,18 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 
-public record UpdateProfileCommand();
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+
+public record UpdateProfileCommand(
+    int ProfileId,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Street,
+    string Number,
+    string City,
+    string PostalCode,
+    string Country,
+    string? Dni,
+    string? LicenseNumber,
+    string? Specialization
+);
