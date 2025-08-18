@@ -24,7 +24,9 @@ public interface IProfileRepository : IBaseRepository<Profile>
   Task<IEnumerable<Profile>> FindByRoleAsync(Role role);
   
   Task<Profile?> FindByProfileIdAsync(int id);
-  
+  Task<Profile?> FindByUserIdAsync(int userId);
+  Task<bool> ExistsByIamUserIdAsync(int userId);
+  Task<bool> ExistsByEmailAsync(string email);
   Task<IEnumerable<Profile>> ListWithDetailsAsync();
   
 }
