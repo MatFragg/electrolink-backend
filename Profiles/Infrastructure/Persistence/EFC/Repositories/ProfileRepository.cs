@@ -26,16 +26,29 @@ public class ProfileRepository(AppDbContext context)
       .Where(p => p.Role == role)
       .ToListAsync();
   }
-  
+  public async Task<bool> ExistsByIamUserIdAsync(int userId)
+  {
+    return await Context.Set<Profile>().AnyAsync(p => p.Id == userId);
+  }
+
+  public async Task<bool> ExistsByEmailAsync(string email)
+  {
+    return await Context.Set<Profile>().AnyAsync(p => p.EmailAddress == email);
+  }
 
   public async Task<Profile?> FindByProfileIdAsync(int id)
   {
     return await Context.Set<Profile>()
-      .Include(p => p.HomeOwner)  // Cargar HomeOwner si existe
-      .Include(p => p.Technician) // Cargar Technician si existe
+      .Include(p => p.HomeOwner)  
+      .Include(p => p.Technician)
       .FirstOrDefaultAsync(p => p.Id == id);
   }
-  
+
+  public Task<Profile?> FindByUserIdAsync(int userId)
+  {
+    throw new NotImplementedException();
+  }
+
   public async Task<IEnumerable<Profile>> ListWithDetailsAsync()
   {
     return await Context.Set<Profile>()
