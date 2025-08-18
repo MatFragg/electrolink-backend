@@ -1,3 +1,4 @@
+using System.Text;
 using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
@@ -55,6 +56,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MediatR; 
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -210,6 +213,27 @@ var assemblies = AppDomain.CurrentDomain.GetAssemblies()
     .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
     .ToArray();
 
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        // Carga la clave secreta desde la configuración (asegúrate de que TokenSettings.Secret esté configurado)
+        var secret = builder.Configuration["TokenSettings:Secret"] ?? throw new InvalidOperationException("TokenSettings:Secret not configured.");
+        var key = Encoding.ASCII.GetBytes(secret);
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true, // Valida la firma del token
+            IssuerSigningKey = new SymmetricSecurityKey(key), // Usa tu clave secreta
+            ValidateIssuer = false, // Puedes establecer esto en true si tienes un emisor de tokens específico
+            ValidateAudience = false, // Puedes establecer esto en true si tienes una audiencia de tokens específica
+            ValidateLifetime = true, // Valida la fecha de expiración del token
+            ClockSkew = TimeSpan.Zero // No permite desviación del reloj para la expiración
+        };
+    });
 builder.Services.AddMediatR(cfg => { }, assemblies);
 
 var app = builder.Build();
@@ -232,8 +256,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAllPolicy");
 app.UseHttpsRedirection();
-app.UseRequestAuthorization();
 app.UseAuthentication();
+app.UseRequestAuthorization();
 app.UseAuthorization();
 app.MapControllers();
 
