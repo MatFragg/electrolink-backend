@@ -1,3 +1,12 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
-public record TechnicianSpecialtyUpdatedEvent();
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
+
+public record TechnicianSpecialtyUpdatedEvent(
+    Guid TechnicianId,
+    IReadOnlyList<string> NewSpecialties,
+    DateTime OccurredOn
+) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+};

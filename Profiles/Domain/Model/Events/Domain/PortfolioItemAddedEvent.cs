@@ -2,12 +2,10 @@
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
 
-
-public record TechnicianInfoAssignedEvent(
+public record PortfolioItemAddedEvent(
     int ProfileId,
-    Guid TechnicianId,
-    string LicenseNumber,
-    string Specialization,
+    Guid WorkId, 
+    string Title,
     DateTime OccurredOn
 ) : IEvent
 {

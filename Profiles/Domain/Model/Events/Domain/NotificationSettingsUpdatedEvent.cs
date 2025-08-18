@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
 
 public record NotificationSettingsUpdatedEvent(
-    int ProfileId,
+    int UserId,
     bool EmailNotificationsEnabled,
     bool PushNotificationsEnabled,
     DateTime OccurredOn

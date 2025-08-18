@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
 
 public record TechnicianCoverageAreaUpdatedEvent(
-    int ProfileId,
+    Guid TechnicianId,
     string NewCoverageAreaDetails,
     DateTime OccurredOn
 ) : IEvent

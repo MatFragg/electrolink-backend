@@ -5,7 +5,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
 
 public record ProfileCreatedEvent(    
     int ProfileId, 
-    string Username, 
     string EmailAddress,
     string FullName,
     Role Role,

@@ -4,8 +4,9 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
 
 
 public record PortfolioUpdatedEvent(
-    int ProfileId,
-    /*IReadOnlyList<PortfolioItem> NewPortfolioItems,*/
+    Guid TechnicianId,
+    Guid WorkId,
+    string Title,
     DateTime OccurredOn
 ) : IEvent
 {

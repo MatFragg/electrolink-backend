@@ -3,7 +3,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Integration;
 
 public record TechnicianSpecialtyUpdatedIntegrationEvent(
-    int ProfileId,
+    Guid TechnicianId,
     IReadOnlyList<string> NewSpecialties,
     DateTime OccurredOn
 ) : IIntegrationEvent
