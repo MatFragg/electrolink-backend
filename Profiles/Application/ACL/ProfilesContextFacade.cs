@@ -27,7 +27,6 @@ public class ProfilesContextFacade(
         string postalCode,
         string country,
         string role,
-        string? preferredContactTime,
         string? dni,
         string? licenseNumber,
         string? specialization)
@@ -45,7 +44,6 @@ public class ProfilesContextFacade(
             postalCode,
             country,
             finalRole,
-            preferredContactTime,
             dni,
             licenseNumber,
             specialization
