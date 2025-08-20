@@ -35,6 +35,7 @@ public class ProfilesContextFacade(
         var parsedRole = Enum.TryParse<Role>(role, true, out var finalRole) ? finalRole : Role.HomeOwner;
 
         var createProfileCommand = new CreateProfileCommand(
+            userId,
             firstName,
             lastName,
             email,

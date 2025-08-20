@@ -12,6 +12,7 @@ namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.CommandServic
 public class ProfileCommandService(
   IProfileRepository profileRepository,
   ExternalAssetService externalAssetService,
+  ExternalIamService externalIamService,
   IUnitOfWork unitOfWork,
   IMediator mediator,
   ILogger<ProfileCommandService> logger)
@@ -20,17 +21,26 @@ public class ProfileCommandService(
   public async Task<Profile?> Handle(CreateProfileCommand command)
   { 
       
+      if (!await externalIamService.UserExistsAsync(command.UserId))
+      {
+          logger.LogWarning("[ProfileCommandService] Failed to create profile: IAM User ID {UserId} does not exist in IAM Bounded Context.", command.UserId);
+          throw new ArgumentException($"User with ID {command.UserId} does not exist in Identity and Access Management.");
+      }
       
       var emailAddress = new EmailAddress(command.Email); 
-      var existingProfile = await profileRepository.FindByEmailAsync(emailAddress.Address);
-
-      if (existingProfile != null)
+      if (await profileRepository.ExistsByEmailAsync(emailAddress.Address)) 
       {
           logger.LogWarning("[ProfileCommandService] Attempt to create profile with duplicate email: {Email}", command.Email);
           throw new InvalidOperationException($"A profile with the email {command.Email} already exists.");
       } 
       
-      var profile = new Profile(command); 
+      if (await profileRepository.FindByProfileIdAsync(command.UserId) != null) 
+      {
+          logger.LogWarning("[ProfileCommandService] Attempt to create profile for already existing IAM User ID (Profile ID): {UserId}", command.UserId);
+          throw new InvalidOperationException($"User already exists.");
+      }
+      
+      var profile = new Profile(command.UserId, command); 
       await profileRepository.AddAsync(profile); 
       await unitOfWork.CompleteAsync(); 
       
