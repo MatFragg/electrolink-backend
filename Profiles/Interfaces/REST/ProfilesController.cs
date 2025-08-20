@@ -32,12 +32,31 @@ public class ProfilesController(
     [SwaggerResponse(StatusCodes.Status400BadRequest, "The profile was not created.")]
     public async Task<IActionResult> CreateProfile([FromBody] CreateProfileResource resource)
     {
-        var command = CreateProfileCommandFromResourceAssembler.ToCommandFromResource(resource);
-        var profile = await profileCommandService.Handle(command);
-        if (profile is null) return BadRequest();
+        try
+        {
+            var userId = TryGetUserIdFromClaims();
+        
+            var command = CreateProfileCommandFromResourceAssembler.ToCommandFromResource(
+                resource, 
+                userId ?? 0);  
+            
+            var profile = await profileCommandService.Handle(command);
+        
+            if (profile is null)
+                return BadRequest("The profile could not be created with the provided data.");
 
-        var profileResource = ProfileResourceFromEntityAssembler.ToResourceFromEntity(profile);
-        return CreatedAtAction(nameof(GetProfileById), new { profileId = profile.Id }, profileResource);
+            var profileResource = ProfileResourceFromEntityAssembler.ToResourceFromEntity(profile);
+        
+            logger.LogInformation("Profile successfully created with ID {ProfileId}", profile.Id);
+        
+            return CreatedAtAction(nameof(GetProfileById), new { profileId = profile.Id }, profileResource);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating profile");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "An unexpected internal error occurred.", error = ex.Message });
+        }
     }
 
     [HttpGet("{profileId:int}")]
@@ -246,6 +265,19 @@ public class ProfilesController(
         
         var resources = portfolioItems.Select(PortfolioItemResourceFromEntityAssembler.ToResourceFromEntity);
         return Ok(resources);
+    }
+    
+    private int? TryGetUserIdFromClaims()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.Sid);
+
+        if (string.IsNullOrEmpty(userIdClaim)) 
+            return null;
+
+        if (int.TryParse(userIdClaim, out var userId) && userId > 0) 
+            return userId;
+
+        return null;
     }
 }
 

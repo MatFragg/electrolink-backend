@@ -12,13 +12,13 @@ public static class CreateProfileCommandFromResourceAssembler
   /// <summary>
   /// Converts a CreateProfileResource to a CreateProfileCommand
   /// </summary>
-  public static CreateProfileCommand ToCommandFromResource(CreateProfileResource resource)
+  public static CreateProfileCommand ToCommandFromResource(CreateProfileResource resource,int userId)
   {
     var roleParsed = Enum.TryParse<Role>(resource.Role, ignoreCase: true, out var role)
       ? role
       : throw new ArgumentException($"Invalid role: {resource.Role}");
 
-    return new CreateProfileCommand(0,
+    return new CreateProfileCommand(userId,
       resource.FirstName,
       resource.LastName,
       resource.Email,
