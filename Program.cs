@@ -177,6 +177,7 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfilesContextFacade, ProfilesContextFacade>();
+builder.Services.AddScoped<ExternalIamService>();
 
 // IAM
 builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
