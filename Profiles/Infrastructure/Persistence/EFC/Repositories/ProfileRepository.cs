@@ -33,7 +33,7 @@ public class ProfileRepository(AppDbContext context)
 
   public async Task<bool> ExistsByEmailAsync(string email)
   {
-    return await Context.Set<Profile>().AnyAsync(p => p.EmailAddress == email);
+    return await Context.Set<Profile>().AnyAsync(p => p.Email.Address == email);
   }
 
   public async Task<Profile?> FindByProfileIdAsync(int id)
