@@ -143,4 +143,33 @@ public class TechnicianInventoryCommandService(
 
         return inventory;
     }
+    
+    public async Task<TechnicianInventory?> Handle(AdjustTechnicianInventoryCommand command)
+    {
+        var technicianId = new TechnicianId(command.TechnicianId);
+        var inventory = await inventoryRepository.FindByTechnicianIdAsync(technicianId);
+
+        if (inventory is null)
+        {
+            // Console.WriteLine($"Error: Inventario no encontrado para el técnico con ID {command.TechnicianId}");
+            return null; // El inventario no existe
+        }
+
+       
+        foreach (var adjustment in command.Adjustments)
+        {
+            inventory.AdjustComponentQuantity(adjustment.ComponentId, adjustment.Quantity);
+        }
+        
+
+        await unitOfWork.CompleteAsync();
+
+        foreach (var domainEvent in inventory.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+        inventory.ClearDomainEvents();
+
+        return inventory;
+    }
 }

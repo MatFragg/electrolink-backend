@@ -37,4 +37,10 @@ public class PropertyQueryService(IPropertyRepository propertyRepository) : IPro
             query.Street
         );
     }
+    
+    public async Task<Address?> Handle(GetPropertyAddressQuery query)
+    {
+        var property = await propertyRepository.FindByIdAsync(query.PropertyId);
+        return property?.Address;
+    }
 }
