@@ -1,3 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
-public record GetPropertyByAddressQuery(Guid PropertyId);
+public record GetPropertyAddressQuery(Guid PropertyId);
