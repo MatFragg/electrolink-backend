@@ -26,6 +26,12 @@ public class ComponentStock
         LastUpdated = DateTime.UtcNow;
     }
 
+    public ComponentStock(ComponentId componentId, int quantity)
+    {
+        ComponentId = componentId;
+        QuantityAvailable = quantity;
+    }
+
     // Métodos para modificar el estado
     internal void IncreaseQuantity(int amount)
     {
