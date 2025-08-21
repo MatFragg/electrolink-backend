@@ -158,6 +158,34 @@ public partial class TechnicianInventory
         // _domainEvents.Add(new ComponentStockRemovedEvent(stockItem.Id, stockItem.ComponentId, DateTime.UtcNow)); // Define este evento
     }
   
+    public void AdjustComponentQuantity(Guid componentId, int quantityAdjustment)
+    {
+        var componentIdValueObject = new ComponentId(componentId);
+        var existingComponent = _stockItems.FirstOrDefault(c => c.ComponentId == componentIdValueObject);
+
+        if (existingComponent != null)
+        {
+            // El componente ya existe, ajusta su cantidad.
+            existingComponent.UpdateQuantity(quantityAdjustment);
+
+            // Si la cantidad llega a 0 o menos, eliminar el componente del inventario.
+            if (existingComponent.QuantityAvailable <= 0)
+            {
+                _stockItems.Remove(existingComponent);
+            }
+        }
+        else
+        {
+            // El componente no existe, si el ajuste es positivo, añadirlo como un nuevo componente.
+            if (quantityAdjustment > 0)
+            {
+                _stockItems.Add(new ComponentStock(componentIdValueObject, quantityAdjustment));
+            }
+            // Si el ajuste es negativo y el componente no existe, no hacemos nada (no se puede tener cantidad negativa).
+        }
+    }
+
+    
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
