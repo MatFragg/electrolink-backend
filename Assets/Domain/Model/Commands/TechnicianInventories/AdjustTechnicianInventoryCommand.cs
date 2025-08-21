@@ -1,3 +1,5 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-public record AdjustTechnicianInventoryCommand();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
+
+public record AdjustTechnicianInventoryCommand(Guid TechnicianId, List<ComponentAdjustment> Adjustments);
