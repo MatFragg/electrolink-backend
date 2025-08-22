@@ -6,5 +6,6 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 
 public interface ISubscriptionRepository : IBaseRepository<Subscription>
 {
-    Task<Subscription?> FindByIdAsync(SubscriptionId id);
-}
+    Task<Subscription?> FindBySubscriptionIdAsync(SubscriptionId id);
+    Task<Subscription?> FindByUserIdAsync(UserId userId);
+}   
