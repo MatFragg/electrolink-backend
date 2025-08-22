@@ -7,5 +7,6 @@ public record UpdatePlanCommand(
     decimal Price,
     string Currency,
     string MonetizationType,
-    bool IsDefault
+    bool IsDefault,
+    int? UsageLimit
 );

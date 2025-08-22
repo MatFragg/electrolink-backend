@@ -8,5 +8,6 @@ public record CreatePlanCommand(
     decimal Price,
     string Currency,
     MonetizationType MonetizationType, // "Monthly", "Yearly", "Lifetime"
-    bool IsDefault
+    bool IsDefault,
+    int? UsageLimit // Nullable, only applicable for "Usage-Based" plans
 );
