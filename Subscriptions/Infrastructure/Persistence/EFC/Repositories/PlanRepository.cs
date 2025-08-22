@@ -12,12 +12,13 @@ public class PlanRepository(AppDbContext context)
 {
     public async Task<Plan?> FindByIdAsync(PlanId id)
     {
-        return await context.Set<Plan>()
+        return await Context.Set<Plan>()
             .FirstOrDefaultAsync(p => p.Id == id);
     }
     public async Task<Plan?> FindDefaultAsync()
     {
-        return await context.Set<Plan>()
+        return await Context.Set<Plan>()
             .FirstOrDefaultAsync(p => p.IsDefault);
     }
+    
 }
