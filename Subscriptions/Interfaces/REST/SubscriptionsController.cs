@@ -1,5 +1,7 @@
+using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attributes;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
@@ -9,10 +11,11 @@ using Stripe.Checkout;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST;
 
+[Authorize]
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class SubscriptionsController(ISubscriptionCommandService commandService, ISubscriptionQueryService queryService,  IConfiguration _cfg) : ControllerBase
+public class SubscriptionsController(ISubscriptionCommandService commandService, ISubscriptionQueryService queryService,  IConfiguration _cfg, IPlanQueryService planQueryService ) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -115,5 +118,29 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
         var session = await service.CreateAsync(options);
 
         return Ok(new { url = session.Url });
+    }
+    
+    [HttpGet("users/{userId:int}/eligibility")]
+    [ProducesResponseType(typeof(SubscriptionEligibilityResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserSubscriptionEligibility([FromRoute] int userId)
+    {
+        var subscription = await queryService.Handle(new GetSubscriptionByUserIdQuery(new UserId(   userId)));
+
+        if (subscription == null)
+        {
+            return Ok(SubscriptionEligibilityAclAssembler.ToBasicResource(userId));
+        }
+
+        var plan = await planQueryService.Handle(new GetPlanByIdQuery(subscription.PlanId.Value));
+
+        if (plan == null)
+        {
+            Console.WriteLine($"Warning: Active subscription found for user {userId} but associated plan {subscription.PlanId.Value} not found.");
+            return Ok(SubscriptionEligibilityAclAssembler.ToBasicResource(userId));
+        }
+
+        var aclResource = SubscriptionEligibilityAclAssembler.ToResourceFromEntities(subscription, plan);
+        return Ok(aclResource);
     }
 }
