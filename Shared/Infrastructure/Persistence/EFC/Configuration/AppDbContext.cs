@@ -48,11 +48,11 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         base.OnModelCreating(builder);
 
         builder.ApplyIamConfiguration();
-       builder.ApplyProfilesConfiguration();
+        builder.ApplyProfilesConfiguration();
         builder.ApplyAssetsConfiguration();
       //  builder.ApplyMonitoringConfiguration();
       //  builder.ApplyServiceDesignAndPlanningConfiguration();
-      //  builder.ApplySubscriptionsConfiguration();
+        builder.ApplySubscriptionsConfiguration();
         builder.UseSnakeCaseNamingConvention();
 
     }
