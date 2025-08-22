@@ -10,7 +10,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal;
 
 public class SubscriptionCommandService(
-    ISubscriptionRepository _subscriptionRepository,
+    ISubscriptionRepository subscriptionRepository,
     IUnitOfWork unitOfWork,
     IProfilesContextFacade profilesContextFacade
 ) : ISubscriptionCommandService
@@ -31,7 +31,7 @@ public class SubscriptionCommandService(
             new PlanId(command.PlanId)
         );
 
-        await _subscriptionRepository.AddAsync(subscription);
+        await subscriptionRepository.AddAsync(subscription);
         await unitOfWork.CompleteAsync();
 
         return subscription.Id.Value;
@@ -40,52 +40,58 @@ public class SubscriptionCommandService(
 
     public async Task Handle(CancelSubscriptionCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         subscription?.Cancel();
-        _subscriptionRepository.Update(subscription!);
+        subscriptionRepository.Update(subscription!);
         await unitOfWork.CompleteAsync();
     }
 
     public async Task Handle(PauseSubscriptionCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         subscription?.Pause();
-        _subscriptionRepository.Update(subscription!);
+        subscriptionRepository.Update(subscription!);
         await unitOfWork.CompleteAsync();
     }
 
     public async Task Handle(ResumeSubscriptionCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         subscription?.Resume();
-        _subscriptionRepository.Update(subscription!);
+        subscriptionRepository.Update(subscription!);
         await unitOfWork.CompleteAsync();
     }
 
     public async Task Handle(GrantPremiumAccessCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         subscription?.GrantPremiumAccess(command.ValidUntil);
-        _subscriptionRepository.Update(subscription!);
+        subscriptionRepository.Update(subscription!);
         await unitOfWork.CompleteAsync();
     }
 
     public async Task Handle(ActivateBoostCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         if (subscription != null && subscription.CanActivateBoost(DateTime.UtcNow))
         {
             subscription.ActivateBoost(DateTime.UtcNow);
-            _subscriptionRepository.Update(subscription);
+            subscriptionRepository.Update(subscription);
             await unitOfWork.CompleteAsync();
         }
     }
 
     public async Task Handle(VerifyCertificationCommand command)
     {
-        var subscription = await _subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
+        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId.Value);
         subscription?.VerifyCertification(DateTime.UtcNow);
-        _subscriptionRepository.Update(subscription!);
+        subscriptionRepository.Update(subscription!);
         await unitOfWork.CompleteAsync();
     }
 }
