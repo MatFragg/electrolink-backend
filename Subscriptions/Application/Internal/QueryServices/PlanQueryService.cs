@@ -7,20 +7,25 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 
-public class PlanQueryService(IPlanRepository _planRepository) : IPlanQueryService
+public class PlanQueryService(IPlanRepository planRepository) : IPlanQueryService
 {
     public async Task<IEnumerable<Plan>> Handle(GetAllPlansQuery query)
     {
-        return await _planRepository.ListAsync();
+        return await planRepository.ListAsync();
     }
 
     public async Task<Plan?> Handle(GetPlanByIdQuery query)
     {
-        return await _planRepository.FindByIdAsync(new PlanId(query.PlanId));
+        return await planRepository.FindByIdAsync(new PlanId(query.PlanId));
     }
 
     public async Task<Plan?> Handle(GetDefaultPlanQuery query)
     {
-        return await _planRepository.FindDefaultAsync();
+        return await planRepository.FindDefaultAsync();
+    }
+
+    public async Task<Plan?> Handle(GetPlanDetailsQuery query)
+    {
+        return await planRepository.FindByIdAsync(new PlanId(query.PlanId));
     }
 }
