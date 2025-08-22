@@ -8,4 +8,5 @@ public interface IPlanQueryService
     Task<IEnumerable<Plan>> Handle(GetAllPlansQuery query);
     Task<Plan?> Handle(GetPlanByIdQuery query);
     Task<Plan?> Handle(GetDefaultPlanQuery query);
+    Task<Plan?> Handle(GetPlanDetailsQuery query);
 }
