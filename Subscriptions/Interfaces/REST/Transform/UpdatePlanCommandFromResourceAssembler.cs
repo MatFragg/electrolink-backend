@@ -14,7 +14,8 @@ public static class UpdatePlanCommandFromResourceAssembler
             resource.Price,
             resource.Currency,
             resource.MonetizationType,
-            resource.IsDefault
+            resource.IsDefault,
+            resource.UsageLimit
         );
     }
 }

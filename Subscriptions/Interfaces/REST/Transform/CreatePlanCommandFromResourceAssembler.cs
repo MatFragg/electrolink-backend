@@ -14,7 +14,8 @@ public static class CreatePlanCommandFromResourceAssembler
             resource.Price,
             resource.Currency,
             Enum.Parse<MonetizationType>(resource.MonetizationType, ignoreCase: true),
-            resource.IsDefault
+            resource.IsDefault,
+            resource.UsageLimit
         );
     }
 }
