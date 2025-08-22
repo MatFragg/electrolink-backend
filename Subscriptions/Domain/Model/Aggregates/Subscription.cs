@@ -19,6 +19,7 @@ public class Subscription : IEntityWithCreatedUpdatedDate
 
     public DateTimeOffset? CreatedDate { get; set; }
     public DateTimeOffset? UpdatedDate { get; set; }
+    public int CurrentUsage { get; private set; } 
 
     private Subscription() {}
 
@@ -31,6 +32,7 @@ public class Subscription : IEntityWithCreatedUpdatedDate
         ActivatedAt = DateTime.UtcNow;
         Certification = new CertificationRequest();
         Boost = new BoostActivation();
+        CurrentUsage = 0;
     }
 
     public void Cancel() => Status = ESubscriptionsStatus.Cancelled;
@@ -48,6 +50,11 @@ public class Subscription : IEntityWithCreatedUpdatedDate
     {
         if (Status == ESubscriptionsStatus.Active && (now - ActivatedAt).TotalDays >= 30)
             Certification!.Activate();
+    }
+    
+    public void IncrementUsage(int amount = 1) 
+    {
+        CurrentUsage += amount;
     }
 
     public bool CanActivateBoost(DateTime now) => Boost!.CanActivate(now);
