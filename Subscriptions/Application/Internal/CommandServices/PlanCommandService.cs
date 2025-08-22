@@ -7,7 +7,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal;
 
-public class PlanCommandService(IPlanRepository _planRepository, IUnitOfWork unitOfWork) : IPlanCommandService
+public class PlanCommandService(IPlanRepository planRepository, IUnitOfWork unitOfWork) : IPlanCommandService
 {
     public async Task<Guid> Handle(CreatePlanCommand command)
     {
@@ -17,17 +17,18 @@ public class PlanCommandService(IPlanRepository _planRepository, IUnitOfWork uni
             command.Price,
             command.Currency,
             command.MonetizationType,
-            command.IsDefault
+            command.IsDefault,
+            command.UsageLimit
         );
 
-        await _planRepository.AddAsync(plan);
+        await planRepository.AddAsync(plan);
         await unitOfWork.CompleteAsync();
         return plan.Id.Value;
     }
 
     public async Task Handle(UpdatePlanCommand command)
     {
-        var plan = await _planRepository.FindByIdAsync(new PlanId(command.PlanId));
+        var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId));
         if (plan is null) return;
 
         plan.UpdateDetails(
@@ -36,37 +37,38 @@ public class PlanCommandService(IPlanRepository _planRepository, IUnitOfWork uni
             command.Price,
             command.Currency,
             Enum.Parse<MonetizationType>(command.MonetizationType),
-            command.IsDefault
+            command.IsDefault,
+            command.UsageLimit
         );
 
-        _planRepository.Update(plan);
+        planRepository.Update(plan);
         await unitOfWork.CompleteAsync();
     }
 
     public async Task Handle(DeletePlanCommand command)
     {
-        var plan = await _planRepository.FindByIdAsync(new PlanId(command.PlanId));
+        var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId));
         if (plan != null)
         {
-            _planRepository.Remove(plan);
+            planRepository.Remove(plan);
             await unitOfWork.CompleteAsync();
         }
     }
 
     public async Task Handle(MarkPlanAsDefaultCommand command)
     {
-        var currentDefault = await _planRepository.FindDefaultAsync();
+        var currentDefault = await planRepository.FindDefaultAsync();
         if (currentDefault != null)
         {
             currentDefault.UnmarkAsDefault();
-            _planRepository.Update(currentDefault);
+            planRepository.Update(currentDefault);
         }
 
-        var target = await _planRepository.FindByIdAsync(new PlanId(command.PlanId));
+        var target = await planRepository.FindByIdAsync(new PlanId(command.PlanId));
         if (target != null)
         {
             target.MarkAsDefault();
-            _planRepository.Update(target);
+            planRepository.Update(target);
         }
 
         await unitOfWork.CompleteAsync();
