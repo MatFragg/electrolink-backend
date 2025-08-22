@@ -2,5 +2,5 @@
 
 public interface ISubscriptionContextFacade
 {
-    
+    Task<bool> RecordServiceRequestUsageAsync(int ownerUserId);
 }
