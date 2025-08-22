@@ -1,3 +1,5 @@
-﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-public record GetSubscriptionByUserIdQuery();
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+
+public record GetSubscriptionByUserIdQuery(UserId UserId);
