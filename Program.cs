@@ -5,7 +5,6 @@ using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
-using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;

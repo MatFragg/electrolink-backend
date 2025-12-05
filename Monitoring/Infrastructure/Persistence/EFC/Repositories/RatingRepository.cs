@@ -5,10 +5,10 @@ using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositor
 using Microsoft.EntityFrameworkCore;
 
 
-namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
+namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 
 public class RatingRepository(AppDbContext context)
-    : BaseRepository<Rating>(context), IRatingRepository
+    : BaseRepository<Rating, Guid>(context), IRatingRepository
 {
     public async Task<Rating?> GetByRequestIdAsync(Guid requestId)
     {

@@ -2,7 +2,7 @@ using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 

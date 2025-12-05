@@ -1,5 +1,7 @@
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
+namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
+
 public class ReportPhoto
 {
     public Guid Id { get; private set; }

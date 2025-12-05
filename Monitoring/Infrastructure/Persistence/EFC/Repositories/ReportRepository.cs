@@ -4,10 +4,10 @@ using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configura
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
+namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 
 public class ReportRepository(AppDbContext context)
-    : BaseRepository<Report>(context), IReportRepository
+    : BaseRepository<Report, Guid>(context), IReportRepository
 {
     public async Task<Report?> GetByRequestIdAsync(Guid requestId)
     {

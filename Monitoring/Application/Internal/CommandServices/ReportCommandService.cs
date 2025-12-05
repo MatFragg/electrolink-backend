@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;

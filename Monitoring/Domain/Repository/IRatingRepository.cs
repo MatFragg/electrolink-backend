@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 
-public interface IRatingRepository: IBaseRepository<Rating>
+public interface IRatingRepository: IBaseRepository<Rating, Guid>
 {
     Task<Rating?> GetByRequestIdAsync(Guid requestId);
     

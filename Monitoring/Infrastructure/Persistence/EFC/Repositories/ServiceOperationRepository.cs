@@ -4,10 +4,10 @@ using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configura
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
+namespace Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 
 public class ServiceOperationRepository(AppDbContext context)
-    : BaseRepository<ServiceOperation>(context), IServiceOperationRepository
+    : BaseRepository<ServiceOperation, Guid>(context), IServiceOperationRepository
 {
     public async Task<ServiceOperation?> GetByIdAsync(Guid requestId)
     {
