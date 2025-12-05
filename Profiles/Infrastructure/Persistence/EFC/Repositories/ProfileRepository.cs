@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Repositories;
 
 public class ProfileRepository(AppDbContext context)
-  : BaseRepository<Profile>(context), IProfileRepository
+  : BaseRepository<Profile, int>(context), IProfileRepository
 {
   public async Task<Profile?> FindByEmailAsync(string email)
   {

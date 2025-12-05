@@ -7,7 +7,7 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 /// <summary>
 /// Repository interface for managing Profile aggregate roots.
 /// </summary>
-public interface IProfileRepository : IBaseRepository<Profile>
+public interface IProfileRepository : IBaseRepository<Profile, int>
 {
   /// <summary>
   /// Finds a profile by email address.
