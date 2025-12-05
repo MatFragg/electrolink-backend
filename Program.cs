@@ -7,7 +7,6 @@ using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EfCore;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Subscriptions.Application.Internal;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
@@ -27,7 +26,6 @@ using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Hashing.BCrypt.Services;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Configuration;
-using Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services;
 using Hampcoders.Electrolink.API.IAM.Interfaces.ACL;
 using Hampcoders.Electrolink.API.IAM.Interfaces.ACL.Services;
 using Hampcoders.Electrolink.API.Planning.API.Application.Internal.CommandServices;
@@ -56,8 +54,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MediatR; 
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensions;
+using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.EventHandlers;
+using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Stripe;
+using ExternalIamServiceForSubscriptionsBC = Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices.ExternalIamService;
+using ExternalIamServiceForProfilesBC = Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices.ExternalIamService;
+using TokenService = Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services.TokenService;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,6 +84,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString)
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
+
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -137,16 +144,16 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
+
+
+// Dependency Injection
+
 // Shared
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Dependency Injection
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IServiceOperationRepository, ServiceOperationRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-builder.Services.AddScoped<IPlanRepository, PlanRepository>();
-builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IReportPhotoRepository, ReportPhotoRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IRequestRepository, RequestRepository>();
@@ -159,10 +166,6 @@ builder.Services.AddScoped<IReportCommandService, ReportCommandService>();
 builder.Services.AddScoped<IReportQueryService, ReportQueryService>();
 builder.Services.AddScoped<IRatingCommandService, RatingCommandService>();
 builder.Services.AddScoped<IRatingQueryService, RatingQueryService>();
-builder.Services.AddScoped<IPlanCommandService, PlanCommandService>();
-builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
-builder.Services.AddScoped<ISubscriptionCommandService, SubscriptionCommandService>();
-builder.Services.AddScoped<ISubscriptionQueryService, SubscriptionQueryService>();
 builder.Services.AddScoped<IServiceCommandService, ServiceCommandService>();
 builder.Services.AddScoped<IServiceQueryService, ServiceQueryService>();
 builder.Services.AddScoped<IRequestCommandService, RequestCommandService>();
@@ -172,12 +175,27 @@ builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IMonitoringContextFacade, MonitoringContextFacade>();
 builder.Services.AddScoped<ISDPContextFacade, SdpContextFacade>();
 
+// Subscriptions and Payments Bounded Context
+builder.Services.AddScoped<IPlanRepository, PlanRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+builder.Services.AddScoped<IPlanCommandService, PlanCommandService>();
+builder.Services.AddScoped<IPlanQueryService, PlanQueryService>();
+builder.Services.AddScoped<ISubscriptionCommandService, SubscriptionCommandService>();
+builder.Services.AddScoped<ISubscriptionQueryService, SubscriptionQueryService>();
+builder.Services.AddScoped<IPaymentTransactionQueryService,PaymentTransactionQueryService>();
+builder.Services.AddScoped<IPaymentTransactionCommandService,PaymentTransactionCommandService>();
+builder.Services.AddScoped<ExternalIamServiceForSubscriptionsBC>();
+builder.Services.AddScoped<ExternalProfileService>();
+
+
 // Profiles
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfilesContextFacade, ProfilesContextFacade>();
-builder.Services.AddScoped<ExternalIamService>();
+builder.Services.AddScoped<ExternalIamServiceForProfilesBC>();
+builder.Services.AddScoped<ExternalAssetService>();
 
 // IAM
 builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
@@ -235,8 +253,12 @@ builder.Services.AddAuthentication(options =>
             ClockSkew = TimeSpan.Zero // No permite desviación del reloj para la expiración
         };
     });
-builder.Services.AddMediatR(cfg => { }, assemblies);
+//builder.Services.AddMediatR(cfg => { }, assemblies);
 
+builder.Services.AddMediatR(typeof(StripeEventHandler).Assembly);
+builder.Services.AddMediatR(typeof(GetLocalSubscriptionIdQueryHandler).Assembly);
+
+    
 var app = builder.Build();
 
 // DB Init

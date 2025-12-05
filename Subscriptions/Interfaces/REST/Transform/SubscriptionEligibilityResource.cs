@@ -7,47 +7,56 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 public static class SubscriptionEligibilityAclAssembler
 {
     /// <summary>
-    /// Convierte un agregado de Subscription y su Plan asociado en un SubscriptionEligibilityResource.
+    /// Creates a basic <see cref="SubscriptionEligibilityResource"/> for a user without an active subscription.
     /// </summary>
-    /// <param name="subscription">El agregado de Subscription.</param>
-    /// <param name="plan">El agregado de Plan asociado.</param>
-    /// <returns>Un SubscriptionEligibilityResource.</returns>
-    public static SubscriptionEligibilityResource ToResourceFromEntities(
-        Subscription subscription,
-        Plan plan)
-    {
-        // La condición para 'IsPremium' debe basarse en PremiumAccess
-        // y no en el MonetizationType, ya que este último es solo la frecuencia de pago.
-        bool isPremium = subscription.PremiumAccess != null && subscription.PremiumAccess.IsActive(DateTime.UtcNow);
-
-        // La capacidad de crear solicitudes prioritarias está ligada directamente a ser premium.
-        bool canCreatePriorityRequest = isPremium;
-
-        return new SubscriptionEligibilityResource(
-            UserId: subscription.UserId.Value,
-            PlanName: plan.Name,
-            IsPremium: isPremium,
-            UsageLimit: null, // Sigue siendo null, ya que no está directamente en los agregados actuales
-            CurrentUsage: null, // Sigue siendo null
-            CanCreatePriorityRequest: canCreatePriorityRequest
-        );
-    }
-
-    /// <summary>
-    /// Método para retornar un recurso de elegibilidad para un usuario sin suscripción activa,
-    /// representando un plan básico o por defecto, sin detalles de suscripción.
-    /// </summary>
-    /// <param name="userId">El ID del usuario.</param>
-    /// <returns>Un SubscriptionEligibilityResource para un plan básico.</returns>
+    /// <param name="userId">The ID of the user.</param>
+    /// <returns>A basic eligibility resource.</returns>
     public static SubscriptionEligibilityResource ToBasicResource(int userId)
     {
         return new SubscriptionEligibilityResource(
             UserId: userId,
-            PlanName: "Basic",
-            IsPremium: false,
-            UsageLimit: 0,
-            CurrentUsage: 0,
-            CanCreatePriorityRequest: false
+            HasActiveSubscription: false,
+            CurrentPlanName: "Free",
+            IsPremiumUser: false,
+            IsCertifiedTechnician: false,
+            CanUseBoost: false,
+            RemainingServiceRequests: null, // No limits for basic free tier
+            PlanBenefits: new List<BenefitResource>()
+        );
+    }
+    
+    /// <summary>
+    /// Creates a <see cref="SubscriptionEligibilityResource"/> from a <see cref="Subscription"/> and <see cref="Plan"/>.
+    /// </summary>
+    /// <param name="subscription">The user's subscription.</param>
+    /// <param name="plan">The plan associated with the subscription.</param>
+    /// <returns>An eligibility resource with detailed information.</returns>
+    public static SubscriptionEligibilityResource ToResourceFromEntities(Subscription subscription, Plan plan)
+    {
+        bool isPremium = plan.MonetizationType != EMonetizationType.Free;
+        bool isCertified = plan.Benefits.Exists(b => b.Type == "CertificationAccess" && b.FlagValue == true);
+        bool canUseBoost = plan.Benefits.Exists(b => b.Type == "BoostAccess" && b.FlagValue == true);
+        int? remainingServiceRequests = null;
+
+        var maxServiceRequestsBenefit = plan.Benefits.FirstOrDefault(b => b.Type == "MaxServiceRequests");
+        if (maxServiceRequestsBenefit != null && maxServiceRequestsBenefit.LimitValue.HasValue)
+        {
+            remainingServiceRequests = maxServiceRequestsBenefit.LimitValue.Value - subscription.CurrentUsage;
+        }
+
+        var benefitResources = plan.Benefits.Select(b => new BenefitResource(
+            b.Type, b.LimitValue, b.FlagValue, b.Description
+        )).ToList();
+
+        return new SubscriptionEligibilityResource(
+            UserId: subscription.UserId.Value,
+            HasActiveSubscription: subscription.Status == ESubscriptionStatus.Active || subscription.Status == ESubscriptionStatus.Trial,
+            CurrentPlanName: plan.Name,
+            IsPremiumUser: isPremium,
+            IsCertifiedTechnician: isCertified,
+            CanUseBoost: canUseBoost,
+            RemainingServiceRequests: remainingServiceRequests,
+            PlanBenefits: benefitResources
         );
     }
 }

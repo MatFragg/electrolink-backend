@@ -4,7 +4,7 @@ namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attr
  * This attribute is used to decorate controllers and actions that do not require authorization.
  * It skips authorization if the action is decorated with [AllowAnonymous] attribute.
  */
-[AttributeUsage(AttributeTargets.Method)]
-public class AllowAnonymousAttribute : Attribute
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public class AllowAnonymousAttribute : Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute
 {
 }
