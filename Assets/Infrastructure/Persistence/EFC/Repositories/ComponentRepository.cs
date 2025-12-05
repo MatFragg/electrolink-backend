@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
 
-public class ComponentRepository(AppDbContext context) : BaseRepository<Component>(context), IComponentRepository
+public class ComponentRepository(AppDbContext context) : BaseRepository<Component, Guid>(context), IComponentRepository
 {
     public async Task<Component?> FindByIdAsync(ComponentId id)
     {
