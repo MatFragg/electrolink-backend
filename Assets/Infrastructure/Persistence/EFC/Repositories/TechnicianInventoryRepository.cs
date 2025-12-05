@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
 
-public class TechnicianInventoryRepository(AppDbContext context) : BaseRepository<TechnicianInventory>(context), ITechnicianInventoryRepository
+public class TechnicianInventoryRepository(AppDbContext context) : BaseRepository<TechnicianInventory, Guid>(context), ITechnicianInventoryRepository
 {
     public async Task<TechnicianInventory?> FindByTechnicianIdAsync(TechnicianId technicianId)
     {
