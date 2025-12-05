@@ -15,7 +15,7 @@ namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repos
 ///     It requires the entity type to be passed as a generic parameter.
 ///     It also requires the context to be passed in the constructor.
 /// </remarks>
-public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class
+public class BaseRepository<TEntity, TId> : IBaseRepository<TEntity, TId> where TEntity : class
 {
    protected readonly AppDbContext Context;
 
@@ -30,13 +30,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
       await Context.Set<TEntity>().AddAsync(entity);
    }
 
-   /// <inheritdoc />
-   public async Task<TEntity?> FindByIdAsync(Guid id)
-   {
-      return await Context.Set<TEntity>().FindAsync(id);
-   }
-
-   public async Task<TEntity?> FindByGuidAsync(Guid id)
+   public async Task<TEntity?> FindByIdAsync(TId id)
    {
       return await Context.Set<TEntity>().FindAsync(id);
    }
@@ -57,10 +51,5 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
    public async Task<IEnumerable<TEntity>> ListAsync()
    {
       return await Context.Set<TEntity>().ToListAsync();
-   }
-   
-   public async Task<TEntity?> FindByIdAsyncc(int id)
-   {
-      return await Context.Set<TEntity>().FindAsync(id);
    }
 }
