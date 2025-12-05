@@ -5,7 +5,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 
-public interface IPropertyRepository : IBaseRepository<Property>
+public interface IPropertyRepository : IBaseRepository<Property, Guid>
 {
     Task<Property?> FindByIdAsync(PropertyId id);
 

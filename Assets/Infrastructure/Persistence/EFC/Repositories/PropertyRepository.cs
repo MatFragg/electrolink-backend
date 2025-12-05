@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
 
-public class PropertyRepository(AppDbContext context) : BaseRepository<Property>(context), IPropertyRepository
+public class PropertyRepository(AppDbContext context) : BaseRepository<Property, Guid>(context), IPropertyRepository
 {
     public async Task<IEnumerable<Property>> FindByOwnerIdAsync(OwnerId ownerId)
     {
