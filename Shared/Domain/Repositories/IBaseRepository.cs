@@ -7,7 +7,8 @@ namespace Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 ///     This interface defines the basic CRUD operations for all repositories
 /// </remarks>
 /// <typeparam name="TEntity">The Entity Type</typeparam>
-public interface IBaseRepository<TEntity>
+/// <typeparam name="TId">The Entity ID Type</typeparam>
+public interface IBaseRepository<TEntity, in TId>
 {
    /// <summary>
    ///     Add entity to the repository
@@ -21,9 +22,7 @@ public interface IBaseRepository<TEntity>
    /// </summary>
    /// <param name="id">The Entity ID to Find</param>
    /// <returns>Entity object if found</returns>
-   Task<TEntity?> FindByIdAsync(Guid id);
-   
-   Task<TEntity?> FindByIdAsyncc(int id);
+   Task<TEntity?> FindByIdAsync(TId id);
    
    /// <summary>
    ///     Update entity
