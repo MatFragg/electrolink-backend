@@ -4,7 +4,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 
-public interface IComponentTypeRepository : IBaseRepository<ComponentType>
+public interface IComponentTypeRepository : IBaseRepository<ComponentType, Guid>
 {
     Task<bool> ExistsByNameAsync(string name);
     Task<ComponentType?> FindByIdAsync(ComponentTypeId id);
