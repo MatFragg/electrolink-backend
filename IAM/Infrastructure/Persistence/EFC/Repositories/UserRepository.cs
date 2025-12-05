@@ -15,19 +15,8 @@ namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Reposito
  *     This repository is used to manage users
  * </remarks>
  */
-public class UserRepository(AppDbContext context) : BaseRepository<User>(context), IUserRepository
+public class UserRepository(AppDbContext context) : BaseRepository<User, int>(context), IUserRepository
 {
-    /**
-     * <summary>
-     *     Find a user by id
-     * </summary>
-     * <param name="id">The user id to search</param>
-     * <returns>The user</returns>
-     */
-    public async Task<User?> FindByIdAsync(int id)
-    {
-        return await Context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
-    }
     /**
      * <summary>
      *     Find a user by username

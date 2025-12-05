@@ -11,16 +11,8 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Repositories;
  *     This repository is used to manage users
  * </remarks>
  */
-public interface IUserRepository : IBaseRepository<User>
+public interface IUserRepository : IBaseRepository<User, int>
 {
-    /**
-     * <summary>
-     *     Find a user by id
-     * </summary>
-     * <param name="id">The user id to search</param>
-     * <returns>The user</returns>
-     */
-    Task<User?> FindByIdAsync(int id);
     /**
      * <summary>
      *     Find a user by id
