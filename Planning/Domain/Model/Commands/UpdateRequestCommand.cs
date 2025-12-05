@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Model.Commands;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 /// <summary>
 /// Command to update an existing service request

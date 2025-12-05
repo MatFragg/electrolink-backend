@@ -1,8 +1,8 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 
 public partial class Request
 {

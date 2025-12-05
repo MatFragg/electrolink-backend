@@ -1,9 +1,9 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Microsoft.EntityFrameworkCore;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Infrastructure.Persistence.EFC.Configuration.Extensions;
+namespace Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 public static class ModelBuilderExtensions
 {

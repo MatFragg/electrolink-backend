@@ -1,6 +1,6 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 
 public partial class Service
 {

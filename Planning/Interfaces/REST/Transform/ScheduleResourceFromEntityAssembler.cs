@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Transform;
+namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Transform;
 
 public static class ScheduleResourceFromEntityAssembler
 {

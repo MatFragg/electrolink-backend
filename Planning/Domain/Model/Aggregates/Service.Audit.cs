@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using EntityFrameworkCore.CreatedUpdatedDate.Contracts;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 
 public partial class Service : IEntityWithCreatedUpdatedDate
 {

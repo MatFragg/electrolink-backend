@@ -1,9 +1,9 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Repositories;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Services;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Application.Internal.QueryServices;
+namespace Hampcoders.Electrolink.API.Planning.Application.Internal.QueryServices;
 
 public class ScheduleQueryService(IScheduleRepository scheduleRepository) : IScheduleQueryService
 {

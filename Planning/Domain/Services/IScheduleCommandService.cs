@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Services;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Services;
 
 public interface IScheduleCommandService
 {

@@ -1,7 +1,6 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Resources;
-using Planning.API.Domain.Model.ValueObjects;
+namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 public record RequestResource(
     string RequestId,
     string ClientId,

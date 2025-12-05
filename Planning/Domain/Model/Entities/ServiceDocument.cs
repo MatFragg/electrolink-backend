@@ -1,4 +1,4 @@
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 
 public class ServiceDocument
 {

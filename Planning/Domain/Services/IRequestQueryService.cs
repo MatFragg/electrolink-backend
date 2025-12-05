@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Services;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Services;
 
 public interface IRequestQueryService
 {

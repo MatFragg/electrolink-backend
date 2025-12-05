@@ -1,10 +1,10 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Repositories;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Services;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Application.Internal.CommandServices;
+namespace Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServices;
 
 public class ServiceCommandService(
     IServiceRepository serviceRepository,

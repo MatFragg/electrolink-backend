@@ -1,13 +1,13 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Entities;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Repositories;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Infrastructure.Persistence.EFC.Repositories;
+namespace Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Repositories;
 
 public class ScheduleRepository(AppDbContext context)
-    : BaseRepository<Schedule>(context), IScheduleRepository
+    : BaseRepository<Schedule,string>(context), IScheduleRepository
 {
     public async Task<IEnumerable<Schedule>> ListByTechnicianIdAsync(Guid technicianId)
     {
@@ -22,10 +22,6 @@ public class ScheduleRepository(AppDbContext context)
         return await context.Set<Schedule>()
             .Where(s => s.Day == dateString)
             .ToListAsync();
-    }
-    public async Task<Schedule?> FindByIdAsync(string scheduleId)
-    {
-        return await context.Set<Schedule>().FirstOrDefaultAsync(s => s.ScheduleId == scheduleId);
     }
     public async Task UpdateAsync(Schedule schedule)
     {

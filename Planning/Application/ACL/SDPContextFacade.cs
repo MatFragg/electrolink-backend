@@ -1,7 +1,7 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Services;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
+using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.ACL;
 

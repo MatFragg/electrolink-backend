@@ -1,13 +1,13 @@
 using System.Net.Mime;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Planning.API.Domain.Services;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Resources;
-using Hampcoders.Electrolink.API.Planning.API.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
+using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Interfaces.REST;
+namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST;
 
 [ApiController]
 [Route("api/v1/")]

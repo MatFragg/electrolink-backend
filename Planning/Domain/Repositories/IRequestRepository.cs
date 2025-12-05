@@ -1,12 +1,11 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Domain.Repositories;
+namespace Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 
-public interface IRequestRepository : IBaseRepository<Request>
+public interface IRequestRepository : IBaseRepository<Request, string>
 {
     Task<IEnumerable<Request>> ListByClientIdAsync(Guid clientId);
-    Task<Request?> FindByIdAsync(string requestId);
     Task UpdateAsync(Request request);
     Task DeleteAsync(Request request);
 }

@@ -1,6 +1,6 @@
-using Hampcoders.Electrolink.API.Planning.API.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 
-namespace Hampcoders.Electrolink.API.Planning.API.Interfaces.ACL;
+namespace Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 
 /// <summary>
 /// Facade interface for exposing read-only operations of the Request module.
