@@ -15,7 +15,7 @@ public class PaymentTransactionCommandService(IPaymentTransactionRepository paym
     /// <inheritdoc/>
     public async Task<Guid> Handle(ProcessPaymentCommand command)
     {
-        var subscriptionId = new SubscriptionId(command.SubscriptionId);
+        var subscriptionId = new SubscriptionId(command.SubscriptionId.Value);
         var subscription = await subscriptionRepository.FindBySubscriptionIdAsync(subscriptionId);
         if (subscription == null)
             throw new ArgumentException($"Subscription with ID {subscriptionId} not found for payment processing.");

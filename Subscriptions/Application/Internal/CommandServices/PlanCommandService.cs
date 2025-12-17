@@ -3,6 +3,7 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
@@ -20,7 +21,7 @@ public class PlanCommandService(IPlanRepository planRepository, IUnitOfWork unit
             command.TargetRole,
             command.IsDefault,
             command.Benefits,
-            command.StripePriceId
+            command.GatewayPriceId
         );
 
         await planRepository.AddAsync(plan);
@@ -39,7 +40,7 @@ public class PlanCommandService(IPlanRepository planRepository, IUnitOfWork unit
     /// <inheritdoc/>
     public async Task<Guid?> Handle(UpdatePlanCommand command)
     {
-        var plan = await planRepository.FindByIdAsync(command.PlanId);
+        var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId));
         if (plan == null) return null;
 
         plan.UpdateDetails(
@@ -68,7 +69,7 @@ public class PlanCommandService(IPlanRepository planRepository, IUnitOfWork unit
     /// <inheritdoc/>
     public async Task Handle(DeletePlanCommand command) // Void return
     {
-        var plan = await planRepository.FindByIdAsync(command.PlanId);
+        var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId));
         if (plan == null) throw new ArgumentException($"Plan with ID {command.PlanId} not found.");
 
         planRepository.Remove(plan); // Changed to void

@@ -7,7 +7,7 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 
-public class StripeCheckoutCommandService(IPaymentGatewayService paymentGateway, IPlanRepository planRepository, ISubscriptionRepository subscriptionRepository, ExternalIamService externalIamService,ExternalProfileService externalProfileService, IUnitOfWork unitOfWork, ILogger<StripeCheckoutCommandService> logger) : IStripeCheckoutCommandService
+public class CheckoutCommandService(IPaymentGatewayService paymentGateway, IPlanRepository planRepository, ISubscriptionRepository subscriptionRepository, ExternalIamService externalIamService,ExternalProfileService externalProfileService, IUnitOfWork unitOfWork, ILogger<CheckoutCommandService> logger) : ICheckoutCommandService
 {
     /// <summary>
     /// Creates a Stripe Checkout session to subscribe the user.    
@@ -16,8 +16,8 @@ public class StripeCheckoutCommandService(IPaymentGatewayService paymentGateway,
     {
         logger.LogInformation(
             "Creates a Checkout session for User {UserId} - Plan {PlanId}",
-            command.UserId,
-            command.PlanId);
+            command.UserId.Value,
+            command.PlanId.Value);
 
         // 1. Validate that the user exists
         if (!await externalIamService.UserExistsAsync(command.UserId.Value))
@@ -28,12 +28,12 @@ public class StripeCheckoutCommandService(IPaymentGatewayService paymentGateway,
         var fullName = await externalProfileService.FetchProfileFullName(command.UserId.Value);
         
         if (string.IsNullOrEmpty(email))
-            throw new InvalidOperationException($"Profile for User {command.UserId} requires an email to subscribe.");
+            throw new InvalidOperationException($"Profile for User {command.UserId.Value} requires an email to subscribe.");
         
         // 2. Validate that the plan exists
         var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId.Value));
         if (plan == null)
-            throw new ArgumentException($"Plan {command.PlanId} not found");
+            throw new ArgumentException($"Plan {command.PlanId.Value} not found");
 
         if (plan.GatewayPriceId == null || string.IsNullOrEmpty(plan.GatewayPriceId.Value))
             throw new InvalidOperationException($"Plan {plan.Name} does not have a Stripe Price ID configured");
@@ -43,7 +43,7 @@ public class StripeCheckoutCommandService(IPaymentGatewayService paymentGateway,
 
         if (existingSubscription != null)
             throw new InvalidOperationException(
-                $"User {command.UserId} already has an active subscription");
+                $"User {command.UserId.Value} already has an active subscription");
 
         // 4. Creates a Customer in Stripe
         var stripeCustomerId = await paymentGateway.CreateOrGetCustomerAsync(

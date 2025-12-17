@@ -57,7 +57,7 @@ public class SubscriptionQueryService(ISubscriptionRepository subscriptionReposi
 
     public async Task<Guid?> Handle(GetLocalSubscriptionIdQuery query)
     {
-        var subscription = await subscriptionRepository.FindByStripeSubscriptionIdAsync(query.StripeSubscriptionId);
+        var subscription = await subscriptionRepository.FindByPaymentGatewaySubscriptionIdAsync(new PaymentGatewaySubscriptionId(query.StripeSubscriptionId));
         return subscription?.Id.Value; // Accedes al Guid del ValueObject
     }
 }

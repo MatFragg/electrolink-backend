@@ -45,7 +45,7 @@ public class StripeEventHandler(IMediator mediator, IConfiguration configuration
                     if (session.PaymentIntentId == null) return Unit.Value;
 
                     var processInitialPaymentCommand = new ProcessPaymentCommand(
-                        localSubscriptionIdGuid,
+                        new SubscriptionId(localSubscriptionIdGuid),
                         (decimal)session.AmountTotal.GetValueOrDefault() / 100,
                         session.Currency,
                         DateTime.UtcNow,
@@ -69,7 +69,7 @@ public class StripeEventHandler(IMediator mediator, IConfiguration configuration
                         return Unit.Value;
                     }
 
-// Imprimir todas las propiedades disponibles para depuración
+                // Imprimir todas las propiedades disponibles para depuración
                     foreach (var prop in invoice.GetType().GetProperties())
                     {
                         try
@@ -114,7 +114,7 @@ public class StripeEventHandler(IMediator mediator, IConfiguration configuration
                     }
 
                     var processRecurrentPaymentCommand = new ProcessPaymentCommand(
-                        localSubscriptionIdResult.Value,
+                        new SubscriptionId(localSubscriptionIdResult.Value),
                         (decimal)invoice.AmountPaid / 100,
                         invoice.Currency,
                         DateTime.UtcNow,

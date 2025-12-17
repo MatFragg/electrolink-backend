@@ -16,25 +16,25 @@ public class StripeWebhookCommandService(ISubscriptionRepository subscriptionRep
     /// <summary>
     /// Sync a subscription from Stripe to our DB.
     /// </summary>
-    public async Task Handle(SyncSubscriptionFromStripeCommand command)
+    public async Task Handle(SyncSubscriptionFromGatewayCommand command)
     {
         logger.LogInformation(
-            "Syncing subscription from Stripe: {StripeSubscriptionId}",
-            command.StripeSubscriptionId);
+            "Syncing subscription from Stripe: {PaymentGatewaySubscriptionId}",
+            command.GatewaySubscriptionId);
 
-        // 1. Search for existing subscription by StripeSubscriptionId
+        // 1. Search for existing subscription by PaymentGatewaySubscriptionId
         var subscription = await subscriptionRepository
-            .FindByStripeSubscriptionIdAsync(command.StripeSubscriptionId);
+            .FindByPaymentGatewaySubscriptionIdAsync(new PaymentGatewaySubscriptionId(command.GatewaySubscriptionId.Value));
 
         if (subscription == null)
         {
             logger.LogWarning(
-                "Subscription not found in DB for Stripe ID {StripeSubscriptionId}. " +
+                "Subscription not found in DB for Stripe ID {PaymentGatewaySubscriptionId}. " +
                 "This can be normal if it was created directly in Stripe.",
-                command.StripeSubscriptionId);
+                command.GatewaySubscriptionId.Value);
 
             // TODO: Optionally, create the subscription if it doesn't exist
-            // This would require looking up the Customer by StripeCustomerId and associating it with a UserId
+            // This would require looking up the Customer by PaymentGatewayCustomerId and associating it with a UserId
             return;
         }
 
