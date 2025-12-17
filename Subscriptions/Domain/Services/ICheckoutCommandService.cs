@@ -5,6 +5,6 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 public interface IStripeCheckoutCommandService
 {
     Task<string> Handle(CreateCheckoutSessionCommand command);
-    Task Handle(CancelSubscriptionInStripeCommand command);
-    Task Handle(ChangeSubscriptionPlanInStripeCommand command);
+    Task Handle(CancelSubscriptionInGatewayCommand command);
+    Task Handle(ChangeSubscriptionPlanInGatewayCommand command);
 }

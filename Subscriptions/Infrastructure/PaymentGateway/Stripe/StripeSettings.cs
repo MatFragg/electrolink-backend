@@ -3,7 +3,7 @@
 /// <summary>
 /// Stripe Configuration from appsettings.json.
 /// </summary>
-public class StripeConfiguration
+public class StripeSettings
 {
     public const string SectionName = "Stripe";
 
