@@ -57,12 +57,12 @@ public class Subscription
     /// <summary>
     /// Stripe's unique identifier for the customer.
     /// </summary>
-    public string StripeCustomerId { get; private set; }
+    public PaymentGatewayCustomerId GatewayCustomerId  { get; private set; }
 
     /// <summary>
     /// Stripe's unique identifier for the subscription.
     /// </summary>
-    public string StripeSubscriptionId { get; private set; }
+    public PaymentGatewaySubscriptionId GatewaySubscriptionId  { get; private set; }
     
     private readonly List<IEvent> _domainEvents = new();
     public IReadOnlyCollection<IEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -79,12 +79,12 @@ public class Subscription
     /// <param name="planId">The ID of the plan.</param>
     /// <param name="startDate">The start date of the subscription.</param>
     /// <param name="endDate">The end date of the subscription.</param>
-    /// <param name="stripeCustomerId">Stripe's customer ID.</param>
-    /// <param name="stripeSubscriptionId">Stripe's subscription ID.</param>
+    /// <param name="gatewayCustomerId">Stripe's customer ID.</param>
+    /// <param name="gatewaySubscriptionId">Stripe's subscription ID.</param>
     /// <param name="status">The initial status of the subscription.</param>
     /// <param name="trialEndsAt">Optional trial end date.</param>
-    public Subscription(UserId userId, PlanId planId, DateTime startDate, DateTime endDate, string stripeCustomerId,
-        string stripeSubscriptionId, ESubscriptionStatus status, DateTime? trialEndsAt = null)
+    public Subscription(UserId userId, PlanId planId, DateTime startDate, DateTime endDate, PaymentGatewayCustomerId gatewayCustomerId,
+        PaymentGatewaySubscriptionId gatewaySubscriptionId, ESubscriptionStatus status, DateTime? trialEndsAt = null)
     {
         Id = new SubscriptionId(Guid.NewGuid());
         UserId = userId;
@@ -92,10 +92,18 @@ public class Subscription
         StartDate = startDate;
         EndDate = endDate;
         Status = status;
-        StripeCustomerId = stripeCustomerId;
-        StripeSubscriptionId = stripeSubscriptionId;
+        GatewayCustomerId = gatewayCustomerId;
+        GatewaySubscriptionId = gatewaySubscriptionId;
         TrialEndsAt = trialEndsAt;
         CurrentUsage = 0;
+        
+        _domainEvents.Add(new SubscriptionCreatedEvent(
+            Id,
+            UserId,
+            PlanId,
+            StartDate,
+            status,
+            DateTime.UtcNow));
     }
 
     /// <summary>
@@ -147,8 +155,6 @@ public class Subscription
     public void ScheduleCancellation(DateTime effectiveDate)
     {
         CancellationEffectiveDate = effectiveDate;
-        // Optionally, change status to CancellationScheduled if needed
-        // Status = ESubscriptionStatus.CancellationScheduled;
         
         if (Status != ESubscriptionStatus.Cancelled) 
             UpdateStatus(ESubscriptionStatus.Cancelled);
@@ -193,9 +199,9 @@ public class Subscription
     /// Updates the Stripe subscription ID.
     /// </summary>
     /// <param name="newStripeSubscriptionId">The new Stripe subscription ID.</param>
-    public void UpdateStripeSubscriptionId(string newStripeSubscriptionId)
+    public void UpdateStripeSubscriptionId(PaymentGatewaySubscriptionId newStripeSubscriptionId)
     {
-        StripeSubscriptionId = newStripeSubscriptionId;
+        GatewaySubscriptionId  = newStripeSubscriptionId;
     }
 
     /// <summary>

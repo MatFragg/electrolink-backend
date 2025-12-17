@@ -57,7 +57,7 @@ public class Plan
     /// <summary>
     /// The ID of this plan in Stripe (Price ID). Can be null for free plans.
     /// </summary>
-    public string? StripePriceId { get; private set; }
+    public PaymentGatewayPriceId? GatewayPriceId  { get; private set; }
     
     private readonly List<IEvent> _domainEvents = new();
     public IReadOnlyCollection<IEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -78,8 +78,8 @@ public class Plan
     /// <param name="targetRole">The target user role for this plan.</param>
     /// <param name="isDefault">Indicates if it's a default plan.</param>
     /// <param name="benefits">The list of benefits.</param>
-    /// <param name="stripePriceId">Optional Stripe Price ID associated with this plan.</param>
-    public Plan(string name, string description, decimal price, string currency, EMonetizationType monetizationType, EUserRole targetRole, bool isDefault, List<Benefit> benefits, string? stripePriceId = null)
+    /// <param name="gatewayPriceId">Optional Stripe Price ID associated with this plan.</param>
+    public Plan(string name, string description, decimal price, string currency, EMonetizationType monetizationType, EUserRole targetRole, bool isDefault, List<Benefit> benefits, PaymentGatewayPriceId? gatewayPriceId)
     {
         Id = new PlanId(Guid.NewGuid());
         Name = name;
@@ -90,7 +90,7 @@ public class Plan
         IsDefault = isDefault;
         TargetRole = targetRole;
         Benefits = benefits ?? new List<Benefit>();
-        StripePriceId = stripePriceId;
+        GatewayPriceId = gatewayPriceId;
         
         _domainEvents.Add(new PlanCreatedEvent(
             Id.Value,
@@ -114,12 +114,12 @@ public class Plan
     /// <param name="targetRole">The new target user role.</param>
     /// <param name="isDefault">The new default status.</param>
     /// <param name="benefits">The updated list of benefits.</param>
-    /// <param name="stripePriceId">Optional new Stripe Price ID associated with this plan.</param>
-    public void UpdateDetails(string name, string description, decimal price, string currency, EMonetizationType monetizationType, EUserRole targetRole, bool isDefault, List<Benefit> benefits, string? stripePriceId = null)
+    /// <param name="gatewayPriceId">Optional new Stripe Price ID associated with this plan.</param>
+    public void UpdateDetails(string name, string description, decimal price, string currency, EMonetizationType monetizationType, EUserRole targetRole, bool isDefault, List<Benefit> benefits, PaymentGatewayPriceId? gatewayPriceId = null)
     {
         if (Name == name && Description == description && Price == price && Currency == currency &&
             MonetizationType == monetizationType && IsDefault == isDefault && TargetRole == targetRole &&
-            StripePriceId == stripePriceId &&
+            GatewayPriceId == gatewayPriceId &&
             Benefits.SequenceEqual(benefits ?? new List<Benefit>()))
         {
             return; 
@@ -132,7 +132,7 @@ public class Plan
         IsDefault = isDefault;
         TargetRole = targetRole;
         Benefits = benefits ?? new List<Benefit>();
-        StripePriceId = stripePriceId;
+        GatewayPriceId = gatewayPriceId;
         
         _domainEvents.Add(new PlanDetailsUpdatedEvent(
             Id.Value, 

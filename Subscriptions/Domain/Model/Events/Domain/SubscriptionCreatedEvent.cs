@@ -7,7 +7,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Events.Domain;
 /// Represents the event when a new subscription is successfully created.
 /// </summary>
 public record SubscriptionCreatedEvent(
-    Guid SubscriptionId,
+    SubscriptionId SubscriptionId,
     UserId UserId,
     PlanId PlanId,
     DateTime StartDate,
