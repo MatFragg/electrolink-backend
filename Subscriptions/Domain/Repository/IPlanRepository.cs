@@ -7,15 +7,8 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 /// <summary>
 /// Repository interface for managing <see cref="Plan"/> aggregates.
 /// </summary>
-public interface IPlanRepository : IBaseRepository<Plan>
+public interface IPlanRepository : IBaseRepository<Plan, PlanId>
 {
-    /// <summary>
-    /// Finds a plan by its unique identifier.
-    /// </summary>
-    /// <param name="planId">The plan ID.</param>
-    /// <returns>The <see cref="Plan"/> if found, otherwise null.</returns>
-    Task<Plan?> FindByIdAsync(PlanId planId);
-    
     /// <summary>
     /// Finds the default plan.
     /// </summary>
@@ -40,7 +33,7 @@ public interface IPlanRepository : IBaseRepository<Plan>
     /// <summary>
     /// Finds a plan by its Stripe Price ID.
     /// </summary>
-    /// <param name="stripePriceId">The Stripe Price ID.</param>
+    /// <param name="gatewayPriceId">The Payment Gateway Price ID.</param>
     /// <returns>The <see cref="Plan"/> if found, otherwise null.</returns>
-    Task<Plan?> FindByStripePriceIdAsync(string stripePriceId);
+    Task<Plan?> FindByPaymentGatewayPriceIdAsync(PaymentGatewayPriceId gatewayPriceId);
 }

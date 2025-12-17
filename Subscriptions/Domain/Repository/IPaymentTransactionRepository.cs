@@ -7,15 +7,8 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 /// <summary>
 /// Repository interface for managing <see cref="PaymentTransaction"/> aggregates.
 /// </summary>
-public interface IPaymentTransactionRepository : IBaseRepository<PaymentTransaction>
+public interface IPaymentTransactionRepository : IBaseRepository<PaymentTransaction, Guid>
 {
-    
-    /// <summary>
-    /// Finds a payment transaction by its unique identifier.
-    /// </summary>
-    /// <param name="transactionId">The transaction ID (Guid).</param>
-    /// <returns>The <see cref="PaymentTransaction"/> if found, otherwise null.</returns>
-    new Task<PaymentTransaction?> FindByIdAsync(Guid transactionId); // Uses FindByGuidAsync from BaseRepository
     /// <summary>
     /// Lists all payment transactions for a specific subscription.
     /// </summary>

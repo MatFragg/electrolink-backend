@@ -7,8 +7,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 /// <summary>
 /// Repository for WebhookEvent (idempotency de webhooks).
 /// </summary>
-public interface IWebhookEventRepository : IBaseRepository<WebhookEvent>
+public interface IWebhookEventRepository : IBaseRepository<WebhookEvent, WebhookEventId>
 {
-    Task<WebhookEvent?> FindByIdAsync(WebhookEventId id);
     Task<int> SaveChangesAsync();
 }
