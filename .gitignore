@@ -1,6 +1,7 @@
 ﻿# Build folders
 bin/
 obj/
+docs/
 
 # Rider and IDE files
 .idea/

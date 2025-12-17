@@ -56,9 +56,13 @@ using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensio
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.EventHandlers;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe;
+using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe.Webhooks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Stripe;
+using Stripe.Checkout;
 using ExternalIamServiceForSubscriptionsBC = Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices.ExternalIamService;
 using ExternalIamServiceForProfilesBC = Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices.ExternalIamService;
 using TokenService = Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services.TokenService;
@@ -84,7 +88,46 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
 
-StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+
+if (!string.IsNullOrEmpty(stripeSecretKey))
+{
+    // Configura la clave API globalmente para Stripe.net
+    StripeConfiguration.ApiKey = stripeSecretKey;
+}
+else
+{
+    // Manejo de error si la clave secreta no se encuentra
+    throw new InvalidOperationException("Stripe SecretKey no configurada. No se pueden hacer llamadas de servidor.");
+}
+
+var stripeConfig = builder.Configuration
+                       .GetSection(StripeSettings.SectionName)
+                       .Get<StripeSettings>() 
+                   ?? throw new InvalidOperationException("Stripe configuration is missing");
+
+stripeConfig.Validate();
+
+builder.Services.AddScoped<SessionService>();
+builder.Services.AddSingleton<StripeClientFactory>();
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+builder.Services.AddSingleton<StripeSettings>(sp => sp.GetRequiredService<IOptions<StripeSettings>>().Value);
+// 3. Registrar Payment Gateway Service (Domain Service → Infrastructure Implementation)
+builder.Services.AddScoped<IPaymentGatewayService, StripePaymentGatewayService>();
+builder.Services.AddScoped<IWebhookEventRepository, WebhookEventRepository>();
+
+// 4. Registrar Webhook Infrastructure
+//builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<StripeWebhookValidator>();
+builder.Services.AddScoped<StripeWebhookEventProcessor>();
+
+// 5. Registrar CoICheckoutCommandService, and Services
+builder.Services.AddScoped<ICheckoutCommandService,CheckoutCommandService>();
+builder.Services.AddScoped<StripeWebhookCommandService>();
+builder.Services.AddScoped<IPaymentGatewayService, StripePaymentGatewayService>();
+// 6. Registrar Repositories
+
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -149,7 +192,7 @@ builder.Services.AddCors(options =>
 
 // Shared
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+builder.Services.AddScoped<StripeEventMapper>();
 builder.Services.AddScoped<IServiceOperationRepository, ServiceOperationRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IRatingRepository, RatingRepository>();

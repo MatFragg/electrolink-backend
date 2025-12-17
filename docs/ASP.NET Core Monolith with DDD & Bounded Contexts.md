@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Project Structure for: ASP.NET Core Monolith with DDD & Bounded Contexts" 
 date: 2024-12-04 
 tags:
@@ -35,15 +35,15 @@ This structure is based on **[[Domain-Driven Design]]** principles with **[[Boun
 ### Core Principles
 
 - **Bounded Contexts:** Each business domain is encapsulated in its own bounded context with clear boundaries and responsibilities. Contexts communicate through Anti-Corruption Layers (ACL) to maintain independence.
-
+    
 - **Domain-Centric Design:** Business logic is concentrated in the Domain layer, independent of infrastructure concerns. Aggregates, Entities, and Value Objects enforce business invariants.
-
+    
 - **Dependency Rule:** Dependencies flow inward. Domain layer has zero external dependencies. Application layer depends on Domain. Infrastructure implements Domain interfaces.
-
+    
 - **CQRS Segregation:** Commands (write operations) and Queries (read operations) are separated into distinct services with different optimization strategies.
-
+    
 - **Shared Kernel:** Common domain building blocks (base classes, interfaces, shared utilities) live in a Shared context to promote DRY principles across bounded contexts.
-
+    
 
 ---
 
@@ -139,19 +139,6 @@ This structure is based on **[[Domain-Driven Design]]** principles with **[[Boun
 └── 📁 Shared/                             # Shared Kernel
     ├── 📁 Domain/
     │   ├── 📁 Model/
-    │   │   ├── 📁 Aggregates/
-    │   │   │   ├── BaseAggregateRoot.cs
-    │   │   │   └── IAggregateRoot.cs
-    │   │   ├── 📁 Entities/
-    │   │   │   ├── BaseEntity.cs
-    │   │   │   └── IEntity.cs
-    │   │   ├── 📁 ValueObjects/
-    │   │   │   ├── BaseValueObject.cs
-    │   │   │   └── IValueObject.cs
-    │   │   ├── 📁 Commands/
-    │   │   │   └── ICommand.cs
-    │   │   ├── 📁 Queries/
-    │   │   │   └── IQuery.cs
     │   │   └── 📁 Events/
     │   │       └── IEvent.cs
     │   └── 📁 Repositories/
@@ -160,17 +147,16 @@ This structure is based on **[[Domain-Driven Design]]** principles with **[[Boun
     │
     ├── 📁 Application/
     │   └── 📁 Internal/
-    │       ├── 📁 EventHandlers/
-    │       │   └── IEventHandler.cs
-    │       └── 📁 OutboundServices/
-    │           └── IUnitOfWork.cs
+    │       └── 📁 EventHandlers/
+    │           └── IEventHandler.cs
     │
     └── 📁 Infrastructure/
         ├── 📁 Interfaces/
         │   └── 📁 ASP/
         │       └── 📁 Configuration/
         │           └── 📁 Extensions/
-        │               └── KebabCaseRouteNamingConvention.cs
+        │           │   └── StringExtensions.cs 
+        │           └── KebabCaseRouteNamingConvention.cs
         ├── 📁 Mediator/
         │   └── 📁 Cortex/
         │       └── 📁 Configuration/
@@ -178,10 +164,12 @@ This structure is based on **[[Domain-Driven Design]]** principles with **[[Boun
         └── 📁 Persistence/
             └── 📁 EFC/
                 ├── 📁 Configuration/
-                │   └── 📁 Extensions/
-                │       ├── AppDbContext.cs
-                │       ├── ModelBuilderExtensions.cs
-                │       └── StringExtensions.cs
+                │   ├── 📁 Extensions/
+                │   │   ├── ModelBuilderExtensions.cs
+                │   │   └── StringExtensions.cs
+	            │   └── AppDbContext.cs
+	            ├── 📁 Entities/
+	            │       └── OutboxMessage.cs
                 └── 📁 Repositories/
                     ├── BaseRepository.cs
                     └── UnitOfWork.cs
@@ -200,79 +188,79 @@ Each bounded context is a self-contained module representing a specific business
 The innermost layer containing pure business logic with zero external dependencies.
 
 - **`Model/Aggregates/`**: Aggregate roots that enforce consistency boundaries. Each aggregate is the entry point for all operations on related entities.
-
+    
     - `{Aggregate}.cs`: Main aggregate root class
     - `{Aggregate}Audit.cs`: Audit fields (CreatedAt, UpdatedAt, CreatedBy, UpdatedBy)
     - `{Aggregate}Content.cs`: Rich content or complex nested data
 - **`Model/Entities/`**: Domain entities that exist within aggregate boundaries but have their own identity.
-
+    
 - **`Model/ValueObjects/`**: Immutable objects defined by their attributes, not identity (e.g., Money, Address, Email). Implement equality by value.
-
+    
 - **`Model/Commands/`**: Represent write intentions (CreateX, UpdateX, DeleteX). Used in CQRS pattern for state changes.
-
+    
 - **`Model/Queries/`**: Represent read intentions (GetXById, GetXByY). Optimized for data retrieval without business logic.
-
+    
 - **`Model/Events/`**: Domain events that capture significant business occurrences (XCreated, XUpdated). Used for event-driven architecture.
-
+    
 - **`Repositories/`**: Interfaces defining data access contracts. The domain defines _what_ data operations are needed, not _how_.
-
+    
 - **`Services/`**: Interfaces for domain services that contain business logic not naturally fitting in entities/aggregates.
-
+    
 
 #### **Application Layer** (`/{BoundedContext}/Application/`)
 
 Orchestrates domain operations, implements use cases, and coordinates cross-cutting concerns.
 
 - **`Internal/CommandServices/`**: Implements command handlers. Validates commands, calls domain logic, persists changes through repositories.
-
+    
 - **`Internal/QueryServices/`**: Implements query handlers. Optimized for read operations, may bypass domain models for performance.
-
+    
 - **`Internal/EventHandlers/`**: React to domain events. Implement side effects, trigger workflows, or communicate with other contexts.
-
+    
 - **`Internal/OutboundServices/`**: Abstractions for external dependencies (third-party APIs, messaging systems).
-
+    
 - **`ACL/` (Anti-Corruption Layer)**: Provides a facade for other bounded contexts to interact with this context. Translates between domain models and external representations. See `[[Anti-Corruption Layer Pattern]]`.
-
+    
 
 #### **Infrastructure Layer** (`/{BoundedContext}/Infrastructure/`)
 
 Contains all technical implementation details and framework-specific code.
 
 - **`Persistence/EFC/Configurations/`**: Entity Framework Core configurations using Fluent API. Each entity has its own configuration class implementing `IEntityTypeConfiguration<T>`.
-
+    
 - **`Persistence/EFC/Repositories/`**: Concrete implementations of repository interfaces defined in Domain layer. Uses EF Core DbContext for data access.
-
+    
 
 #### **Interfaces Layer** (`/{BoundedContext}/Interfaces/`)
 
 The outermost layer handling external communication and data transformation.
 
 - **`REST/Resources/`**: DTOs (Data Transfer Objects) representing API contracts. Decoupled from domain models to prevent leaking domain structure.
-
+    
 - **`REST/Transform/`**: Assemblers (mappers) that convert between Resources and Domain models. Implements the Assembler pattern for clean object-to-object mapping.
-
+    
 - **`REST/{Entity}Controller.cs`**: ASP.NET Core controllers exposing RESTful endpoints. Handle HTTP concerns, validate input, delegate to services.
-
+    
 - **`ACL/`**: Interface definitions for Anti-Corruption Layer, consumed by other contexts.
-
+    
 
 ### Shared Kernel (`/Shared/`)
 
 Contains common building blocks reused across all bounded contexts.
 
 - **`Domain/Model/`**: Base classes and interfaces for Aggregates, Entities, Value Objects, Commands, Queries, Events.
-
+    
 - **`Domain/Repositories/`**: Generic repository interfaces (`IBaseRepository<T>`, `IUnitOfWork`).
-
+    
 - **`Infrastructure/Persistence/EFC/`**:
-
+    
     - `AppDbContext`: Main EF Core DbContext
     - `BaseRepository<T>`: Generic repository implementation
     - `UnitOfWork`: Transaction management implementation
 - **`Infrastructure/Mediator/Cortex/`**: MediatR pipeline behaviors (logging, validation, transaction management).
-
+    
 - **`Infrastructure/Interfaces/ASP/`**: ASP.NET Core conventions (KebabCase routing, exception handling middleware).
-
+    
 
 ---
 
@@ -355,21 +343,21 @@ Return to Orders Context
 ### Key Patterns Applied
 
 1. **[[Domain-Driven Design]]**: Business logic encapsulated in Aggregates, Entities, and Value Objects. Ubiquitous language reflected in code.
-
+    
 2. **[[Repository Pattern]]**: Abstracts data access behind interfaces. Domain defines contracts, Infrastructure provides implementations.
-
+    
 3. **[[CQRS Pattern]]**: Separates read (Query) and write (Command) models for optimization and scalability. Commands change state, Queries read state.
-
+    
 4. **[[Unit of Work Pattern]]**: Manages transactions and coordinates multiple repository operations. Ensures consistency across aggregate boundaries.
-
+    
 5. **[[Mediator Pattern]]**: MediatR decouples request senders from handlers. Enables cross-cutting concerns through pipeline behaviors.
-
+    
 6. **[[Anti-Corruption Layer]]**: Protects bounded context integrity by translating external models. Prevents external changes from corrupting domain.
-
+    
 7. **[[Assembler Pattern]]**: Converts between domain models and external representations (Resources, DTOs) without polluting domain with presentation concerns.
-
+    
 8. **[[Specification Pattern]]**: (Optional) Encapsulates query logic in reusable, composable specifications for complex filtering.
-
+    
 
 ---
 
@@ -383,7 +371,7 @@ Return to Orders Context
 // Domain/Model/Aggregates/Product.cs
 namespace CatalogContext.Domain.Model.Aggregates;
 
-public class Product : BaseAggregateRoot
+public class Product
 {
     // Value Objects
     public ProductCode Code { get; private set; }
@@ -459,7 +447,7 @@ public class Product : BaseAggregateRoot
 // Domain/Model/ValueObjects/Money.cs
 namespace CatalogContext.Domain.Model.ValueObjects;
 
-public record Money : IValueObject
+public record Money 
 {
     public decimal Amount { get; init; }
     public string Currency { get; init; }
@@ -504,12 +492,12 @@ public record CreateProductCommand(
     decimal Price,
     string Currency,
     int CategoryId
-) : ICommand;
+);
 
 // Domain/Model/Queries/GetProductByIdQuery.cs
 namespace CatalogContext.Domain.Model.Queries;
 
-public record GetProductByIdQuery(int ProductId) : IQuery<Product>;
+public record GetProductByIdQuery(int ProductId);
 ```
 
 **Repository Interface**
@@ -1112,40 +1100,40 @@ public class AppDbContext : DbContext
 ### Pros
 
 - ✅ **Strong Business Logic Encapsulation:** Domain models enforce business rules and invariants. Business complexity is centralized and testable.
-
+    
 - ✅ **Scalability Through Bounded Contexts:** Each context can evolve independently. Teams can work on different contexts without coordination overhead.
-
+    
 - ✅ **Maintainability:** Clear separation of concerns across layers. Changes to infrastructure don't affect domain logic. Easy to locate and modify code.
-
+    
 - ✅ **Testability:** Domain layer has zero dependencies and can be unit tested in isolation. Repository pattern enables easy mocking for tests.
-
+    
 - ✅ **Technology Flexibility:** Infrastructure can be swapped (e.g., from EF Core to Dapper) without affecting domain. Database vendor agnostic.
-
+    
 - ✅ **CQRS Optimization:** Read and write models optimized separately. Queries can bypass domain models for performance.
-
+    
 - ✅ **Context Integrity:** Anti-Corruption Layer prevents external changes from polluting domain. Each context maintains its own ubiquitous language.
-
+    
 - ✅ **Event-Driven Capabilities:** Domain events enable reactive behavior, audit trails, and eventual consistency patterns.
-
+    
 
 ### Cons
 
 - ❌ **High Initial Complexity:** Steep learning curve for developers unfamiliar with DDD. More upfront design and architecture decisions required.
-
+    
 - ❌ **Significant Boilerplate:** Multiple layers, interfaces, and transformations increase code volume. Simple CRUD operations require many files.
-
+    
 - ❌ **Over-engineering Risk:** Can be excessive for simple domains or small applications. Not all business problems require this level of sophistication.
-
+    
 - ❌ **Development Speed Trade-off:** Initial feature development is slower due to architectural ceremony. ROI comes from long-term maintainability.
-
+    
 - ❌ **Team Skill Requirements:** Requires developers proficient in DDD, OOP principles, and architectural patterns. Junior developers may struggle.
-
+    
 - ❌ **Performance Overhead:** Multiple layer traversals and object transformations add latency. Value Objects and Aggregates create more object allocations.
-
+    
 - ❌ **Bounded Context Boundaries:** Difficult to identify correct boundaries initially. Poor boundaries lead to tight coupling and integration headaches.
-
+    
 - ❌ **Communication Complexity:** ACL and inter-context communication add integration points. Eventual consistency between contexts can complicate business flows.
-
+    
 
 ---
 
@@ -1154,36 +1142,36 @@ public class AppDbContext : DbContext
 ### ✅ Use this structure when:
 
 - **Complex Business Domains:** The application has rich business logic, complex workflows, and non-trivial business rules that require encapsulation.
-
+    
 - **Multiple Business Domains:** Your application spans several distinct business capabilities (e.g., Catalog, Orders, Inventory, Shipping) that benefit from separate bounded contexts.
-
+    
 - **Long-Term Projects:** Building enterprise applications expected to evolve and be maintained for years. The upfront investment pays off over time.
-
+    
 - **Large Development Teams:** Multiple teams working on different parts of the system. Bounded contexts enable parallel development with clear boundaries.
-
+    
 - **High Change Frequency:** Business requirements evolve frequently. The architecture enables changes to be localized within bounded contexts.
-
+    
 - **Event-Driven Requirements:** System needs audit trails, event sourcing, or reactive behaviors triggered by domain events.
-
+    
 - **Testability is Critical:** Comprehensive unit testing of business logic is a requirement. Domain isolation makes testing straightforward.
-
+    
 - **Microservices Migration Path:** Planning eventual decomposition into microservices. Bounded contexts provide natural service boundaries.
-
+    
 
 ### ❌ Consider simpler alternatives when:
 
 - **Simple CRUD Applications:** The application is primarily data entry/retrieval with minimal business logic. A simpler layered architecture or even MVC may suffice.
-
+    
 - **Tight Deadlines:** Building an MVP or prototype where time-to-market is critical. The architectural overhead slows initial development.
-
+    
 - **Small Team or Solo Developer:** Limited development resources may struggle with the complexity. Simpler structures reduce cognitive load.
-
+    
 - **Well-Defined, Stable Domain:** Business logic is simple and unlikely to change. The flexibility of DDD provides limited value.
-
+    
 - **Read-Heavy Workloads:** Application is primarily querying and displaying data. CQRS adds unnecessary complexity if you're not leveraging write-side benefits.
-
+    
 - **Greenfield Uncertainty:** Domain understanding is still evolving. Consider starting simpler and refactoring toward DDD as the domain crystallizes.
-
+    
 
 ---
 
@@ -1969,17 +1957,17 @@ public class ProductCreatedEventHandler : INotificationHandler<ProductCreatedEve
 ### Key Takeaways
 
 1. **Domain Events = Internal Communication**: Use for side effects within your application, even across bounded contexts in a monolith.
-
+    
 2. **Integration Events = External Communication**: Use for publishing to external systems, microservices, or when eventual consistency is acceptable.
-
+    
 3. **Start Simple**: Begin with Domain Events. Add Integration Events only when you have concrete external integration needs.
-
+    
 4. **Outbox Pattern is Essential**: If you use Integration Events, implement the Outbox Pattern to guarantee delivery and maintain consistency.
-
+    
 5. **Transaction Boundaries Matter**: Domain Events can participate in transactions; Integration Events cannot.
-
+    
 6. **Schema Stability**: Domain Event schemas can evolve freely. Integration Event schemas are public contracts requiring versioning.
-
+    
 
 ### Related Concepts
 
