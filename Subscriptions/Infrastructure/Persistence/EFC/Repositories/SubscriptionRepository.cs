@@ -8,42 +8,38 @@ using Microsoft.EntityFrameworkCore;
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
 
 public class SubscriptionRepository(AppDbContext context)
-    : BaseRepository<Subscription>(context), ISubscriptionRepository
+    : BaseRepository<Subscription, SubscriptionId>(context), ISubscriptionRepository
 {
     
     /// <inheritdoc/>
     public async Task<Subscription?> FindBySubscriptionIdAsync(SubscriptionId id)
-    {
-        return await Context.Set<Subscription>()
+        => await Context.Set<Subscription>()
             .FirstOrDefaultAsync(s => s.Id == id);
-    }
 
     /// <inheritdoc/>
     public async Task<Subscription?> FindByUserIdAsync(UserId userId)
-    {
-        return await Context.Set<Subscription>()
+        => await Context.Set<Subscription>()
             .FirstOrDefaultAsync(s => s.UserId == userId);
-    }
     
     /// <inheritdoc/>
     public async Task<IEnumerable<Subscription>> ListActiveAsync()
-    {
-        return await Context.Set<Subscription>()
+        => await Context.Set<Subscription>()
             .Where(s => s.Status == ESubscriptionStatus.Active || s.Status == ESubscriptionStatus.Trial)
             .ToListAsync();
-    }
     
     /// <inheritdoc/>
-    public async Task<Subscription?> FindByStripeCustomerIdAsync(string stripeCustomerId)
-    {
-        return await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.StripeCustomerId == stripeCustomerId);
-    }
+    public async Task<Subscription?> FindByPaymentGatewayCustomerIdAsync(PaymentGatewayCustomerId gatewayCustomerId)
+        => await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.GatewayCustomerId == gatewayCustomerId);
+    
 
     /// <inheritdoc/>
-    public async Task<Subscription?> FindByStripeSubscriptionIdAsync(string stripeSubscriptionId)
-    {
-        return await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.StripeSubscriptionId == stripeSubscriptionId);
-    }
+    public async Task<Subscription?> FindByPaymentGatewaySubscriptionIdAsync(PaymentGatewaySubscriptionId gatewaySubscriptionId)
+        => await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.GatewaySubscriptionId == gatewaySubscriptionId);
+    
+    
+    public async Task<Subscription?> FindActiveByUserIdAsync(UserId userId)
+        => await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.UserId == userId && (s.Status == ESubscriptionStatus.Active || s.Status == ESubscriptionStatus.Trial));
 }

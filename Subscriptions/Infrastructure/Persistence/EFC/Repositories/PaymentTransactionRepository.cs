@@ -9,7 +9,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EF
 /// <summary>
 /// Entity Framework Core implementation of <see cref="IPaymentTransactionRepository"/>.
 /// </summary>
-public class PaymentTransactionRepository(AppDbContext context) : BaseRepository<PaymentTransaction>(context), IPaymentTransactionRepository
+public class PaymentTransactionRepository(AppDbContext context) : BaseRepository<PaymentTransaction, Guid>(context), IPaymentTransactionRepository
 {
     /// <inheritdoc/>
     public async Task<IEnumerable<PaymentTransaction>> ListBySubscriptionIdAsync(Guid subscriptionId)

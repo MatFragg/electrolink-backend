@@ -9,6 +9,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EF
 /// </summary>
 public static class ModelBuilderExtensions
 {
+    
     /// <summary>
     /// Applies the Entity Framework Core configuration for the Subscription and Payments Bounded Context.
     /// </summary>
@@ -30,12 +31,12 @@ public static class ModelBuilderExtensions
                 .ValueGeneratedOnAdd();
 
             // Configure other Value Object properties (keep these)
-            subscriptionConfiguration.OwnsOne(s => s.UserId, userIdBuilder =>
-            {
-                userIdBuilder.Property(u => u.Value)
-                    .HasColumnName("UserId")
-                    .IsRequired();
-            });
+            subscriptionConfiguration.Property(s => s.UserId)
+                .HasConversion(
+                    userId => userId.Value, // Convierte UserId a int para la DB
+                    value => new UserId(value)) // Convierte int a UserId para la aplicación
+                .HasColumnName("UserId") // Nombre de la columna en la tabla
+                .IsRequired();
             subscriptionConfiguration.Property(s => s.PlanId)
                 .HasConversion(
                     planId => planId.Value,
@@ -50,8 +51,18 @@ public static class ModelBuilderExtensions
             subscriptionConfiguration.Property(s => s.EndDate).IsRequired();
             subscriptionConfiguration.Property(s => s.CancellationEffectiveDate);
             subscriptionConfiguration.Property(s => s.TrialEndsAt);
-            subscriptionConfiguration.Property(s => s.StripeCustomerId).IsRequired();
-            subscriptionConfiguration.Property(s => s.StripeSubscriptionId).IsRequired();
+            subscriptionConfiguration.Property(s => s.GatewayCustomerId)
+                .HasConversion(
+                    pgId => pgId.Value,
+                    value => new PaymentGatewayCustomerId(value))
+                .IsRequired()
+                .HasMaxLength(100);
+            subscriptionConfiguration.Property(s => s.GatewaySubscriptionId)
+                .HasConversion(
+                    pgId => pgId.Value,
+                    value => new PaymentGatewaySubscriptionId(value))
+                .IsRequired()
+                .HasMaxLength(100);
             subscriptionConfiguration.Property(s => s.CurrentUsage).IsRequired().HasDefaultValue(0);
         });
 
@@ -80,7 +91,11 @@ public static class ModelBuilderExtensions
             planConfiguration.Property(p => p.TargetRole)
                 .IsRequired()
                 .HasConversion<string>();
-            planConfiguration.Property(p => p.StripePriceId).HasMaxLength(100);
+            planConfiguration.Property(p => p.GatewayPriceId)
+                .HasConversion(
+                    pgId => pgId == null ? null : pgId.Value,
+                    value => value == null ? null : new PaymentGatewayPriceId(value))
+                .HasMaxLength(100);
 
             planConfiguration.OwnsMany(p => p.Benefits, benefitBuilder =>
             {
@@ -116,5 +131,7 @@ public static class ModelBuilderExtensions
             paymentTransactionConfiguration.Property(pt => pt.GatewayTransactionId).IsRequired().HasMaxLength(255);
             paymentTransactionConfiguration.Property(pt => pt.Message).HasMaxLength(500);
         });
+        
+        builder.ApplyConfiguration(new WebhookEventConfiguration()); 
     }
 }

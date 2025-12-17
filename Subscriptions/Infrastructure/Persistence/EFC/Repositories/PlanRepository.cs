@@ -8,15 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Repositories;
 
 public class PlanRepository(AppDbContext context)
-    : BaseRepository<Plan>(context), IPlanRepository
+    : BaseRepository<Plan, PlanId>(context), IPlanRepository
 {
-    
-    /// <inheritdoc/>
-    public async Task<Plan?> FindByIdAsync(PlanId id)
-    {
-        return await Context.Set<Plan>()
-            .FindAsync(id);
-    }
     
     /*public new async Task<Plan?> FindByIdAsync(Guid id)
     {
@@ -48,12 +41,10 @@ public class PlanRepository(AppDbContext context)
     }
     
     /// <inheritdoc/>
-    public async Task<Plan?> FindByStripePriceIdAsync(string stripePriceId)
+    public async Task<Plan?> FindByPaymentGatewayPriceIdAsync(PaymentGatewayPriceId gatewayPriceId)
     {
-        // Asume que el agregado Plan tiene una propiedad pública llamada StripePriceId.
-        // Si no la tiene, tendrás que añadirla al agregado Plan y a la configuración de EF Core.
         return await Context.Set<Plan>()
             .Include(p => p.Benefits)
-            .FirstOrDefaultAsync(p => p.StripePriceId == stripePriceId);
+            .FirstOrDefaultAsync(p => p.GatewayPriceId == gatewayPriceId);
     }
 }
