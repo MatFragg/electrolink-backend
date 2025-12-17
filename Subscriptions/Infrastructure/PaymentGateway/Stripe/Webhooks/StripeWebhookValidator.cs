@@ -3,15 +3,16 @@
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe.Webhooks;
 
 /// <summary>
-/// Validates the authenticity of Stripe webhooks using signatures..
+/// Validates the authenticity of Stripe webhooks using signatures.
 /// </summary>
 public class StripeWebhookValidator
 {
-    private readonly StripeConfiguration _config;
+    private readonly StripeSettings _config;
     private readonly ILogger<StripeWebhookValidator> _logger;
 
     public StripeWebhookValidator(
-        StripeConfiguration config,
+        StripeSettings config,
+        IConfiguration configuration,
         ILogger<StripeWebhookValidator> logger)
     {
         _config = config;

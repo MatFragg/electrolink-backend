@@ -1,4 +1,7 @@
 ﻿using Stripe;
+using BillingPortal = Stripe.BillingPortal;
+using Checkout = Stripe.Checkout;
+
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe;
 
@@ -7,15 +10,15 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway
 /// </summary>
 public class StripeClientFactory
 {
-    private readonly StripeConfiguration _config;
+    private readonly StripeSettings _settings;
 
-    public StripeClientFactory(StripeConfiguration config)
+    public StripeClientFactory(StripeSettings config)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _config.Validate();
+        _settings = config ?? throw new ArgumentNullException(nameof(config));
+        _settings.Validate();
         
         // Configurar API Key globalmente
-        StripeConfiguration.ApiKey = _config.SecretKey;
+        global::Stripe.StripeConfiguration.ApiKey = _settings.SecretKey;
     }
 
     public CustomerService CreateCustomerService() => new CustomerService();

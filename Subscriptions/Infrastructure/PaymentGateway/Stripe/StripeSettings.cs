@@ -23,11 +23,6 @@ public class StripeSettings
     public string WebhookSecret { get; set; } = string.Empty;
 
     /// <summary>
-    /// Base URL of your application for redirects.
-    /// </summary>
-    public string BaseUrl { get; set; } = "https://localhost:5001";
-
-    /// <summary>
     /// Validates that the configuration is complete.
     /// </summary>
     public void Validate()

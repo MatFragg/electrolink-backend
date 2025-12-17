@@ -1,4 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Stripe;
@@ -12,20 +12,27 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway
 public class StripePaymentGatewayService : IPaymentGatewayService
 {
     private readonly StripeClientFactory _clientFactory;
-    private readonly StripeConfiguration _config;
+    private readonly StripeSettings _config;
+    private readonly StripeEventMapper _eventMapper;
     private readonly ILogger<StripePaymentGatewayService> _logger;
+    private readonly SessionService _checkoutSessionService;
 
     public StripePaymentGatewayService(
         StripeClientFactory clientFactory,
-        StripeConfiguration config,
-        ILogger<StripePaymentGatewayService> logger)
+        StripeSettings config,
+        StripeEventMapper eventMapper,
+        ILogger<StripePaymentGatewayService> logger,
+        SessionService checkoutSessionService
+    )
     {
         _clientFactory = clientFactory;
         _config = config;
+        _eventMapper = eventMapper;
         _logger = logger;
+        _checkoutSessionService = checkoutSessionService;
     }
 
-    public async Task<StripeCustomerId> CreateOrGetCustomerAsync(int userId, string email, string name)
+    public async Task<PaymentGatewayCustomerId> CreateOrGetCustomerAsync(int userId, string email, string name)
     {
         var customerService = _clientFactory.CreateCustomerService();
 
@@ -42,7 +49,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         {
             var existingCustomer = existingCustomers.Data[0];
             _logger.LogInformation("Customer already exists: {CustomerId} for User {UserId}", existingCustomer.Id, userId);
-            return new StripeCustomerId(existingCustomer.Id);
+            return new PaymentGatewayCustomerId(existingCustomer.Id);
         }
 
         // Create new customer
@@ -59,12 +66,12 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         var customer = await customerService.CreateAsync(createOptions);
         _logger.LogInformation("Customer created: {CustomerId} for User {UserId}", customer.Id, userId);;
 
-        return new StripeCustomerId(customer.Id);
+        return new PaymentGatewayCustomerId(customer.Id);
     }
 
     public async Task<string> CreateCheckoutSessionAsync(
-        StripeCustomerId customerId,
-        StripePriceId priceId,
+        PaymentGatewayCustomerId customerId,
+        PaymentGatewayPriceId priceId,
         string successUrl,
         string cancelUrl,
         int? trialPeriodDays = null)
@@ -104,27 +111,14 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         return session.Url;
     }
 
-    public async Task<StripeSubscriptionInfo?> GetSubscriptionAsync(StripeSubscriptionId subscriptionId)
+    public async Task<SubscriptionInfo?> GetSubscriptionAsync(PaymentGatewaySubscriptionId subscriptionId)
     {
         try
         {
             var subscriptionService = _clientFactory.CreateSubscriptionService();
             var subscription = await subscriptionService.GetAsync(subscriptionId.Value);
 
-            return new StripeSubscriptionInfo(
-                subscription.Id,
-                subscription.CustomerId,
-                subscription.Items.Data[0].Price.Id,
-                subscription.Status,
-                subscription.CurrentPeriodStart,
-                subscription.CurrentPeriodEnd,
-                subscription.TrialEnd,
-                subscription.CanceledAt,
-                subscription.CancelAt,
-                subscription.CancelAtPeriodEnd,
-                subscription.Items.Data[0].Price.UnitAmount ?? 0 / 100m, // Stripe usa centavos
-                subscription.Items.Data[0].Price.Currency
-            );
+            return _eventMapper.MapToSubscriptionInfo(subscription);
         }
         catch (StripeException ex) when (ex.StripeError.Code == "resource_missing")
         {
@@ -133,7 +127,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         }
     }
 
-    public async Task<DateTime> CancelSubscriptionAtPeriodEndAsync(StripeSubscriptionId subscriptionId)
+    public async Task<DateTime> CancelSubscriptionAtPeriodEndAsync(PaymentGatewaySubscriptionId subscriptionId)
     {
         var subscriptionService = _clientFactory.CreateSubscriptionService();
 
@@ -143,13 +137,13 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         };
 
         var subscription = await subscriptionService.UpdateAsync(subscriptionId.Value, options);
-        _logger.LogInformation("Subscription {SubscriptionId} canceled at the end of the period: {CancelAt}",,
+        _logger.LogInformation("Subscription {SubscriptionId} canceled at the end of the period: {CancelAt}",
             subscriptionId, subscription.CancelAt);
 
-        return subscription.CancelAt ?? subscription.CurrentPeriodEnd;
+        return subscription.CancelAt ?? subscription.EndedAt ?? DateTime.MinValue;
     }
 
-    public async Task CancelSubscriptionImmediatelyAsync(StripeSubscriptionId subscriptionId)
+    public async Task CancelSubscriptionImmediatelyAsync(PaymentGatewaySubscriptionId subscriptionId)
     {
         var subscriptionService = _clientFactory.CreateSubscriptionService();
         await subscriptionService.CancelAsync(subscriptionId.Value);
@@ -157,14 +151,13 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         _logger.LogInformation("Subscription {SubscriptionId} canceled immediately", subscriptionId);
     }
 
-    public async Task<StripeSubscriptionInfo> UpdateSubscriptionPlanAsync(
-        StripeSubscriptionId subscriptionId,
-        StripePriceId newPriceId,
+    public async Task<SubscriptionInfo> UpdateSubscriptionPlanAsync(
+        PaymentGatewaySubscriptionId subscriptionId,
+        PaymentGatewayPriceId newPriceId,
         string prorationBehavior = "create_prorations")
     {
         var subscriptionService = _clientFactory.CreateSubscriptionService();
 
-        // Obtain the current subscription
         var currentSubscription = await subscriptionService.GetAsync(subscriptionId.Value);
         var subscriptionItemId = currentSubscription.Items.Data[0].Id;
 
@@ -172,7 +165,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         {
             Items = new List<SubscriptionItemOptions>
             {
-                new SubscriptionItemOptions
+                new()
                 {
                     Id = subscriptionItemId,
                     Price = newPriceId.Value
@@ -185,20 +178,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         _logger.LogInformation("Subscription {SubscriptionId} updated to Price {PriceId}",
             subscriptionId, newPriceId);
 
-        return new StripeSubscriptionInfo(
-            updatedSubscription.Id,
-            updatedSubscription.CustomerId,
-            updatedSubscription.Items.Data[0].Price.Id,
-            updatedSubscription.Status,
-            updatedSubscription.CurrentPeriodStart,
-            updatedSubscription.CurrentPeriodEnd,
-            updatedSubscription.TrialEnd,
-            updatedSubscription.CanceledAt,
-            updatedSubscription.CancelAt,
-            updatedSubscription.CancelAtPeriodEnd,
-            updatedSubscription.Items.Data[0].Price.UnitAmount ?? 0 / 100m,
-            updatedSubscription.Items.Data[0].Price.Currency
-        );
+        return _eventMapper.MapToSubscriptionInfo(updatedSubscription);
     }
 
     public async Task<bool> RetryPaymentAsync(string invoiceId)
@@ -218,7 +198,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         }
     }
 
-    public async Task<string> CreateBillingPortalSessionAsync(StripeCustomerId customerId, string returnUrl)
+    public async Task<string> CreateBillingPortalSessionAsync(PaymentGatewayCustomerId customerId, string returnUrl)
     {
         var sessionService = _clientFactory.CreateBillingPortalSessionService();
 
@@ -231,5 +211,81 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         var session = await sessionService.CreateAsync(options);
         _logger.LogInformation("Billing portal session created for Customer {CustomerId}", customerId);        
         return session.Url;
+    }
+    
+    public async Task<CheckoutSession> CreateCheckoutSessionAsync(
+        CheckoutSessionCommand request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Creating checkout session for user {UserId} and plan {PlanId}",
+                request.UserId, request.PriceId.Value);
+            // Mapear de Domain → Stripe
+            var options = new SessionCreateOptions
+            {
+                Mode = "subscription",  // Puede parametrizarse
+                CustomerEmail = request.UserEmail,
+                LineItems = new List<SessionLineItemOptions>
+                {
+                    new()
+                    {
+                        Price = request.PriceId.Value, 
+                        Quantity = 1
+                    }
+                },
+                SuccessUrl = request.SuccessUrl,
+                CancelUrl = request.CancelUrl,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "UserId", request.UserId.Value.ToString() },
+                    { "PlanId", request.PriceId.Value },
+                    { "Source", "ElectroLink" }
+                }
+            };
+            // Agregar metadata adicional si existe
+            if (request.Metadata?.AdditionalData != null)
+            {
+                foreach (var (key, value) in request.Metadata.AdditionalData)
+                {
+                    options.Metadata[key] = value;
+                }
+            }
+            // Llamar a Stripe
+            var stripeSession = await _checkoutSessionService.CreateAsync(
+                options,
+                cancellationToken: cancellationToken);
+            _logger.LogInformation(
+                "Stripe checkout session created: {SessionId}",
+                stripeSession.Id);
+            // Mapear de Stripe → Domain
+            return new CheckoutSession(
+                SessionId: new CheckoutSessionId(stripeSession.Id),
+                CheckoutUrl: new Uri(stripeSession.Url),
+                ExpiresAt: stripeSession.ExpiresAt,
+                Status: MapStripeSessionStatus(stripeSession.Status),
+                Amount: request.Amount,
+                Currency: request.Currency
+            );
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, 
+                "Stripe error creating checkout session for user {UserId}", 
+                request.UserId);
+            throw new Exception(
+                "Failed to create checkout session in payment gateway", ex);
+        }
+    }
+    private CheckoutSessionStatus MapStripeSessionStatus(string stripeStatus)
+    {
+        return stripeStatus switch
+        {
+            "open" => CheckoutSessionStatus.Open,
+            "complete" => CheckoutSessionStatus.Complete,
+            "expired" => CheckoutSessionStatus.Expired,
+            _ => CheckoutSessionStatus.Open
+        };
     }
 }
