@@ -18,7 +18,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class SubscriptionsController(ISubscriptionCommandService commandService, ISubscriptionQueryService queryService,  IConfiguration _cfg, IPlanQueryService planQueryService ) : ControllerBase
+public class SubscriptionsController(ISubscriptionCommandService subscriptionCommandService, ISubscriptionQueryService queryService,  IConfiguration _cfg, IPlanQueryService planQueryService,ILogger<SubscriptionsController> logger ) : ControllerBase
 {
     /// <summary>
     /// Creates a new subscription for a user.
@@ -35,7 +35,7 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
         var command = CreateSubscriptionCommandFromResourceAssembler.ToCommand(resource);
         try
         {
-            var id = await commandService.Handle(command);
+            var id = await subscriptionCommandService.Handle(command);
             var subscription = await queryService.Handle(new GetSubscriptionByIdQuery(id));
             if (subscription == null)
                 return BadRequest(new { message = "Failed to retrieve created subscription." });
@@ -121,7 +121,7 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
     {
         try
         {
-            await commandService.Handle(new CancelSubscriptionCommand(id, DateTime.UtcNow.AddDays(30))); // Example: effective in 30 days
+            await subscriptionCommandService.Handle(new CancelSubscriptionCommand(id, DateTime.UtcNow.AddDays(30))); // Example: effective in 30 days
             return NoContent();
         }
         catch (ArgumentException)
@@ -144,7 +144,7 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
         try
         {
             var command = UpdateSubscriptionStatusCommandFromResourceAssembler.ToCommand(id, resource);
-            var updatedId = await commandService.Handle(command);
+            var updatedId = await subscriptionCommandService.Handle(command);
             return updatedId is null ? NotFound() : NoContent();
         }
         catch (ArgumentException ex)
@@ -154,21 +154,40 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
     }
     
     /// <summary>
-    /// Changes the plan of an existing subscription.
+    /// Change subscription plan internally (updates DB without Stripe interaction).
+    /// Used for manual adjustments or migrations.
     /// </summary>
-    /// <param name="id">The ID of the subscription.</param>
-    /// <param name="resource">The resource containing the new plan details.</param>
-    /// <returns>No Content if successful, otherwise Not Found.</returns>
-    [HttpPut("{id:guid}/change-plan")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [HttpPut("{subscriptionId:guid}/change-plan-internal")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ChangePlan([FromRoute] Guid id, [FromBody] ChangeSubscriptionPlanResource resource)
+    public async Task<IActionResult> ChangeSubscriptionPlanInternal(
+        Guid subscriptionId,
+        [FromBody] ChangeSubscriptionPlanInternalResource resource)
     {
         try
         {
-            var command = ChangeSubscriptionPlanCommandFromResourceAssembler.ToCommand(id, resource);
-            var updatedId = await commandService.Handle(command);
-            return updatedId is null ? NotFound() : NoContent();
+            // Usa el assembler interno
+            var command = ChangeSubscriptionPlanCommandFromResourceAssembler.ToCommand(
+                subscriptionId, 
+                resource);
+
+            var result = await subscriptionCommandService.Handle(command);
+
+            if (result == null)
+            {
+                return NotFound(new { message = $"Subscription {subscriptionId} not found" });
+            }
+
+            logger.LogInformation(
+                "Subscription plan {SubscriptionId} changed internally to {NewPlanId}",
+                subscriptionId,
+                resource.NewPlanId);
+
+            return Ok(new { 
+                message = "Subscription plan updated successfully (internal)",
+                subscriptionId = result
+            });
         }
         catch (ArgumentException ex)
         {
@@ -185,7 +204,7 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
     /// <returns>A URL to the Stripe Checkout page.</returns>
     [HttpPost("checkout-session")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateCheckoutSession([FromBody] CheckoutSessionRequest req)
+    public async Task<IActionResult> CreateCheckoutSession([FromBody] CheckoutSessionCommand req)
     {
         Stripe.StripeConfiguration.ApiKey = _cfg["Stripe:SecretKey"];
 
@@ -196,7 +215,7 @@ public class SubscriptionsController(ISubscriptionCommandService commandService,
             {
                 new()
                 {
-                    Price = req.PriceId,
+                    Price = req.PriceId.Value,
                     Quantity = 1
                 }
             },

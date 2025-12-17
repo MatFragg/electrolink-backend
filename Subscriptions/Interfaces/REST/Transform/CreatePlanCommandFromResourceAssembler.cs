@@ -29,6 +29,11 @@ public static class CreatePlanCommandFromResourceAssembler
             new Benefit(b.Type, b.LimitValue, b.FlagValue, b.Description)
         ).ToList() ?? new List<Benefit>();
 
+        if (string.IsNullOrEmpty(resource.StripePriceId))
+        {
+            throw new ArgumentException("StripePriceId cannot be null or empty.");
+        }
+
         return new CreatePlanCommand(
             resource.Name,
             resource.Description,
@@ -38,7 +43,7 @@ public static class CreatePlanCommandFromResourceAssembler
             targetRole,
             resource.IsDefault,
             benefits,
-            resource.StripePriceId
+            new PaymentGatewayPriceId(resource.StripePriceId)
         );
     }
 }

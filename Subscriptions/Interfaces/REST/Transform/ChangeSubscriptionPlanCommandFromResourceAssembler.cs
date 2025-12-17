@@ -1,4 +1,5 @@
 ﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
@@ -15,13 +16,15 @@ public static class ChangeSubscriptionPlanCommandFromResourceAssembler
     /// <param name="subscriptionId">The ID of the subscription to change.</param>
     /// <param name="resource">The resource containing the new plan details.</param>
     /// <returns>The created command.</returns>
-    public static ChangeSubscriptionPlanCommand ToCommand(Guid subscriptionId, ChangeSubscriptionPlanResource resource)
+    public static ChangeSubscriptionPlanCommand ToCommand(
+        Guid subscriptionId, 
+        ChangeSubscriptionPlanInternalResource resource)
     {
         return new ChangeSubscriptionPlanCommand(
-            subscriptionId,
+            new SubscriptionId(subscriptionId),
             resource.NewPlanId,
             resource.NewEndDate,
-            resource.StripeSubscriptionId
+            new PaymentGatewaySubscriptionId(resource.StripeSubscriptionId)
         );
     }
 }

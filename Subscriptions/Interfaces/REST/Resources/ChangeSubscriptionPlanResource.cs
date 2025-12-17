@@ -1,9 +1,9 @@
 ﻿namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
 /// <summary>
-/// Resource for changing a subscription's plan.
+/// Resource to change a subscription's plan.
 /// </summary>
-/// <param name="NewPlanId">The ID of the new plan.</param>
-/// <param name="NewEndDate">The new end date for the subscription.</param>
-/// <param name="StripeSubscriptionId">The new Stripe subscription ID (if changed with the plan).</param>
-public record ChangeSubscriptionPlanResource(Guid NewPlanId, DateTime NewEndDate, string StripeSubscriptionId);
+public record ChangeSubscriptionPlanResource(
+    Guid NewPlanId,
+    string ProrationBehavior = "create_prorations" // create_prorations, none, always_invoice
+);

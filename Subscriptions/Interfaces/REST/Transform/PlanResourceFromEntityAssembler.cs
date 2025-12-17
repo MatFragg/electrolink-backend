@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
@@ -27,7 +28,7 @@ public static class PlanResourceFromEntityAssembler
             plan.MonetizationType.ToString(),
             plan.IsDefault,
             plan.TargetRole.ToString(),
-            plan.StripePriceId, 
+            plan.GatewayPriceId?.Value, 
             benefitResources
         );
     }

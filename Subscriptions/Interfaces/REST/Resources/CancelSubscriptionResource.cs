@@ -1,3 +1,8 @@
 ﻿namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
-public record CancelSubscriptionResource();
+/// <summary>
+/// Resource to cancel a subscription.
+/// </summary>
+public record CancelSubscriptionResource(
+    bool Immediately = false
+);

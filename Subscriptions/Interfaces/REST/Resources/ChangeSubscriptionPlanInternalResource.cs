@@ -1,4 +1,4 @@
-﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+﻿namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
 /// <summary>
 /// Resource for internal plan changes (non-Stripe).

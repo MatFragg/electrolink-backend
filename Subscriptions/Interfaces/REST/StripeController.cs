@@ -1,4 +1,5 @@
 ﻿using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +17,7 @@ public class StripeController(IStripeService stripeService) : ControllerBase
     {
         // Llama al servicio de infraestructura para crear la sesión de Stripe
         var session = await stripeService.CreateSubscriptionCheckoutSession(
-            resource.PriceId,
+            resource.PlanId.ToString(),
             resource.SuccessUrl,
             resource.CancelUrl
         );

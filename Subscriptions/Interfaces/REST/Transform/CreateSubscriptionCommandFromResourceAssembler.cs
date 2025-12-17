@@ -22,12 +22,12 @@ public static class CreateSubscriptionCommandFromResourceAssembler
         }
 
         return new CreateSubscriptionCommand(
-            resource.UserId,
+            new UserId(resource.UserId),
             resource.PlanId,
             resource.StartDate,
             resource.EndDate,
-            resource.StripeCustomerId,
-            resource.StripeSubscriptionId,
+            new PaymentGatewayCustomerId(resource.StripeCustomerId),
+            new PaymentGatewaySubscriptionId(resource.StripeSubscriptionId),
             initialStatus,
             resource.TrialEndsAt
         );
