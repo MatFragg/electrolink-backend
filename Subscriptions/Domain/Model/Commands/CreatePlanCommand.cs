@@ -13,6 +13,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// <param name="TargetRole">The target user role for the plan.</param>
 /// <param name="IsDefault">Indicates if it's a default plan.</param>
 /// <param name="Benefits">A list of benefits included in the plan.</param>
+/// <param name="GatewayPriceId">The payment gateway price ID.</param>
 public record CreatePlanCommand(
     string Name,
     string Description,
@@ -22,5 +23,5 @@ public record CreatePlanCommand(
     EUserRole TargetRole,
     bool IsDefault,
     List<Benefit> Benefits,
-    string StripePriceId
+    PaymentGatewayPriceId GatewayPriceId
 );

@@ -9,17 +9,17 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// <param name="PlanId">The ID of the plan.</param>
 /// <param name="StartDate">The start date of the subscription.</param>
 /// <param name="EndDate">The end date of the subscription.</param>
-/// <param name="StripeCustomerId">Stripe's customer ID.</param>
-/// <param name="StripeSubscriptionId">Stripe's subscription ID.</param>
+/// <param name="GatewayCustomerId">Stripe's customer ID.</param>
+/// <param name="GatewaySubscriptionId">Stripe's subscription ID.</param>
 /// <param name="InitialStatus">The initial status of the subscription.</param>
 /// <param name="TrialEndsAt">Optional trial end date.</param>
 public record CreateSubscriptionCommand(
-    int UserId,
+    UserId UserId,
     Guid PlanId,
     DateTime StartDate,
     DateTime EndDate,
-    string StripeCustomerId,
-    string StripeSubscriptionId,
+    PaymentGatewayCustomerId GatewayCustomerId,
+    PaymentGatewaySubscriptionId GatewaySubscriptionId,
     ESubscriptionStatus InitialStatus,
     DateTime? TrialEndsAt = null
 );

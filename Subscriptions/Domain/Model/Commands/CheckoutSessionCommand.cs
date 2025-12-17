@@ -1,11 +1,13 @@
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
-public record CheckoutSessionRequest(
+public record CheckoutSessionCommand(
     UserId UserId,
-    EmailAddress UserEmail,
-    PlanId PlanId,
-    Money Amount,
-    Currency Currency,
+    string UserEmail,
+    PaymentGatewayPriceId PriceId,
+    decimal Amount,
+    string Currency,
     string SuccessUrl,
     string CancelUrl,
     CheckoutSessionMetadata? Metadata = null

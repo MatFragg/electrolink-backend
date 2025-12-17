@@ -8,5 +8,5 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// <param name="SubscriptionId">The ID of the subscription to change.</param>
 /// <param name="NewPlanId">The ID of the new plan.</param>
 /// <param name="NewEndDate">The new end date for the subscription.</param>
-/// <param name="StripeSubscriptionId">The new Stripe subscription ID (if changed).</param>
-public record ChangeSubscriptionPlanCommand(Guid SubscriptionId, Guid NewPlanId, DateTime NewEndDate, string StripeSubscriptionId);
+/// <param name="GatewaySubscriptionId">The new Stripe subscription ID (if changed).</param>
+public record ChangeSubscriptionPlanCommand(SubscriptionId SubscriptionId, Guid NewPlanId, DateTime NewEndDate, PaymentGatewaySubscriptionId GatewaySubscriptionId);

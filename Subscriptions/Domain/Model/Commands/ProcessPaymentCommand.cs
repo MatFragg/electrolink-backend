@@ -14,7 +14,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// <param name="GatewayTransactionId">The payment gateway's transaction ID.</param>
 /// <param name="Message">Optional message.</param>
 public record ProcessPaymentCommand(
-    Guid   SubscriptionId,
+    SubscriptionId   SubscriptionId,
     decimal? Amount,
     string Currency,
     DateTime TransactionDate,
