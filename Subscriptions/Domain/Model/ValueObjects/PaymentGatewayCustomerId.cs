@@ -3,11 +3,11 @@
 /// <summary>
 /// Represents Customer Id in Stripe(formato: cus_xxxxx).
 /// </summary>
-public record StripeCustomerId
+public record PaymentGatewayCustomerId
 {
     public string Value { get; init; }
 
-    public StripeCustomerId(string value)
+    public PaymentGatewayCustomerId(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Stripe Customer ID cannot be empty", nameof(value));

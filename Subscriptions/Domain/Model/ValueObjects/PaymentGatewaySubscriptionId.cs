@@ -3,11 +3,11 @@
 /// <summary>
 /// Represents Subscription Id in Stripe (formato: sub_xxxxx).
 /// </summary>
-public record StripeSubscriptionId
+public record PaymentGatewaySubscriptionId
 {
     public string Value { get; init; }
 
-    public StripeSubscriptionId(string value)
+    public PaymentGatewaySubscriptionId(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Stripe Subscription ID cannot be empty", nameof(value));

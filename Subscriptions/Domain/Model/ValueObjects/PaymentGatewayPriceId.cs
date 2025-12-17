@@ -3,11 +3,11 @@
 /// <summary>
 /// Represents Price Id in Stripe (formato: price_xxxxx).
 /// </summary>
-public record StripePriceId
+public record PaymentGatewayPriceId
 {
     public string Value { get; init; }
 
-    public StripePriceId(string value)
+    public PaymentGatewayPriceId(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Stripe Price ID cannot be empty", nameof(value));
