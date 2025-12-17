@@ -1,4 +1,5 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 
@@ -15,7 +16,7 @@ public interface IPaymentGatewayService
     /// <param name="email">User email.</param>
     /// <param name="name">Full Name.</param>
     /// <returns>Stripe Customer ID (cus_xxxxx).</returns>
-    Task<StripeCustomerId> CreateOrGetCustomerAsync(int userId, string email, string name);
+    Task<PaymentGatewayCustomerId> CreateOrGetCustomerAsync(int userId, string email, string name);
 
     /// <summary>
     /// Creates a Checkout session so the user can subscribe to a plan.
@@ -27,8 +28,8 @@ public interface IPaymentGatewayService
     /// <param name="trialPeriodDays">Trial Days (optional).</param>
     /// <returns>Session Checkout URL.</returns>
     Task<string> CreateCheckoutSessionAsync(
-        StripeCustomerId customerId,
-        StripePriceId priceId,
+        PaymentGatewayCustomerId customerId,
+        PaymentGatewayPriceId priceId,
         string successUrl,
         string cancelUrl,
         int? trialPeriodDays = null);
@@ -38,20 +39,20 @@ public interface IPaymentGatewayService
     /// </summary>
     /// <param name="subscriptionId">Stripe Subscription ID.</param>
     /// <returns>Subscription information or null if it doesn't exist.</returns>
-    Task<StripeSubscriptionInfo?> GetSubscriptionAsync(StripeSubscriptionId subscriptionId);
+    Task<SubscriptionInfo?> GetSubscriptionAsync(PaymentGatewaySubscriptionId subscriptionId);
 
     /// <summary>
     /// Cancels a subscription in Stripe at the end of the current period.
     /// </summary>
     /// <param name="subscriptionId">Stripe Subscription ID.</param>
     /// <returns>Effective cancellation date.</returns>
-    Task<DateTime> CancelSubscriptionAtPeriodEndAsync(StripeSubscriptionId subscriptionId);
+    Task<DateTime> CancelSubscriptionAtPeriodEndAsync(PaymentGatewaySubscriptionId subscriptionId);
 
     /// <summary>
     /// Cancels a subscription in Stripe immediately.
     /// </summary>
     /// <param name="subscriptionId">Stripe Subscription ID.</param>
-    Task CancelSubscriptionImmediatelyAsync(StripeSubscriptionId subscriptionId);
+    Task CancelSubscriptionImmediatelyAsync(PaymentGatewaySubscriptionId subscriptionId);
 
     /// <summary>
     /// Changes the plan of an existing subscription (upgrade/downgrade).
@@ -60,9 +61,9 @@ public interface IPaymentGatewayService
     /// <param name="newPriceId">New Stripe Price ID.</param>
     /// <param name="prorationBehavior">How to handle proration (create_prorations, none, always_invoice).</param>
     /// <returns>New subscription information.</returns>
-    Task<StripeSubscriptionInfo> UpdateSubscriptionPlanAsync(
-        StripeSubscriptionId subscriptionId,
-        StripePriceId newPriceId,
+    Task<SubscriptionInfo> UpdateSubscriptionPlanAsync(
+        PaymentGatewaySubscriptionId subscriptionId,
+        PaymentGatewayPriceId newPriceId,
         string prorationBehavior = "create_prorations");
 
     /// <summary>
@@ -77,24 +78,14 @@ public interface IPaymentGatewayService
     /// <param name="customerId">Stripe Customer ID.</param>
     /// <param name="returnUrl">URL to return to after managing.</param>
     /// <returns>Billing portal URL.</returns>
-    Task<string> CreateBillingPortalSessionAsync(StripeCustomerId customerId, string returnUrl);
-}
+    Task<string> CreateBillingPortalSessionAsync(PaymentGatewayCustomerId customerId, string returnUrl);
+    
+    /// <summary>
+    /// Creates a Checkout Session based on the provided command.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Checkout session information.</returns>
+    Task<CheckoutSession> CreateCheckoutSessionAsync(CheckoutSessionCommand request,CancellationToken cancellationToken = default);
 
-/// <summary>
-/// DTO that represents information of a Stripe subscription.
-/// Used by Domain Service to return data without coupling Stripe SDK.
-/// </summary>
-public record StripeSubscriptionInfo(
-    string Id,
-    string CustomerId,
-    string PriceId,
-    string Status, // active, trialing, past_due, canceled, etc.
-    DateTime CurrentPeriodStart,
-    DateTime CurrentPeriodEnd,
-    DateTime? TrialEnd,
-    DateTime? CanceledAt,
-    DateTime? CancelAt,
-    bool CancelAtPeriodEnd,
-    decimal Amount,
-    string Currency
-);
+}

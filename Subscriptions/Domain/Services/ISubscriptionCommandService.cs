@@ -63,4 +63,39 @@ public interface ISubscriptionCommandService
     /// <param name="command">The <see cref="ChangeSubscriptionPlanCommand"/>.</param>
     /// <returns>The GUID of the updated subscription, or null if not found.</returns>
     Task<Guid?> Handle(ChangeSubscriptionPlanCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to create a Checkout session in Stripe.</p>
+    /// </summary>
+    /// <param name="command">The <see cref="CreateCheckoutSessionCommand"/>.</param>
+    /// <returns>The session ID of the created Checkout session.</returns>  
+    Task<string> Handle(CreateCheckoutSessionCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to process a payment.</p>
+    /// </summary>
+    /// <param name="command">The <see cref="ProcessPaymentCommand"/>.</param>
+    /// <returns>The payment ID of the processed payment.</returns>
+    Task<Guid> Handle(ProcessPaymentCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to cancel a subscription in the payment gateway.</p>
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    Task Handle(CancelSubscriptionInGatewayCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to change a subscription plan in the payment gateway.</p>
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    Task Handle(ChangeSubscriptionPlanInGatewayCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to sync a subscription from the payment gateway.</p>
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    Task Handle(SyncSubscriptionFromGatewayCommand command);
 }

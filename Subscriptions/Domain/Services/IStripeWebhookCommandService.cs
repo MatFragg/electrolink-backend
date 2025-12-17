@@ -5,5 +5,5 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 public interface IStripeWebhookCommandService
 {
     //Task HandleWebhookEventAsync(Event stripeEvent);
-    Task Handle(SyncSubscriptionFromStripeCommand command);
+    Task Handle(SyncSubscriptionFromGatewayCommand command);
 }
