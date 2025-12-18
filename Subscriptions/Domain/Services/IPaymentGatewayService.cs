@@ -79,13 +79,4 @@ public interface IPaymentGatewayService
     /// <param name="returnUrl">URL to return to after managing.</param>
     /// <returns>Billing portal URL.</returns>
     Task<string> CreateBillingPortalSessionAsync(PaymentGatewayCustomerId customerId, string returnUrl);
-    
-    /// <summary>
-    /// Creates a Checkout Session based on the provided command.
-    /// </summary>
-    /// <param name="request"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>Checkout session information.</returns>
-    Task<CheckoutSession> CreateCheckoutSessionAsync(CheckoutSessionCommand request,CancellationToken cancellationToken = default);
-
 }

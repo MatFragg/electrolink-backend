@@ -23,13 +23,6 @@ public interface ISubscriptionCommandService
     Task<Guid?> Handle(UpdateSubscriptionStatusCommand command);
 
     /// <summary>
-    /// <para>Handles the command to cancel a subscription.</para>
-    /// </summary>
-    /// <param name="command">The <see cref="CancelSubscriptionCommand"/>.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task Handle(CancelSubscriptionCommand command); // Void return
-
-    /// <summary>
     /// <para>Handles the command to activate a trial for a subscription.</para>
     /// </summary>
     /// <param name="command">The <see cref="ActivateTrialCommand"/>.</param>
@@ -83,7 +76,7 @@ public interface ISubscriptionCommandService
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
-    Task Handle(CancelSubscriptionInGatewayCommand command);
+    Task Handle(CancelSubscriptionCommand command);
 
     /// <summary>
     /// <p> Handles the command to change a subscription plan in the payment gateway.</p>
@@ -98,4 +91,11 @@ public interface ISubscriptionCommandService
     /// <param name="command"></param>
     /// <returns></returns>
     Task Handle(SyncSubscriptionFromGatewayCommand command);
+
+    /// <summary>
+    /// <p> Handles the command to create a billing portal session in the payment gateway.</p>
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    Task<string> Handle(CreateBillingPortalSessionCommand command);
 }

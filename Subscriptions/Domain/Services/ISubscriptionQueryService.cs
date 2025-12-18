@@ -38,6 +38,10 @@ public interface ISubscriptionQueryService
     /// <returns>The <see cref="Benefit"/> if found for the user, otherwise null.</returns>
     Task<Benefit?> Handle(GetUserBenefitQuery query);
 
-
+    /// <summary>
+    /// <para>Handles the query to get a subscription by payment gateway subscription ID.</para>
+    /// </summary>
+    /// <param name="query">The <see cref="GetLocalSubscriptionIdQuery"/>.</param>
+    /// <returns>The <see cref="Guid"/> if found, otherwise null.</returns> 
     Task<Guid?> Handle(GetLocalSubscriptionIdQuery query);
 }
