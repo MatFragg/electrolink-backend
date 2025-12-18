@@ -122,11 +122,9 @@ builder.Services.AddScoped<StripeWebhookValidator>();
 builder.Services.AddScoped<StripeWebhookEventProcessor>();
 
 // 5. Registrar CoICheckoutCommandService, and Services
-builder.Services.AddScoped<ICheckoutCommandService,CheckoutCommandService>();
+//builder.Services.AddScoped<ICheckoutCommandService,CheckoutCommandService>();
 builder.Services.AddScoped<StripeWebhookCommandService>();
-builder.Services.AddScoped<IPaymentGatewayService, StripePaymentGatewayService>();
 // 6. Registrar Repositories
-
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -298,7 +296,6 @@ builder.Services.AddAuthentication(options =>
 //builder.Services.AddMediatR(cfg => { }, assemblies);
 
 builder.Services.AddMediatR(typeof(StripeEventHandler).Assembly);
-builder.Services.AddMediatR(typeof(GetLocalSubscriptionIdQueryHandler).Assembly);
 
     
 var app = builder.Build();
