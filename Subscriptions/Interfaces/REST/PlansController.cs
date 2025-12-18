@@ -28,7 +28,7 @@ public class PlanController(IPlanCommandService commandService, IPlanQueryServic
     public async Task<IActionResult> GetAll()
     {
         var plans = await queryService.Handle(new GetAllPlansQuery());
-        var resources = plans.Select(PlanResourceFromEntityAssembler.ToResource);
+        var resources = plans.Select(PlanResourceFromEntityAssembler.ToResourceFromEntity);
         return Ok(resources);
     }
 
@@ -43,7 +43,7 @@ public class PlanController(IPlanCommandService commandService, IPlanQueryServic
     public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
         var plan = await queryService.Handle(new GetPlanByIdQuery(id));
-        return plan is null ? NotFound() : Ok(PlanResourceFromEntityAssembler.ToResource(plan));
+        return plan is null ? NotFound() : Ok(PlanResourceFromEntityAssembler.ToResourceFromEntity(plan));
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public class PlanController(IPlanCommandService commandService, IPlanQueryServic
     [SwaggerResponse(StatusCodes.Status201Created, "Plan created successfully.")]
     public async Task<IActionResult> Create([FromBody] CreatePlanResource resource)
     {
-        var command = CreatePlanCommandFromResourceAssembler.ToCommand(resource);
+        var command = CreatePlanCommandFromResourceAssembler.ToCommandFromResource(resource);
         var id = await commandService.Handle(command);
     
         if (id == Guid.Empty)
@@ -66,7 +66,7 @@ public class PlanController(IPlanCommandService commandService, IPlanQueryServic
         if (plan == null)
             return BadRequest("Failed to retrieve created plan.");
 
-        var planResource = PlanResourceFromEntityAssembler.ToResource(plan);
+        var planResource = PlanResourceFromEntityAssembler.ToResourceFromEntity(plan);
         return CreatedAtAction(nameof(GetById), new { id }, planResource);
     }
     
@@ -81,7 +81,7 @@ public class PlanController(IPlanCommandService commandService, IPlanQueryServic
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdatePlanResource resource)
     {
-        var command = UpdatePlanCommandFromResourceAssembler.ToCommand(id, resource);
+        var command = UpdatePlanCommandFromResourceAssembler.ToCommandFromResource(id, resource);
         var updatedPlanId = await commandService.Handle(command);
         return updatedPlanId is null ? NotFound() : NoContent();
     }

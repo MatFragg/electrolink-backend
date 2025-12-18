@@ -32,7 +32,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
         // The validation for User existence and Technician existence/info retrieval
         // has been moved to the SubscriptionCommandService itself, as per CQRS principles
         // where commands encapsulate all necessary logic for their execution.
-        var command = CreateSubscriptionCommandFromResourceAssembler.ToCommand(resource);
+        var command = CreateSubscriptionCommandFromResourceAssembler.ToCommandFromResource(resource);
         try
         {
             var id = await subscriptionCommandService.Handle(command);
@@ -45,7 +45,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
                 return StatusCode(StatusCodes.Status500InternalServerError, 
                     new { message = "Associated plan not found for created subscription." });
 
-            var subscriptionResource = SubscriptionResourceFromEntityAssembler.ToResource(subscription, plan);
+            var subscriptionResource = SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(subscription, plan);
             return CreatedAtAction(nameof(GetById), new { id }, subscriptionResource);
         }
         catch (ArgumentException ex)
@@ -80,7 +80,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Associated plan not found for this subscription." });
         }
 
-        return Ok(SubscriptionResourceFromEntityAssembler.ToResource(subscription, plan));
+        return Ok(SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(subscription, plan));
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
             var plan = await planQueryService.Handle(new GetPlanByIdQuery(subscription.PlanId.Value));
             if (plan != null)
             {
-                resources.Add(SubscriptionResourceFromEntityAssembler.ToResource(subscription, plan));
+                resources.Add(SubscriptionResourceFromEntityAssembler.ToResourceFromEntity(subscription, plan));
             }
             else
             {
@@ -107,27 +107,6 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
             }
         }
         return Ok(resources);
-    }
-
-    /// <summary>
-    /// Cancels a subscription.
-    /// </summary>
-    /// <param name="id">The ID of the subscription to cancel.</param>
-    /// <returns>No Content if successful, otherwise Not Found.</returns>
-    [HttpPut("{id:guid}/cancel")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Cancel([FromRoute] Guid id)
-    {
-        try
-        {
-            await subscriptionCommandService.Handle(new CancelSubscriptionCommand(id, DateTime.UtcNow.AddDays(30))); // Example: effective in 30 days
-            return NoContent();
-        }
-        catch (ArgumentException)
-        {
-            return NotFound();
-        }
     }
 
     /// <summary>
@@ -143,7 +122,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
     {
         try
         {
-            var command = UpdateSubscriptionStatusCommandFromResourceAssembler.ToCommand(id, resource);
+            var command = UpdateSubscriptionStatusCommandFromResourceAssembler.ToCommandFromResource(id, resource);
             var updatedId = await subscriptionCommandService.Handle(command);
             return updatedId is null ? NotFound() : NoContent();
         }
@@ -168,7 +147,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
         try
         {
             // Usa el assembler interno
-            var command = ChangeSubscriptionPlanCommandFromResourceAssembler.ToCommand(
+            var command = ChangeSubscriptionPlanCommandFromResourceAssembler.ToCommandFromResource(
                 subscriptionId, 
                 resource);
 
@@ -196,40 +175,6 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
     }
 
     /// <summary>
-    /// Endpoint to create a Stripe Checkout Session for new subscriptions.
-    /// This endpoint bypasses the standard CreateSubscriptionCommand for direct Stripe interaction,
-    /// and then a webhook would handle the actual subscription creation in the system.
-    /// </summary>
-    /// <param name="req">The checkout session request.</param>
-    /// <returns>A URL to the Stripe Checkout page.</returns>
-    [HttpPost("checkout-session")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public async Task<IActionResult> CreateCheckoutSession([FromBody] CheckoutSessionCommand req)
-    {
-        Stripe.StripeConfiguration.ApiKey = _cfg["Stripe:SecretKey"];
-
-        var options = new SessionCreateOptions
-        {
-            Mode = "subscription",
-            LineItems = new List<SessionLineItemOptions>
-            {
-                new()
-                {
-                    Price = req.PriceId.Value,
-                    Quantity = 1
-                }
-            },
-            SuccessUrl = _cfg["Stripe:SuccessUrl"],
-            CancelUrl = _cfg["Stripe:CancelUrl"]
-        };
-
-        var service = new SessionService();
-        var session = await service.CreateAsync(options);
-
-        return Ok(new { url = session.Url });
-    }
-    
-    /// <summary>
     /// Gets a user's subscription eligibility and current benefits.
     /// This is an ACL endpoint to provide a simplified view for other Bounded Contexts or UIs.
     /// </summary>
@@ -255,7 +200,7 @@ public class SubscriptionsController(ISubscriptionCommandService subscriptionCom
             return Ok(SubscriptionEligibilityAclAssembler.ToBasicResource(userId));
         }
 
-        var aclResource = SubscriptionEligibilityAclAssembler.ToResourceFromEntities(subscription, plan);
+        var aclResource = SubscriptionEligibilityAclAssembler.ToResourceFromEntity(subscription, plan);
         return Ok(aclResource);
     }
 }

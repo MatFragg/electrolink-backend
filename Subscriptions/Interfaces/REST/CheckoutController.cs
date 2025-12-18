@@ -1,9 +1,10 @@
-﻿using System.Security.Claims;
-using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attributes;
+﻿using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attributes;
+using Hampcoders.Electrolink.API.Shared.Interfaces.REST;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST;
@@ -16,8 +17,8 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST;
 [Authorize] 
 [Produces("application/json")]
 public class CheckoutController(
-    ICheckoutCommandService checkoutCommandService, 
-    IPaymentGatewayService paymentGateway, 
+    ISubscriptionCommandService subscriptionCommandService,
+    ISubscriptionQueryService subscriptionQueryService,
     ILogger<CheckoutController> logger
 ) : ControllerBase
 {
@@ -33,18 +34,14 @@ public class CheckoutController(
     {
         try
         {
-            var userId = GetAuthenticatedUserId();
+            var userId = this.GetAuthenticatedUserIdOrThrow();
 
             // Create an Assembler for the command
-            var command = new CreateCheckoutSessionCommand(
-                new UserId(userId),
-                new PlanId(resource.PlanId),
-                resource.SuccessUrl,
-                resource.CancelUrl,
-                resource.TrialPeriodDays
-            );
-
-            var checkoutUrl = await checkoutCommandService.Handle(command);
+            var createCheckoutSessionCommand = CreateCheckoutSessionCommandFromResourceAssembler
+                .ToCommandFromResource(userId, resource);
+            
+            
+            var checkoutUrl = await subscriptionCommandService.Handle(createCheckoutSessionCommand);
 
             logger.LogInformation(
                 "Checkout session created for User {UserId} - Plan {PlanId}",
@@ -80,12 +77,12 @@ public class CheckoutController(
         try
         {
             // Create and Assembler for the command
-            var command = new CancelSubscriptionInGatewayCommand(
+            var command = new CancelSubscriptionCommand(
                 new SubscriptionId(subscriptionId),
                 resource.Immediately
             );
 
-            await checkoutCommandService.Handle(command);
+            await subscriptionCommandService.Handle(command);
 
             logger.LogInformation(
                 "Subscription {SubscriptionId} cancelled (Immediately: {Immediately})",
@@ -124,7 +121,7 @@ public class CheckoutController(
                 resource.ProrationBehavior
             );
 
-            await checkoutCommandService.Handle(command);
+            await subscriptionCommandService.Handle(command);
 
             logger.LogInformation(
                 "Subscription plan {SubscriptionId} changed to {NewPlanId}",
@@ -150,53 +147,36 @@ public class CheckoutController(
     /// <summary>
     /// Create a Stripe billing portal for the user to manage their subscription.
     /// </summary>
-    [HttpPost("create-portal-session")]
+    [HttpPost("billing-portal")]
     [ProducesResponseType(typeof(CheckoutSessionResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CheckoutSessionResource>> CreateBillingPortalSession(
-        [FromQuery] string returnUrl)
+        [FromBody] CreateBillingPortalSessionResource resource)
     {
         try
         {
-            var userId = GetAuthenticatedUserId();
-
-            // TODO: Obtener PaymentGatewayCustomerId del usuario desde el repositorio
-            var stripeCustomerId = new Domain.Model.ValueObjects.PaymentGatewayCustomerId("cus_xxxxx");
-
-            var portalUrl = await paymentGateway.CreateBillingPortalSessionAsync(
-                stripeCustomerId,
-                returnUrl
-            );
-
-            logger.LogInformation(
-                "Billing portal created for User {UserId}",
-                userId);
-
-            return Ok(new CheckoutSessionResource(
-                portalUrl,
-                "portal_session"
-            ));
+            var userId = this.GetAuthenticatedUserIdOrThrow();
+        
+            var checkOutCommand = CreateBillingPortalSessionCommandFromResourceAssembler
+                .ToCommand(userId, resource);
+            
+            var portalUrl = await subscriptionCommandService.Handle(checkOutCommand);
+        
+            return Ok(new CheckoutSessionResource(portalUrl));
         }
-        catch (Exception ex)
+        catch (UnauthorizedAccessException ex)
         {
-            logger.LogError(ex, "Error creating billing portal");
-            return BadRequest(new { message = "Failed to create billing portal session" });
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 
     #region Helper Methods
-
-    private int GetAuthenticatedUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.Sid)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            throw new UnauthorizedAccessException("User is not authenticated");
-        }
-
-        return userId;
-    }
 
     private string ExtractSessionIdFromUrl(string checkoutUrl)
     {
