@@ -1,3 +1,8 @@
-﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-public record CreateBillingPortalSessionCommand();
+namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+
+public record CreateBillingPortalSessionCommand(
+    UserId UserId,
+    string ReturnUrl
+);
