@@ -11,13 +11,6 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 public interface ISubscriptionRepository : IBaseRepository<Subscription, SubscriptionId>
 {
     /// <summary>
-    /// Finds a subscription by its unique identifier.
-    /// </summary>
-    /// <param name="id">The subscription ID.</param>
-    /// <returns>The <see cref="Subscription"/> if found, otherwise null.</returns>
-    Task<Subscription?> FindBySubscriptionIdAsync(SubscriptionId id);
-    
-    /// <summary>
     /// Finds a subscription by the user's unique identifier.
     /// </summary>
     /// <param name="userId">The user ID.</param>
