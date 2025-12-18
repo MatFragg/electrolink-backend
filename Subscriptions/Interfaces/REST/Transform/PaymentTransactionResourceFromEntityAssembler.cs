@@ -13,7 +13,7 @@ public static class PaymentTransactionResourceFromEntityAssembler
     /// </summary>
     /// <param name="transaction">The payment transaction aggregate to convert.</param>
     /// <returns>The created payment transaction resource.</returns>
-    public static PaymentTransactionResource ToResource(PaymentTransaction transaction)
+    public static PaymentTransactionResource ToResourceFromEntity(PaymentTransaction transaction)
     {
         return new PaymentTransactionResource(
             transaction.Id,

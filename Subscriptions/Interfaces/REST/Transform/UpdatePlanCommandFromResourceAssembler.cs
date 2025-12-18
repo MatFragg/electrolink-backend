@@ -15,7 +15,7 @@ public static class UpdatePlanCommandFromResourceAssembler
     /// <param name="planId">The ID of the plan to update.</param>
     /// <param name="resource">The resource to convert.</param>
     /// <returns>The created command.</returns>
-    public static UpdatePlanCommand ToCommand(Guid planId, UpdatePlanResource resource)
+    public static UpdatePlanCommand ToCommandFromResource(Guid planId, UpdatePlanResource resource)
     {
         if (!Enum.TryParse(resource.MonetizationType, true, out EMonetizationType monetizationType))
         {

@@ -13,7 +13,7 @@ public static class ChangeSubscriptionPlanInStripeCommandFromResourceAssembler
     /// <summary>
     /// Converts a Stripe resource to a command for Stripe-based plan changes.
     /// </summary>
-    public static ChangeSubscriptionPlanInGatewayCommand ToCommand(
+    public static ChangeSubscriptionPlanInGatewayCommand ToCommandFromResource(
         SubscriptionId subscriptionId, 
         ChangeSubscriptionPlanResource resource)
     {

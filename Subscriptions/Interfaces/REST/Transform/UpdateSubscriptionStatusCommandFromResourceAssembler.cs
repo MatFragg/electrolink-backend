@@ -15,7 +15,7 @@ public static class UpdateSubscriptionStatusCommandFromResourceAssembler
     /// <param name="subscriptionId">The ID of the subscription to update.</param>
     /// <param name="resource">The resource containing the new status.</param>
     /// <returns>The created command.</returns>
-    public static UpdateSubscriptionStatusCommand ToCommand(Guid subscriptionId, UpdateSubscriptionStatusResource resource)
+    public static UpdateSubscriptionStatusCommand ToCommandFromResource(Guid subscriptionId, UpdateSubscriptionStatusResource resource)
     {
         if (!Enum.TryParse(resource.NewStatus, true, out ESubscriptionStatus newStatus))
         {

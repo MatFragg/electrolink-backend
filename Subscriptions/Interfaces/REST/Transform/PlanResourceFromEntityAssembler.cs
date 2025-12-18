@@ -14,7 +14,7 @@ public static class PlanResourceFromEntityAssembler
     /// </summary>
     /// <param name="plan">The plan aggregate to convert.</param>
     /// <returns>The created plan resource.</returns>
-    public static PlanResource ToResource(Plan plan)
+    public static PlanResource ToResourceFromEntity(Plan plan)
     {
         var benefitResources = plan.Benefits?.Select(b =>
             new BenefitResource(b.Type, b.LimitValue, b.FlagValue, b.Description)

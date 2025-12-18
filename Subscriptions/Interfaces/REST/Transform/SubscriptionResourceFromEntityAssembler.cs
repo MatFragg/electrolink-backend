@@ -15,7 +15,7 @@ public static class SubscriptionResourceFromEntityAssembler
     /// <param name="subscription">The subscription aggregate to convert.</param>
     /// <param name="plan">The associated plan aggregate.</param>
     /// <returns>The created subscription resource.</returns>
-    public static SubscriptionResource ToResource(Subscription subscription, Plan plan)
+    public static SubscriptionResource ToResourceFromEntity(Subscription subscription, Plan plan)
     {
         // Determine derived properties based on plan benefits and subscription state
         bool isPremium = plan.MonetizationType != EMonetizationType.Free;

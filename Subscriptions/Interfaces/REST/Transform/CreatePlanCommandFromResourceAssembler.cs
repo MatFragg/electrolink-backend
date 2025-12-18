@@ -14,7 +14,7 @@ public static class CreatePlanCommandFromResourceAssembler
     /// </summary>
     /// <param name="resource">The resource to convert.</param>
     /// <returns>The created command.</returns>
-    public static CreatePlanCommand ToCommand(CreatePlanResource resource)
+    public static CreatePlanCommand ToCommandFromResource(CreatePlanResource resource)
     {
         if (!Enum.TryParse(resource.MonetizationType, true, out EMonetizationType monetizationType))
         {

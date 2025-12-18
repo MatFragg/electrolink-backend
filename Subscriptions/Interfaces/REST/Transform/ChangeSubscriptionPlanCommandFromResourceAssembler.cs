@@ -16,7 +16,7 @@ public static class ChangeSubscriptionPlanCommandFromResourceAssembler
     /// <param name="subscriptionId">The ID of the subscription to change.</param>
     /// <param name="resource">The resource containing the new plan details.</param>
     /// <returns>The created command.</returns>
-    public static ChangeSubscriptionPlanCommand ToCommand(
+    public static ChangeSubscriptionPlanCommand ToCommandFromResource(
         Guid subscriptionId, 
         ChangeSubscriptionPlanInternalResource resource)
     {

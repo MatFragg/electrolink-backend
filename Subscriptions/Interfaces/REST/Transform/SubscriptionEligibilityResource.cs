@@ -31,7 +31,7 @@ public static class SubscriptionEligibilityAclAssembler
     /// <param name="subscription">The user's subscription.</param>
     /// <param name="plan">The plan associated with the subscription.</param>
     /// <returns>An eligibility resource with detailed information.</returns>
-    public static SubscriptionEligibilityResource ToResourceFromEntities(Subscription subscription, Plan plan)
+    public static SubscriptionEligibilityResource ToResourceFromEntity(Subscription subscription, Plan plan)
     {
         bool isPremium = plan.MonetizationType != EMonetizationType.Free;
         bool isCertified = plan.Benefits.Exists(b => b.Type == "CertificationAccess" && b.FlagValue == true);

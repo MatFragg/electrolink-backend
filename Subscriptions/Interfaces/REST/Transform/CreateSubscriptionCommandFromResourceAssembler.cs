@@ -14,7 +14,7 @@ public static class CreateSubscriptionCommandFromResourceAssembler
     /// </summary>
     /// <param name="resource">The resource to convert.</param>
     /// <returns>The created command.</returns>
-    public static CreateSubscriptionCommand ToCommand(CreateSubscriptionResource resource)
+    public static CreateSubscriptionCommand ToCommandFromResource(CreateSubscriptionResource resource)
     {
         if (!Enum.TryParse(resource.InitialStatus, true, out ESubscriptionStatus initialStatus))
         {
