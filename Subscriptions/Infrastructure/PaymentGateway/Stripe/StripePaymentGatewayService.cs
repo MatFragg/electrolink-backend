@@ -212,72 +212,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         _logger.LogInformation("Billing portal session created for Customer {CustomerId}", customerId);        
         return session.Url;
     }
-    
-    public async Task<CheckoutSession> CreateCheckoutSessionAsync(
-        CheckoutSessionCommand request,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            _logger.LogInformation(
-                "Creating checkout session for user {UserId} and plan {PlanId}",
-                request.UserId, request.PriceId.Value);
-            // Mapear de Domain → Stripe
-            var options = new SessionCreateOptions
-            {
-                Mode = "subscription",  // Puede parametrizarse
-                CustomerEmail = request.UserEmail,
-                LineItems = new List<SessionLineItemOptions>
-                {
-                    new()
-                    {
-                        Price = request.PriceId.Value, 
-                        Quantity = 1
-                    }
-                },
-                SuccessUrl = request.SuccessUrl,
-                CancelUrl = request.CancelUrl,
-                Metadata = new Dictionary<string, string>
-                {
-                    { "UserId", request.UserId.Value.ToString() },
-                    { "PlanId", request.PriceId.Value },
-                    { "Source", "ElectroLink" }
-                }
-            };
-            // Agregar metadata adicional si existe
-            if (request.Metadata?.AdditionalData != null)
-            {
-                foreach (var (key, value) in request.Metadata.AdditionalData)
-                {
-                    options.Metadata[key] = value;
-                }
-            }
-            // Llamar a Stripe
-            var stripeSession = await _checkoutSessionService.CreateAsync(
-                options,
-                cancellationToken: cancellationToken);
-            _logger.LogInformation(
-                "Stripe checkout session created: {SessionId}",
-                stripeSession.Id);
-            // Mapear de Stripe → Domain
-            return new CheckoutSession(
-                SessionId: new CheckoutSessionId(stripeSession.Id),
-                CheckoutUrl: new Uri(stripeSession.Url),
-                ExpiresAt: stripeSession.ExpiresAt,
-                Status: MapStripeSessionStatus(stripeSession.Status),
-                Amount: request.Amount,
-                Currency: request.Currency
-            );
-        }
-        catch (StripeException ex)
-        {
-            _logger.LogError(ex, 
-                "Stripe error creating checkout session for user {UserId}", 
-                request.UserId);
-            throw new Exception(
-                "Failed to create checkout session in payment gateway", ex);
-        }
-    }
+ 
     private CheckoutSessionStatus MapStripeSessionStatus(string stripeStatus)
     {
         return stripeStatus switch
