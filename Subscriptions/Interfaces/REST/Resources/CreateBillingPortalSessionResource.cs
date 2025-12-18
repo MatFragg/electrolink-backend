@@ -1,3 +1,6 @@
 ﻿namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
-public record CreateBillingPortalSessionResource();
+/// <summary>
+/// Resource for creating a billing portal session.
+/// </summary>
+public record CreateBillingPortalSessionResource(string ReturnUrl);

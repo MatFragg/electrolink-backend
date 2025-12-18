@@ -5,5 +5,5 @@
 /// </summary>
 public record CheckoutSessionResource(
     string CheckoutUrl,
-    string SessionId
+    string? SessionId = null
 );
