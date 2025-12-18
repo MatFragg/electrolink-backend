@@ -10,12 +10,6 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EF
 public class SubscriptionRepository(AppDbContext context)
     : BaseRepository<Subscription, SubscriptionId>(context), ISubscriptionRepository
 {
-    
-    /// <inheritdoc/>
-    public async Task<Subscription?> FindBySubscriptionIdAsync(SubscriptionId id)
-        => await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.Id == id);
-
     /// <inheritdoc/>
     public async Task<Subscription?> FindByUserIdAsync(UserId userId)
         => await Context.Set<Subscription>()
