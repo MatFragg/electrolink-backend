@@ -88,24 +88,6 @@ public class SubscriptionCommandService(
     }
 
     /// <inheritdoc/>
-    public async Task Handle(CancelSubscriptionCommand command) // Void return
-    {
-        var subscription = await subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
-        if (subscription == null) throw new ArgumentException($"Subscription with ID {command.SubscriptionId} not found.");
-
-        subscription.ScheduleCancellation(command.CancellationEffectiveDate);
-        await unitOfWork.CompleteAsync();
-
-        // Publish domain event
-        foreach (var domainEvent in subscription.DomainEvents)
-        {
-            await mediator.Publish(domainEvent);
-        }
-
-        subscription.ClearDomainEvents();
-    }
-
-    /// <inheritdoc/>
     public async Task<Guid?> Handle(ActivateTrialCommand command)
     {
         var subscription = await subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId));
@@ -222,43 +204,42 @@ public class SubscriptionCommandService(
     /// </summary>
     public async Task<string> Handle(CreateCheckoutSessionCommand command)
     {
-        var userId = new UserId(command.UserId.Value);
-        // 1. Validate user exists
-        if (!await externalIamService.UserExistsAsync(userId.Value))
-            throw new ArgumentException($"User {userId} not found");
+        // 1. Validate that the user exists
+        if (!await externalIamService.UserExistsAsync(command.UserId.Value))
+            throw new ArgumentException($"User {command.UserId} not found");
 
         // 2. Fetch profile info
-        var email = await externalProfileService.FetchProfileEmail(userId.Value);
-        var fullName = await externalProfileService.FetchProfileFullName(userId.Value);
-
+        var email = await externalProfileService.FetchProfileEmail(command.UserId.Value);
+        var fullName = await externalProfileService.FetchProfileFullName(command.UserId.Value);
+        
         if (string.IsNullOrEmpty(email))
-            throw new InvalidOperationException($"User {userId.Value} requires an email to subscribe");
-
-        // 3. Validate plan exists
+            throw new InvalidOperationException($"Profile for User {command.UserId.Value} requires an email to subscribe.");
+        
+        // 2. Validate that the plan exists
         var plan = await planRepository.FindByIdAsync(new PlanId(command.PlanId.Value));
         if (plan == null)
-            throw new ArgumentException($"Plan {userId.Value} not found");
+            throw new ArgumentException($"Plan {command.PlanId.Value} not found");
 
         if (plan.GatewayPriceId == null || string.IsNullOrEmpty(plan.GatewayPriceId.Value))
-            throw new InvalidOperationException($"Plan {plan.Name} does not have a payment gateway price configured");
+            throw new InvalidOperationException($"Plan {plan.Name} does not have a Stripe Price ID configured");
 
-        // 4. Check if user already has active subscription
-        var existingSubscription = await subscriptionRepository
-            .FindActiveByUserIdAsync(userId);
+        // 3. Verifies if the user already has an active subscription
+        var existingSubscription = await subscriptionRepository.FindActiveByUserIdAsync(new UserId(command.UserId.Value));
 
         if (existingSubscription != null)
-            throw new InvalidOperationException($"User {userId.Value} already has an active subscription");
+            throw new InvalidOperationException(
+                $"User {command.UserId.Value} already has an active subscription");
 
-        // 5. Create/get customer in payment gateway
-        var gatewayCustomerId = await paymentGateway.CreateOrGetCustomerAsync(
-            userId.Value,
+        // 4. Creates a Customer in Stripe
+        var stripeCustomerId = await paymentGateway.CreateOrGetCustomerAsync(
+            command.UserId.Value,
             email,
             fullName);
 
-        // 6. Create checkout session
+        // 5. Creates a Checkout session
         var checkoutUrl = await paymentGateway.CreateCheckoutSessionAsync(
-            gatewayCustomerId,
-            plan.GatewayPriceId,
+            stripeCustomerId,
+            new PaymentGatewayPriceId(plan.GatewayPriceId.Value),
             command.SuccessUrl,
             command.CancelUrl,
             command.TrialPeriodDays);
@@ -275,7 +256,7 @@ public class SubscriptionCommandService(
     {
 
         var subscriptionId = new SubscriptionId(command.SubscriptionId.Value);
-        var subscription = await subscriptionRepository.FindBySubscriptionIdAsync(subscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId);
 
         if (subscription == null)
             throw new ArgumentException($"Subscription {subscriptionId} not found");
@@ -316,28 +297,30 @@ public class SubscriptionCommandService(
     /// <summary>
     /// Cancels a subscription in the payment gateway.
     /// </summary>
-    public async Task Handle(CancelSubscriptionInGatewayCommand command)
+    public async Task Handle(CancelSubscriptionCommand command)
     {
+        // 1. Find the subscription
         var subscription = await subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId.Value));
         if (subscription == null)
             throw new ArgumentException($"Subscription {command.SubscriptionId} not found");
 
-        // Cancel in payment gateway
+        var stripeSubscriptionId = new PaymentGatewaySubscriptionId(subscription.GatewaySubscriptionId.Value);
+
+        // 2. Cancels the subscription in Stripe
         if (command.Immediately)
         {
-            await paymentGateway.CancelSubscriptionImmediatelyAsync(subscription.GatewaySubscriptionId);
+            await paymentGateway.CancelSubscriptionImmediatelyAsync(stripeSubscriptionId);
             subscription.UpdateStatus(ESubscriptionStatus.Cancelled);
         }
         else
         {
-            var cancelAt = await paymentGateway.CancelSubscriptionAtPeriodEndAsync(subscription.GatewaySubscriptionId);
+            var cancelAt = await paymentGateway.CancelSubscriptionAtPeriodEndAsync(stripeSubscriptionId);
             subscription.ScheduleCancellation(cancelAt);
         }
 
-        // Persist
+        // 3. Persist changes
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();
-
     }
 
     /// <summary>
@@ -345,30 +328,34 @@ public class SubscriptionCommandService(
     /// </summary>
     public async Task Handle(ChangeSubscriptionPlanInGatewayCommand command)
     {
-
+        // 1. Find the subscription
         var subscription = await subscriptionRepository.FindByIdAsync(new SubscriptionId(command.SubscriptionId.Value));
         if (subscription == null)
             throw new ArgumentException($"Subscription {command.SubscriptionId} not found");
 
-        var newPlan = await planRepository.FindByIdAsync(new PlanId(command.NewPlanId.Value));
+        // 2. Find the new plan
+        var newPlanId = new PlanId(command.NewPlanId.Value);
+        var newPlan = await planRepository.FindByIdAsync(newPlanId);
         if (newPlan == null)
             throw new ArgumentException($"Plan {command.NewPlanId} not found");
 
         if (newPlan.GatewayPriceId == null || string.IsNullOrEmpty(newPlan.GatewayPriceId.Value))
-            throw new InvalidOperationException($"Plan {newPlan.Name} does not have a payment gateway price");
+            throw new InvalidOperationException($"Plan {newPlan.Name} does not have a Stripe Price ID");
 
-        // Update in payment gateway
-        var updatedSubscriptionInfo = await paymentGateway.UpdateSubscriptionPlanAsync(
-            subscription.GatewaySubscriptionId,
-            newPlan.GatewayPriceId,
+        // 3. Updates in Stripe
+        var stripeSubscriptionId = new PaymentGatewaySubscriptionId(subscription.GatewaySubscriptionId.Value);
+        var updatedStripeSubscription = await paymentGateway.UpdateSubscriptionPlanAsync(
+            stripeSubscriptionId,
+            new PaymentGatewayPriceId(newPlan.GatewayPriceId.Value),
             command.ProrationBehavior);
 
-        // Update in our domain
-        subscription.ChangePlan(new PlanId(command.NewPlanId.Value), updatedSubscriptionInfo.currentPeriodEnd);
+        // 4. Update in our DB
+        subscription.ChangePlan(
+            newPlanId,
+            updatedStripeSubscription.currentPeriodEnd);
 
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();
-        
     }
 
     /// <summary>
@@ -402,6 +389,25 @@ public class SubscriptionCommandService(
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();
 
+    }
+    
+    
+    public async Task<string> Handle(CreateBillingPortalSessionCommand command)
+    {
+        // 1. Buscar la suscripción activa del usuario
+        var subscription = await subscriptionRepository.FindActiveByUserIdAsync(command.UserId);
+        if (subscription == null)
+            throw new ArgumentException($"No se encontró una suscripción activa para el usuario {command.UserId.Value}.");
+
+        // 2. Obtener el customer ID de Stripe
+        var stripeCustomerId = subscription.GatewayCustomerId;
+
+        // 3. Crear la sesión de billing portal usando el servicio de pago
+        var portalUrl = await paymentGateway.CreateBillingPortalSessionAsync(
+            new PaymentGatewayCustomerId(stripeCustomerId.Value),
+            command.ReturnUrl);
+
+        return portalUrl;
     }
     
     /// <summary>

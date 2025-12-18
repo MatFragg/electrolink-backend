@@ -9,16 +9,19 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QuerySer
 public class SubscriptionQueryService(ISubscriptionRepository subscriptionRepository, IPlanRepository planRepository) : ISubscriptionQueryService
 {
     
+    /// <inheritdoc/>
     public async Task<IEnumerable<Subscription>> Handle(GetAllSubscriptionsQuery query)
     {
         return await subscriptionRepository.ListAsync();
     }
 
+    /// <inheritdoc/>
     public async Task<Subscription?> Handle(GetSubscriptionByIdQuery query)
     {
-        return await subscriptionRepository.FindBySubscriptionIdAsync(new SubscriptionId(query.SubscriptionId));
+        return await subscriptionRepository.FindByIdAsync(new SubscriptionId(query.SubscriptionId));
     }
 
+    /// <inheritdoc/>
     public async Task<Subscription?> Handle(GetSubscriptionByUserIdQuery query)
     {
         return await subscriptionRepository.FindByUserIdAsync(new UserId(query.UserId.Value));
@@ -55,6 +58,7 @@ public class SubscriptionQueryService(ISubscriptionRepository subscriptionReposi
         return plan.GetBenefit(query.BenefitType);
     }
 
+    /// <inheritdoc/>
     public async Task<Guid?> Handle(GetLocalSubscriptionIdQuery query)
     {
         var subscription = await subscriptionRepository.FindByPaymentGatewaySubscriptionIdAsync(new PaymentGatewaySubscriptionId(query.StripeSubscriptionId));

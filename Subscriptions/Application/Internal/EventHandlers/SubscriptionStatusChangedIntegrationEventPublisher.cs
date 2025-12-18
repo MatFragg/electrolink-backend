@@ -27,7 +27,7 @@ public class SubscriptionStatusChangedIntegrationEventPublisher(ISubscriptionRep
 
         // 1. Obtener información completa de la suscripción y plan
         var subscription = await subscriptionRepository
-            .FindBySubscriptionIdAsync(new SubscriptionId(domainEvent.SubscriptionId));
+            .FindByIdAsync(new SubscriptionId(domainEvent.SubscriptionId));
 
         if (subscription == null)
         {

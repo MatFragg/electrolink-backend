@@ -28,7 +28,7 @@ public class PaymentProcessedIntegrationEventPublisher(ISubscriptionRepository s
             domainEvent.SubscriptionId);
 
         var subscription = await subscriptionRepository
-            .FindBySubscriptionIdAsync(new SubscriptionId(domainEvent.SubscriptionId));
+            .FindByIdAsync(new SubscriptionId(domainEvent.SubscriptionId));
 
         if (subscription == null)
         {
