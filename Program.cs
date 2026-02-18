@@ -32,8 +32,6 @@ using Hampcoders.Electrolink.API.Planning.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Repositories;
-using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.Application.ACL;
 using Hampcoders.Electrolink.API.Profiles.Application.ACL;
 using Hampcoders.Electrolink.API.Profiles.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices;
@@ -195,9 +193,7 @@ builder.Services.AddScoped<IServiceOperationRepository, ServiceOperationReposito
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 builder.Services.AddScoped<IReportPhotoRepository, ReportPhotoRepository>();
-builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
-builder.Services.AddScoped<IRequestRepository, RequestRepository>();
-builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+
 
 // Domain services for Monitoring
 builder.Services.AddScoped<IServiceOperationCommandService, ServiceOperationCommandService>();
@@ -206,14 +202,8 @@ builder.Services.AddScoped<IReportCommandService, ReportCommandService>();
 builder.Services.AddScoped<IReportQueryService, ReportQueryService>();
 builder.Services.AddScoped<IRatingCommandService, RatingCommandService>();
 builder.Services.AddScoped<IRatingQueryService, RatingQueryService>();
-builder.Services.AddScoped<IServiceCommandService, ServiceCommandService>();
-builder.Services.AddScoped<IServiceQueryService, ServiceQueryService>();
-builder.Services.AddScoped<IRequestCommandService, RequestCommandService>();
-builder.Services.AddScoped<IRequestQueryService, RequestQueryService>();
-builder.Services.AddScoped<IScheduleCommandService, ScheduleCommandService>();
-builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
+
 builder.Services.AddScoped<IMonitoringContextFacade, MonitoringContextFacade>();
-builder.Services.AddScoped<ISDPContextFacade, SdpContextFacade>();
 
 // Subscriptions and Payments Bounded Context
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();
@@ -228,6 +218,22 @@ builder.Services.AddScoped<IPaymentTransactionCommandService,PaymentTransactionC
 builder.Services.AddScoped<ExternalIamServiceForSubscriptionsBC>();
 builder.Services.AddScoped<ExternalProfileService>();
 
+// Planning
+builder.Services.AddScoped<IServiceAssignmentRepository, ServiceAssignmentRepository>();
+builder.Services.AddScoped<IServiceCatalogRepository, ServiceCatalogRepository>();
+builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
+
+builder.Services.AddScoped<IServiceAssignmentCommandService, ServiceAssignmentCommandService>();
+builder.Services.AddScoped<IServiceRequestCommandService, ServiceRequestCommandService>();
+builder.Services.AddScoped<IServiceCatalogCommandService, ServiceCatalogCommandService>();
+
+builder.Services.AddScoped<IServiceAssignmentQueryService, ServiceAssignmentQueryService>();
+builder.Services.AddScoped<IServiceRequestQueryService, ServiceRequestQueryService>();
+builder.Services.AddScoped<IServiceCatalogQueryService, ServiceCatalogQueryService>();
+
+builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalAssetsService>();
+builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalProfilesService>();
+builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalSubscriptionsService>();
 
 // Profiles
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
