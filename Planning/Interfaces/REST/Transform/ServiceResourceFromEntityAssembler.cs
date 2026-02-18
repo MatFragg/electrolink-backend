@@ -7,13 +7,13 @@ public static class ServiceResourceFromEntityAssembler
 {
     public static ServiceResource ToResourceFromEntity(Service s) =>
         new ServiceResource(
-            s.ServiceId,
+            s.Id.ToString(),
             s.Name,
             s.Description,
-            s.BasePrice,
+            s.BasePrice.Amount,
             s.EstimatedTime,
             s.Category,
             s.IsVisible,
-            s.CreatedBy
+            s.CreatedBy.Id
         );
 }

@@ -7,7 +7,7 @@ public partial class Service
     public void Update(
         string name,
         string description,
-        double basePrice,
+        Money basePrice,
         string estimatedTime,
         string category,
         ServicePolicy policy,

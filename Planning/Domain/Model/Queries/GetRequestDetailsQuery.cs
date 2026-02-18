@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 
-public record GetRequestDetailsQuery(string RequestId);
+public record GetRequestDetailsQuery(Guid RequestId);

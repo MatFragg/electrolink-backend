@@ -7,13 +7,8 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 /// Command to update an existing service request
 /// </summary>
 public record UpdateRequestCommand(
-    string RequestId,
-    Guid ClientId,
-    Guid TechnicianId,
-    Guid PropertyId,
-    Guid ServiceId,
-    DateOnly ScheduledDate,
-    string ProblemDescription,
-    ElectricBill Bill,
-    List<RequestPhotoResource> Photos
+    Guid RequestId,
+    DateOnly? ScheduledDate,
+    Guid? TechnicianId,
+    string? ProblemDescription
 );

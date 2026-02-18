@@ -13,7 +13,13 @@ public class ScheduleCommandService(
 {
     public async Task<Schedule> CreateAsync(CreateScheduleCommand cmd)
     {
-        var schedule = new Schedule(cmd.ScheduleId, cmd.TechnicianId, cmd.Day, cmd.StartTime, cmd.EndTime);
+        var schedule = new Schedule(
+            cmd.ScheduleId, 
+            cmd.TechnicianId, 
+            cmd.Day, 
+            cmd.StartTime, 
+            cmd.EndTime);
+        
         await scheduleRepository.AddAsync(schedule);
         await unitOfWork.CompleteAsync();
         return schedule;
@@ -32,7 +38,6 @@ public class ScheduleCommandService(
         return schedule;
     }
 
-
     public async Task<bool> DeleteAsync(DeleteScheduleCommand command)
     {
         var schedule = await scheduleRepository.FindByIdAsync(command.ScheduleId);
@@ -43,5 +48,4 @@ public class ScheduleCommandService(
 
         return true;
     }
-    
 }

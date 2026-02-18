@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 /// Command to create a new service request
 /// </summary>
 public record CreateRequestCommand(
-    Guid ClientId,
+    int ClientId,
     Guid TechnicianId,
     Guid PropertyId,
     Guid ServiceId,

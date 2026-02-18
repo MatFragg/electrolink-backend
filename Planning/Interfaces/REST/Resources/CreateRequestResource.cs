@@ -7,7 +7,7 @@ namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 /// Resource received from the client to create a new service request
 /// </summary>
 public record CreateRequestResource(
-    Guid ClientId,
+    int ClientId,
     Guid TechnicianId,
     Guid PropertyId,
     Guid ServiceId,

@@ -28,14 +28,14 @@ public class ServicesController : ControllerBase
     [SwaggerOperation(Summary = "Get Service by ID", OperationId = "GetServiceById")]
     [SwaggerResponse(200, "Service found", typeof(ServiceResource))]
     [SwaggerResponse(404, "Service not found")]
-    public async Task<IActionResult> GetById(string serviceId)
-    {
-        var svc = await _qry.Handle(new GetServiceByIdQuery(serviceId));
+    public async Task<IActionResult> GetById(string serviceId) {
+        var guid = Guid.Parse(serviceId);
+        var svc = await _qry.Handle(new GetServiceByIdQuery(guid));
         if (svc is null) return NotFound();
         var res = ServiceResourceFromEntityAssembler.ToResourceFromEntity(svc);
         return Ok(res);
     }
-
+    
     [HttpPost]
     [SwaggerOperation(Summary = "Create a new Service", OperationId = "CreateService")]
     [SwaggerResponse(201, "Service created", typeof(ServiceResource))]
@@ -55,9 +55,17 @@ public class ServicesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Service not found")]
     public async Task<IActionResult> UpdateService(string serviceId, [FromBody] CreateServiceResource resource)
     {
-        var command = new UpdateServiceCommand(serviceId, resource.Name, resource.Description, resource.BasePrice,
-            resource.EstimatedTime, resource.Category, resource.IsVisible, resource.CreatedBy);
-        var updated = await _cmd.UpdateAsync(command);
+        var guid = Guid.Parse(serviceId);
+        var command = new UpdateServiceCommand(
+            guid,
+            resource.Name,
+            resource.Description,
+            resource.BasePrice,
+            resource.EstimatedTime,
+            resource.Category,
+            resource.IsVisible
+        );
+        var updated = await _cmd.Handle(command);
         if (updated is null) return NotFound();
         return Ok(ServiceResourceFromEntityAssembler.ToResourceFromEntity(updated));
     }
@@ -68,8 +76,9 @@ public class ServicesController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Service not found")]
     public async Task<IActionResult> DeleteService(string serviceId)
     {
-        var command = new DeleteServiceCommand(serviceId);
-        var deleted = await _cmd.DeleteAsync(command);
+        var guid = Guid.Parse(serviceId);
+        var command = new DeleteServiceCommand(guid);
+        var deleted = await _cmd.Handle(command);
         return deleted ? NoContent() : NotFound();
     }
 }

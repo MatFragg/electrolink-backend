@@ -1,3 +1,4 @@
+using System.Linq;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
@@ -8,14 +9,14 @@ public static class RequestResourceFromEntityAssembler
 {
     public static RequestResource ToResourceFromEntity(Request r) =>
         new RequestResource(
-            r.RequestId,
+            r.Id.ToString(),
             r.ClientId.ToString(),
             r.TechnicianId.ToString(),
             r.PropertyId.ToString(),
             r.ServiceId.ToString(),
             r.ProblemDescription,
             r.ScheduledDate,
-            r.Status,
+            r.Status.ToString(),
             new ElectricBill(
                 r.Bill.BillingPeriod,
                 r.Bill.EnergyConsumed,

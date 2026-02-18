@@ -3,16 +3,11 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record CreateServiceCommand(
-    string ServiceId,
     string Name,
     string Description,
-    double BasePrice,
+    decimal BasePrice,
     string EstimatedTime,
     string Category,
     bool IsVisible,
-    string CreatedBy,
-    ServicePolicy Policy,
-    ServiceRestriction Restriction,
-    List<ServiceTag> Tags,
-    List<ServiceComponent> Components
+    Guid CreatedBy
 );

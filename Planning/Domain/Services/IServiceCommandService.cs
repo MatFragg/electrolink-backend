@@ -6,6 +6,6 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Services;
 public interface IServiceCommandService
 {
     Task<Service> Handle(CreateServiceCommand command);
-    Task<Service?> UpdateAsync(UpdateServiceCommand command);
-    Task<bool> DeleteAsync(DeleteServiceCommand command);
+    Task<Service?> Handle(UpdateServiceCommand command);
+    Task<bool> Handle(DeleteServiceCommand command);
 }

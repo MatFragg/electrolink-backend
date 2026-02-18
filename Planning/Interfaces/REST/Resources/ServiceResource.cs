@@ -4,9 +4,9 @@ public record ServiceResource(
     string ServiceId,
     string Name,
     string Description,
-    double BasePrice,
+    decimal BasePrice,
     string EstimatedTime,
     string Category,
     bool IsVisible,
-    string CreatedBy
+    Guid CreatedBy
 );

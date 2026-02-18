@@ -19,5 +19,5 @@ public interface ISDPContextFacade
     /// </summary>
     /// <param name="clientId">The ID of the client.</param>
     /// <returns>A list of requests belonging to the client.</returns>
-    Task<IEnumerable<Request>> FetchRequestsByClientIdAsync(Guid clientId);
+    Task<IEnumerable<Request>> FetchRequestsByClientIdAsync(int clientId);
 }

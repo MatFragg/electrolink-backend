@@ -4,11 +4,11 @@ namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 public record CreateServiceResource(
     string Name,
     string Description,
-    double BasePrice,
+    decimal BasePrice,
     string EstimatedTime,
     string Category,
     bool IsVisible,
-    string CreatedBy,
+    Guid CreatedBy,
     ServicePolicy Policy,
     ServiceRestriction Restriction,
     List<ServiceTag> Tags,

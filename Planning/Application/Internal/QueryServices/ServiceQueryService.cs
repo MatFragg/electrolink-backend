@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 
@@ -9,7 +10,8 @@ public class ServiceQueryService(IServiceRepository serviceRepository) : IServic
 {
     public async Task<Service?> Handle(GetServiceByIdQuery query)
     {
-        return await serviceRepository.FindByIdAsync(query.ServiceId);
+        var serviceId = new ServiceId(query.ServiceId);
+        return await serviceRepository.FindByIdAsync(serviceId);
     }
 
     public async Task<IEnumerable<Service>> Handle(GetAllVisibleServicesQuery query)

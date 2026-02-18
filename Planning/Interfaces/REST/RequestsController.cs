@@ -30,7 +30,8 @@ public class RequestsController : ControllerBase
     [SwaggerResponse(404, "Request not found")]
     public async Task<IActionResult> GetById(string requestId)
     {
-        var req = await _qry.Handle(new GetRequestDetailsQuery(requestId));
+        var guid = Guid.Parse(requestId);
+        var req = await _qry.Handle(new GetRequestDetailsQuery(guid));
         if (req is null) return NotFound();
         var res = RequestResourceFromEntityAssembler.ToResourceFromEntity(req);
         return Ok(res);
@@ -42,14 +43,13 @@ public class RequestsController : ControllerBase
     [SwaggerResponse(400, "Invalid client ID format")]
     public async Task<IActionResult> GetByClient(string clientId)
     {
-        if (!Guid.TryParse(clientId, out var parsedClientId))
+        if (!int.TryParse(clientId, out var parsedClientId))
             return BadRequest("Invalid client ID format.");
 
         var reqs = await _qry.Handle(new GetRequestsByClientIdQuery(parsedClientId));
         var resources = reqs.Select(RequestResourceFromEntityAssembler.ToResourceFromEntity);
         return Ok(resources);
     }
-
 
     [HttpPost("[controller]")]
     [SwaggerOperation(Summary = "Create a new Request", OperationId = "CreateRequest")]
@@ -70,29 +70,28 @@ public class RequestsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Request not found")]
     public async Task<IActionResult> UpdateRequest(string requestId, [FromBody] CreateRequestResource resource)
     {
+        var guid = Guid.Parse(requestId);
+    
         var command = new UpdateRequestCommand(
-            requestId,
-            resource.ClientId,
-            resource.TechnicianId,
-            resource.PropertyId,
-            resource.ServiceId,
+            guid,
             resource.ScheduledDate,
-            resource.ProblemDescription,
-            resource.Bill,
-            resource.Photos
+            resource.TechnicianId,
+            resource.ProblemDescription
         );
 
         var updated = await _cmd.UpdateAsync(command);
         if (updated is null) return NotFound();
         return Ok(RequestResourceFromEntityAssembler.ToResourceFromEntity(updated));
     }
+
     [HttpDelete("[controller]/{requestId}")]
     [SwaggerOperation(Summary = "Delete a Request", OperationId = "DeleteRequest")]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Request deleted")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Request not found")]
     public async Task<IActionResult> DeleteRequest(string requestId)
     {
-        var deleted = await _cmd.DeleteAsync(new DeleteRequestCommand(requestId));
+        var guid = Guid.Parse(requestId);
+        var deleted = await _cmd.DeleteAsync(new DeleteRequestCommand(guid));
         return deleted ? NoContent() : NotFound();
     }
 }

@@ -12,6 +12,8 @@ using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Configura
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
@@ -24,9 +26,9 @@ namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Confi
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     
-    //public DbSet<Rating> Ratings { get; set; }
-    //public DbSet<Report> Reports { get; set; }
-    //public DbSet<ServiceOperation> ServiceOperations { get; set; }
+    public DbSet<Rating> Ratings { get; set; }
+    public DbSet<Report> Reports { get; set; }
+    public DbSet<ServiceOperation> ServiceOperations { get; set; }
     
     public DbSet<Property> Properties { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
@@ -36,6 +38,11 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ComponentStock> ComponentStocks { get; set; }
     
     public DbSet<Profile> Profiles { get; set; }
+    
+    // Planning Bounded Context
+    public DbSet<Service> Services { get; set; }
+    public DbSet<Request> Requests { get; set; }
+    public DbSet<Schedule> Schedules { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
@@ -50,8 +57,8 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
         builder.ApplyIamConfiguration();
         builder.ApplyProfilesConfiguration();
         builder.ApplyAssetsConfiguration();
-      //  builder.ApplyMonitoringConfiguration();
-      //  builder.ApplyServiceDesignAndPlanningConfiguration();
+        builder.ApplyMonitoringConfiguration();
+        builder.ApplyServiceDesignAndPlanningConfiguration();
         builder.ApplySubscriptionsConfiguration();
         builder.UseSnakeCaseNamingConvention();
 

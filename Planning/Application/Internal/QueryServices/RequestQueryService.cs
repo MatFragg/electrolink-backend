@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 
@@ -9,11 +10,13 @@ public class RequestQueryService(IRequestRepository requestRepository) : IReques
 {
     public async Task<Request?> Handle(GetRequestDetailsQuery query)
     {
-        return await requestRepository.FindByIdAsync(query.RequestId);
+        var requestId = new RequestId(query.RequestId);
+        return await requestRepository.FindByIdAsync(requestId);
     }
 
     public async Task<IEnumerable<Request>> Handle(GetRequestsByClientIdQuery query)
     {
-        return await requestRepository.ListByClientIdAsync(query.ClientId);
+        var clientId = new ClientId(query.ClientId);
+        return await requestRepository.ListByClientIdAsync(clientId);
     }
 }

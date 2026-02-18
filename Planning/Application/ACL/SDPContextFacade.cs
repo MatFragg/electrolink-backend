@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 
@@ -12,11 +13,14 @@ public class SdpContextFacade(IRequestQueryService requestQueryService) : ISDPCo
 {
     public async Task<Request?> FetchRequestDetailsAsync(string requestId)
     {
-        var query = new GetRequestDetailsQuery(requestId);
+        if (!Guid.TryParse(requestId, out var guid))
+            return null;
+
+        var query = new GetRequestDetailsQuery(guid);
         return await requestQueryService.Handle(query);
     }
 
-    public async Task<IEnumerable<Request>> FetchRequestsByClientIdAsync(Guid clientId)
+    public async Task<IEnumerable<Request>> FetchRequestsByClientIdAsync(int clientId)
     {
         var query = new GetRequestsByClientIdQuery(clientId);
         return await requestQueryService.Handle(query);
