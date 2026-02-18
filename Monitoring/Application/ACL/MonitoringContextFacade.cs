@@ -2,7 +2,6 @@ using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
@@ -11,7 +10,7 @@ namespace Hampcoders.Electrolink.API.Monitoring.Application.ACL;
 
 /// <inheritdoc />
 public sealed class MonitoringContextFacade(
-    ISDPContextFacade                 sdpFacade,
+    //ISDPContextFacade                 sdpFacade,
     IServiceOperationCommandService   operationCmdService,
     IServiceOperationRepository serviceOperationRepository,
     IProfilesContextFacade profilesContextFacade,   
@@ -21,9 +20,9 @@ public sealed class MonitoringContextFacade(
     public async Task<Guid> CreateServiceOperationForRequestAsync(Guid requestId, int technicianId)
     {
         // 1) Verificar que el Request exista en SDP.
-        var requestDto = await sdpFacade.FetchRequestDetailsAsync(requestId.ToString());
-        if (requestDto is null)
-            throw new ArgumentException($"Request {requestId} not found in Service Design and Planning.");
+        //var requestDto = await sdpFacade.FetchRequestDetailsAsync(requestId.ToString());
+        /*if (requestDto is null)
+            throw new ArgumentException($"Request {requestId} not found in Service Design and Planning.");*/
 
         // 2) Verificar si ya existe una ServiceOperation para ese Request
         var existingOperation = await serviceOperationRepository.FindByIdAsync(requestId);

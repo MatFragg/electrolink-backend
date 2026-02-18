@@ -39,9 +39,13 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     
     public DbSet<Profile> Profiles { get; set; }
     
-    // Planning Bounded Context
-    public DbSet<Service> Services { get; set; }
-    public DbSet<Request> Requests { get; set; }
+    // Planning Bounded Context (Refactored with Tactical DDD)
+    //public DbSet<Service> Services { get; set; } // OLD - replaced by ServiceCatalog
+    //public DbSet<Request> Requests { get; set; } // OLD - replaced by ServiceRequest
+    public DbSet<ServiceCatalog> ServiceCatalogs { get; set; }
+    public DbSet<ServiceRecipe> ServiceRecipes { get; set; }
+    public DbSet<ServiceRequest> ServiceRequests { get; set; }
+    public DbSet<ServiceAssignment> ServiceAssignments { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
