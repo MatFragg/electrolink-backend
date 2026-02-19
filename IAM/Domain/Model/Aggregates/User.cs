@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 
@@ -12,13 +14,13 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
  *     This class is used to represent a user
  * </remarks>
  */
-public partial class User(string username, string passwordHash)
+public partial class User(string username, string passwordHash) : BaseAggregateRoot
 {
     public User() : this(string.Empty, string.Empty)
     {
     }   
 
-    public int Id { get; }
+    public UserId Id { get; }
     public string Username { get; private set; } = username;
     private readonly List<IEvent> _domainEvents = new();
     public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -41,7 +43,7 @@ public partial class User(string username, string passwordHash)
         Username = newUsername;
 
         // Registra el evento de dominio
-        _domainEvents.Add(new UsernameUpdatedEvent(Id, oldUsername, newUsername, DateTime.UtcNow));
+        _domainEvents.Add(new UsernameUpdatedEvent(Id.Value, oldUsername, newUsername, DateTime.UtcNow));
     }
 
     /**
@@ -59,7 +61,7 @@ public partial class User(string username, string passwordHash)
         PasswordHash = newPasswordHash;
 
         // Registra el evento de dominio
-        _domainEvents.Add(new UserPasswordChangedEvent(Id, DateTime.UtcNow));
+        _domainEvents.Add(new UserPasswordChangedEvent(Id.Value, DateTime.UtcNow));
     }
 
     /**
@@ -69,7 +71,7 @@ public partial class User(string username, string passwordHash)
      */
     public void RecordSignIn()
     {
-        _domainEvents.Add(new UserSignedInEvent(Id, DateTime.UtcNow));
+        _domainEvents.Add(new UserSignedInEvent(Id.Value, DateTime.UtcNow));
     }
 
     /// <summary>

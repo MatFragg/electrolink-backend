@@ -11,7 +11,7 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Repositories;
  *     This repository is used to manage users
  * </remarks>
  */
-public interface IUserRepository : IBaseRepository<User, int>
+public interface IUserRepository : IBaseRepository<User, string>
 {
     /**
      * <summary>

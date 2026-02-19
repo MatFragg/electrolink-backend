@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 
 public record UserPasswordChangedEvent(
-    int UserId,
+    string UserId,
     DateTime OccurredOn
 ) : IEvent
 {

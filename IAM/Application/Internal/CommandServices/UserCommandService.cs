@@ -82,7 +82,7 @@ public class UserCommandService(
             await unitOfWork.CompleteAsync();
             
             var userRegisteredEvent = new UserRegisteredEvent(
-                user.Id,
+                user.Id.Value,
                 user.Username,
                 DateTime.UtcNow
             );

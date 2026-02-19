@@ -48,7 +48,7 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
         var userId = await tokenService.ValidateToken(token);
         if (userId == null) throw new Exception("Invalid token");
 
-        var getUserByIdQuery = new GetUserByIdQuery(userId.Value);
+        var getUserByIdQuery = new GetUserByIdQuery(userId.Value.ToString());
         var user = await userQueryService.Handle(getUserByIdQuery);
 
         context.Items["User"] = user;

@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 
 public record UsernameUpdatedEvent(
-    int UserId,
+    string UserId,
     string OldUsername,
     string NewUsername,
     DateTime OccurredOn

@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.IAM.Interfaces.REST.Transform;
 
 public static class UpdatePasswordCommandFromResourceAssembler
 {
-    public static UpdatePasswordCommand ToCommandFromResource(int userId, UpdatePasswordResource resource)
+    public static UpdatePasswordCommand ToCommandFromResource(string userId, UpdatePasswordResource resource)
     {
         return new UpdatePasswordCommand(userId, resource.CurrentPassword, resource.NewPassword);
     }

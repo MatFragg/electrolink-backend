@@ -5,7 +5,7 @@ namespace Hampcoders.Electrolink.API.IAM.Interfaces.REST.Transform;
 
 public static class UpdateUsernameCommandFromResourceAssembler
 {
-    public static UpdateUsernameCommand ToCommandFromResource(int userId, UpdateUsernameResource resource)
+    public static UpdateUsernameCommand ToCommandFromResource(string userId, UpdateUsernameResource resource)
     {
         return new UpdateUsernameCommand(userId, resource.Username);
     }

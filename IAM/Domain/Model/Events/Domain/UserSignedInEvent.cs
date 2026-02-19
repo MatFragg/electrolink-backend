@@ -2,7 +2,7 @@
 
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 
-public record UserSignedInEvent(int UserId, DateTime OccurredOn) : IEvent
+public record UserSignedInEvent(string UserId, DateTime OccurredOn) : IEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
 };

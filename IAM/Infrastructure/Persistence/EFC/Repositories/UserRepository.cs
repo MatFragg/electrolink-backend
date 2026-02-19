@@ -15,7 +15,7 @@ namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Reposito
  *     This repository is used to manage users
  * </remarks>
  */
-public class UserRepository(AppDbContext context) : BaseRepository<User, int>(context), IUserRepository
+public class UserRepository(AppDbContext context) : BaseRepository<User, string>(context), IUserRepository
 {
     /**
      * <summary>

@@ -24,7 +24,7 @@ public class UsersController(IUserQueryService userQueryService, IUserCommandSer
         Description = "Get a user by its id",
         OperationId = "GetUserById")]
     [SwaggerResponse(StatusCodes.Status200OK, "The user was found", typeof(UserResource))]
-    public async Task<IActionResult> GetUserById(int id)
+    public async Task<IActionResult> GetUserById(string id)
     {
         var getUserByIdQuery = new GetUserByIdQuery(id);
         var user = await userQueryService.Handle(getUserByIdQuery);
@@ -55,13 +55,13 @@ public class UsersController(IUserQueryService userQueryService, IUserCommandSer
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid username or user not found")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden - User ID in token does not match route ID")]
-    public async Task<IActionResult> UpdateUsername(int id, [FromBody] UpdateUsernameResource resource)
+    public async Task<IActionResult> UpdateUsername(string id, [FromBody] UpdateUsernameResource resource)
     {
         try
         {
             // **CORRECCIÓN**: Obtener el usuario desde HttpContext.Items
             var authenticatedUser = HttpContext.Items["User"] as User;
-            if (authenticatedUser == null || authenticatedUser.Id != id)
+            if (authenticatedUser == null || authenticatedUser.Id.Value != id)
             {
                 logger.LogWarning($"[IAM Controller] Intento de actualizar username por usuario no autorizado. TokenUserId: {authenticatedUser?.Id}, RouteId: {id}.");
                 return StatusCode(StatusCodes.Status403Forbidden, new
@@ -95,13 +95,13 @@ public class UsersController(IUserQueryService userQueryService, IUserCommandSer
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid current password, new password, or user not found")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden - User ID in token does not match route ID")]
-    public async Task<IActionResult> UpdatePassword(int id, [FromBody] UpdatePasswordResource resource)
+    public async Task<IActionResult> UpdatePassword(string id, [FromBody] UpdatePasswordResource resource)
     {
         try
         {
             // **CORRECCIÓN**: Obtener el usuario desde HttpContext.Items
             var authenticatedUser = HttpContext.Items["User"] as User;
-            if (authenticatedUser == null || authenticatedUser.Id != id)
+            if (authenticatedUser == null || authenticatedUser.Id.Value != id)
             {
                 logger.LogWarning($"[IAM Controller] Intento de actualizar contraseña por usuario no autorizado. TokenUserId: {authenticatedUser?.Id}, RouteId: {id}.");
                 return StatusCode(StatusCodes.Status403Forbidden, new

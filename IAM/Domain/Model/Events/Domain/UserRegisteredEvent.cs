@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 
 public record UserRegisteredEvent(
-    int UserId,
+    string UserId,
     string Username,
     DateTime OccurredOn
 ) : IEvent
