@@ -15,7 +15,17 @@ public interface IProfileCommandService
     Task<bool> Handle(AssignTechnicianInfoCommand command);
     Task<bool> Handle(UpdateTechnicianCoverageCommand command);
     Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command);
-    Task<Guid> Handle(AddPortfolioItemCommand command); // Nuevo
-    Task<bool> Handle(UpdatePortfolioItemDetailsCommand command); // Nuevo
-    Task<bool> Handle(RemovePortfolioItemCommand command); // Nuevo
+    Task<Guid> Handle(AddPortfolioItemCommand command); 
+    Task<bool> Handle(UpdatePortfolioItemDetailsCommand command);
+    Task<bool> Handle(RemovePortfolioItemCommand command); 
+    
+    Task<Profile> Handle(CompleteProfileAsTechnicianCommand command);
+    Task<Profile> Handle(CompleteProfileAsHomeownerCommand command);
+    Task<Profile> Handle(UpdateProfilePersonalDataCommand command);
+    Task<Profile> Handle(UpdateTechnicianDataCommand command);
+    Task<Profile> Handle(AddCertificationCommand command);
+    Task<Profile> Handle(UpdateCertificationCommand command);
+    Task<Profile> Handle(UpdateCommunicationPreferencesCommand command);
+    Task Handle(DeactivateProfileCommand command);
+    Task Handle(ReactivateProfileCommand command);
 }
