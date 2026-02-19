@@ -2,5 +2,6 @@
 
 public enum EBusinessRole
 {
-    
+    Technician,
+    HomeOwner
 }

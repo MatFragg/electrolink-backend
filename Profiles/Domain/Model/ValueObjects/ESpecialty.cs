@@ -2,5 +2,10 @@
 
 public enum ESpecialty
 {
-    
+    SolarInstallation,
+    ElectricalMaintenance,
+    Repair,
+    Inspection,
+    Upgrade,
+    BatterySystems
 }

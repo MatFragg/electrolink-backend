@@ -2,5 +2,7 @@
 
 public enum EProfileStatus
 {
-    
+    Incomplete,
+    Active,
+    Rejected
 }
