@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 
-public record CreateServiceOperationCommand(Guid RequestId, int TechnicianId);
+public record CreateServiceOperationCommand(Guid RequestId, string TechnicianId);

@@ -20,7 +20,7 @@ public class RatingCommandService(
         var existing = await _repository.GetByRequestIdAsync(command.RequestId);
         if (existing != null) return;
 
-        var rating = new Rating(Guid.NewGuid(), command.RequestId, command.Score, command.Comment, command.RaterId, command.TechnicianId);
+        var rating = new Rating(Guid.NewGuid(), command.RequestId, command.Score, command.Comment, command.RaterId, command.TechnicianId.ToString());
         await _repository.AddAsync(rating);
         await unitOfWork.CompleteAsync();
     }

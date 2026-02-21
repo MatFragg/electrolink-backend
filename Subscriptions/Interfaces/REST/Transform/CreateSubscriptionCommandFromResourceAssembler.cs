@@ -1,6 +1,7 @@
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+using UserId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.UserId;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 
@@ -22,7 +23,7 @@ public static class CreateSubscriptionCommandFromResourceAssembler
         }
 
         return new CreateSubscriptionCommand(
-            new UserId(resource.UserId),
+            UserId.From(resource.UserId),
             resource.PlanId,
             resource.StartDate,
             resource.EndDate,

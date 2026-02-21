@@ -14,6 +14,6 @@ public interface IMonitoringContextFacade
     /// <param name="requestId">Identificador del Request (GUID en SDP).</param>
     /// <param name="technicianId">Técnico responsable.</param>
     /// <returns>Guid que identifica la ServiceOperation creada.</returns>
-    Task<Guid> CreateServiceOperationForRequestAsync(Guid requestId, int technicianId);
+    Task<Guid> CreateServiceOperationForRequestAsync(Guid requestId, string technicianId);
 
 }

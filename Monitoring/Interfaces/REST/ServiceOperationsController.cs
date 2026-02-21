@@ -77,7 +77,7 @@ public class ServiceOperationsController(
     [HttpGet("technician/{technicianId}/history")]
     [SwaggerOperation(Summary = "Technician history", Description = "Gets the service operations completed by a technician.", OperationId = "GetClientHistory")]
     [SwaggerResponse(StatusCodes.Status200OK, "History retrieved", typeof(IEnumerable<ServiceOperation>))]
-    public async Task<IActionResult> GetClientHistory(int technicianId)
+    public async Task<IActionResult> GetClientHistory(string technicianId)
     {
         var query = new GetClientHistoryByTechnicianIdQuery(technicianId);
         var history = await queryService.Handle(new GetClientHistoryByTechnicianIdQuery(technicianId));

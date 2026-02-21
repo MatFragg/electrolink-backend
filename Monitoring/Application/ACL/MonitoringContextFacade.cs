@@ -17,7 +17,7 @@ public sealed class MonitoringContextFacade(
     IUnitOfWork                       unitOfWork)
     : IMonitoringContextFacade
 {
-    public async Task<Guid> CreateServiceOperationForRequestAsync(Guid requestId, int technicianId)
+    public async Task<Guid> CreateServiceOperationForRequestAsync(Guid requestId, string technicianId)
     {
         // 1) Verificar que el Request exista en SDP.
         //var requestDto = await sdpFacade.FetchRequestDetailsAsync(requestId.ToString());

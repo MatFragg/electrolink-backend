@@ -19,6 +19,7 @@ public class SubscriptionCommandService(
     IMediator mediator
 ) : ISubscriptionCommandService
 {
+    /*
     public async Task<Guid> Handle(CreateSubscriptionCommand command)
     {
         // 1. Validate User existence
@@ -391,7 +392,6 @@ public class SubscriptionCommandService(
 
     }
     
-    
     public async Task<string> Handle(CreateBillingPortalSessionCommand command)
     {
         // 1. Buscar la suscripción activa del usuario
@@ -427,6 +427,69 @@ public class SubscriptionCommandService(
             _ => ESubscriptionStatus.Pending
         };
     }
+    */
+    public Task<Guid> Handle(CreateSubscriptionCommand command)
+    {
+        throw new NotImplementedException();
+    }
 
-    
+    public Task<Guid?> Handle(UpdateSubscriptionStatusCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Guid?> Handle(ActivateTrialCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Guid?> Handle(IncrementSubscriptionUsageCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Guid?> Handle(ResetSubscriptionUsageCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Handle(ApplyDiscountCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Guid?> Handle(ChangeSubscriptionPlanCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> Handle(CreateCheckoutSessionCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Guid> Handle(ProcessPaymentCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Handle(CancelSubscriptionCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Handle(ChangeSubscriptionPlanInGatewayCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Handle(SyncSubscriptionFromGatewayCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string> Handle(CreateBillingPortalSessionCommand command)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -51,6 +51,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MediatR; 
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensions;
+using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.EventHandlers;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
@@ -240,6 +241,7 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileCommandService, ProfileCommandService>();
 builder.Services.AddScoped<IProfileQueryService, ProfileQueryService>();
 builder.Services.AddScoped<IProfilesContextFacade, ProfilesContextFacade>();
+builder.Services.AddScoped<IProfileUniquenessChecker, ProfileUniquenessChecker>();
 builder.Services.AddScoped<ExternalIamServiceForProfilesBC>();
 builder.Services.AddScoped<ExternalAssetService>();
 

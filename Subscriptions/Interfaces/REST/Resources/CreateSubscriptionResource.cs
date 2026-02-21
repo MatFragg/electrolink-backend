@@ -12,7 +12,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 /// <param name="InitialStatus">The initial status of the subscription (e.g., "Active", "Trial").</param>
 /// <param name="TrialEndsAt">Optional trial end date.</param>
 public record CreateSubscriptionResource(
-    int UserId,
+    string UserId,
     Guid PlanId,
     DateTime StartDate,
     DateTime EndDate,

@@ -38,7 +38,7 @@ public class CheckoutController(
 
             // Create an Assembler for the command
             var createCheckoutSessionCommand = CreateCheckoutSessionCommandFromResourceAssembler
-                .ToCommandFromResource(userId, resource);
+                .ToCommandFromResource(userId.ToString(), resource);
             
             
             var checkoutUrl = await subscriptionCommandService.Handle(createCheckoutSessionCommand);

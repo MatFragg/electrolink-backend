@@ -6,6 +6,7 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using MediatR;
 using Stripe;
+using UserId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.UserId;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe.Webhooks;
 
@@ -319,7 +320,7 @@ public class StripeWebhookEventProcessor
 
         // 4. Retornar todos los datos requeridos como una tupla
         return (
-            UserId: new UserId(localUserId),
+            UserId: UserId.From(localUserId.ToString()),
             PlanId: planLocal.Id.Value,
             CustomerId: new PaymentGatewayCustomerId(subscriptionStripe.CustomerId),
             SubscriptionId: new PaymentGatewaySubscriptionId(subscriptionStripe.Id),

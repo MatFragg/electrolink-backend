@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// Command to create a Checkout session in Stripe.
 /// </summary>
 public record CreateCheckoutSessionCommand(
-    UserId UserId,
+    string UserId,
     PlanId PlanId,
     string SuccessUrl,
     string CancelUrl,

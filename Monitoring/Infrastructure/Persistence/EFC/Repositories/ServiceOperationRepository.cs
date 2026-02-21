@@ -17,7 +17,7 @@ public class ServiceOperationRepository(AppDbContext context)
     }
     
 
-    public async Task<IEnumerable<ServiceOperation>> GetByTechnicianIdAsync(int technicianId)
+    public async Task<IEnumerable<ServiceOperation>> GetByTechnicianIdAsync(string technicianId)
     {
         return (await context.Set<ServiceOperation>()
                 .Include(s => s.StatusHistory)

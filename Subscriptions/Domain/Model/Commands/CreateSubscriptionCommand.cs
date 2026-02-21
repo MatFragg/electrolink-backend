@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+using UserId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.UserId;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 

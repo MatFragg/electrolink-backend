@@ -13,7 +13,7 @@ public class Rating
 
     public Rating() {}
     
-    public Rating(Guid ratingId, Guid requestId, int score, string comment, string raterId, int technicianId)
+    public Rating(Guid ratingId, Guid requestId, int score, string comment, string raterId, string technicianId)
     {
         RatingId = ratingId;
         RequestId = requestId;

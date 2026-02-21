@@ -52,6 +52,7 @@
       <Folder Include="Planning\Application\" />
       <Folder Include="Planning\Domain\" />
       <Folder Include="Planning\Infrastructure\" />
+      <Folder Include="Profiles\Application\Internal\EventHandlers\" />
         <Folder Include="Subscriptions\" />
     </ItemGroup>
 

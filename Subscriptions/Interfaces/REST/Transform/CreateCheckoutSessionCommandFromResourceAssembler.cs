@@ -9,10 +9,10 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Transform;
 /// </summary>
 public static class CreateCheckoutSessionCommandFromResourceAssembler
 {
-    public static CreateCheckoutSessionCommand ToCommandFromResource(int userId, CreateCheckoutSessionResource resource)
+    public static CreateCheckoutSessionCommand ToCommandFromResource(string userId, CreateCheckoutSessionResource resource)
     {
         return new CreateCheckoutSessionCommand(
-            new UserId(userId),
+            userId,
             new PlanId(resource.PlanId),
             resource.SuccessUrl,
             resource.CancelUrl,

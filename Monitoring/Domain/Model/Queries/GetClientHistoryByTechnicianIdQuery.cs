@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
 
-public record GetClientHistoryByTechnicianIdQuery(int TechnicianId);
+public record GetClientHistoryByTechnicianIdQuery(string TechnicianId);

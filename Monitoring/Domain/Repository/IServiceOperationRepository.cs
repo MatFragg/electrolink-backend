@@ -5,6 +5,6 @@ namespace Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
 
 public interface IServiceOperationRepository : IBaseRepository<ServiceOperation, Guid>
 {
-    Task<IEnumerable<ServiceOperation>> GetByTechnicianIdAsync(int technicianId);
+    Task<IEnumerable<ServiceOperation>> GetByTechnicianIdAsync(string technicianId);
     
 }
