@@ -1,215 +1,173 @@
 
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.Events.Domain;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using InvalidOperationException = System.InvalidOperationException;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 
-public partial class Profile
+public partial class Profile : BaseAggregateRoot
 {
-    public int Id { get; protected set; }
-    public PersonName Name { get; protected set; }
-    public EmailAddress Email { get; protected set; }
-    public StreetAddress Address { get; protected set; }
+    // ── Identity ──────────────────────────────────────────
+    public ProfileId ProfileId { get; protected set; }
+    public UserId UserId { get; private set; }
 
-    public Role Role { get; protected set; }
-    public HomeOwner? HomeOwner { get; protected set; }
-    public Technician? Technician { get; protected set; }
+    // ── States ────────────────────────────────────────────
+    public EProfileStatus Status { get; private set; }
+    public EBusinessRole? BusinessRole { get; private set; }
 
-    public string FullName => Name.FullName;
-    public string EmailAddress => Email.Address;
-    public string StreetAddress => Address.FullAddress;
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
+    // ── Personal Data ─────
+    public PersonalData? PersonalData { get; private set; }
 
-    protected Profile()
+    // ── Sub-entities according to role ──
+    public Technician? Technician { get; private set; }
+    public HomeOwner? Homeowner { get; private set; }
+
+    private Profile()
     {
-        Name = new PersonName();
-        Email = new EmailAddress();
-        Address = new StreetAddress();
     }
 
-    public Profile(string firstName, string lastName, string email, string street, string number, string city,
-        string postalCode, string country, Role role)
+    public static Profile Create(UserId userId)
     {
-        Name = new PersonName(firstName, lastName);
-        Email = new EmailAddress(email);
-        Address = new StreetAddress(street, number, city, postalCode, country);
-        Role = role;
-    }
-
-    public Profile(int userId, CreateProfileCommand command)
-    {
-        if (string.IsNullOrWhiteSpace(command.FirstName) || string.IsNullOrWhiteSpace(command.LastName)) throw new ArgumentException("First name and Last name cannot be empty.");
-        if (string.IsNullOrWhiteSpace(command.Email)) throw new ArgumentException("Email address cannot be empty.");
-        if (string.IsNullOrWhiteSpace(command.Street)) throw new ArgumentException("Street address cannot be empty.");
-        
-        Id = userId;
-        Name = new PersonName(command.FirstName, command.LastName);
-        Email = new EmailAddress(command.Email);
-        Address = new StreetAddress(command.Street, command.Number, command.City, command.PostalCode, command.Country);
-        Role = command.Role;
-
-        switch (Role)
+        var profile = new Profile
         {
-            case Role.HomeOwner:
-                if (string.IsNullOrWhiteSpace(command.Dni))
-                    throw new ArgumentException("Dni is required for HomeOwner role.");
-                HomeOwner = new HomeOwner(command.Dni);
-                break;
+            ProfileId = ProfileId.NewProfileId(),
+            UserId = userId,
+            Status = EProfileStatus.Incomplete,
+            BusinessRole = null,
+            PersonalData = null,
+            Technician = null,
+            Homeowner = null,
+        };
 
-            case Role.Technician:
-                if (string.IsNullOrWhiteSpace(command.LicenseNumber) || string.IsNullOrWhiteSpace(command.Specialization))
-                    throw new ArgumentException("LicenseNumber and Specialization are required for Technician role.");
-                Technician = new Technician(command.LicenseNumber, command.Specialization);
-                break;
+        profile.RaiseDomainEvent(new ProfileCreatedAsIncompleteEvent(
+            profile.ProfileId, profile.UserId));
 
-            default:
-                throw new InvalidOperationException("Unsupported profile role.");
-        }
-        
+        return profile;
     }
 
-    public void SetIdAfterPersistence(int newId)
+    public void CompleteAsTechnician(
+        PersonalData personalData,
+        TechnicianData technicianData,
+        IProfileUniquenessChecker uniquenessChecker
+        )
     {
-        if (Id != 0 && Id != newId)
-            throw new InvalidOperationException($"Profile ID has already been set to {Id} and cannot be changed to a different value ({newId}).");
-        
-        if (Id == 0)
-            Id = newId;
-        
+        EnsureStatus(EProfileStatus.Incomplete);
+        uniquenessChecker.EnsureEmailIsUnique(personalData.Email, ProfileId);
+        uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
 
-        _domainEvents.Add(new ProfileCreatedEvent(Id, Email.Address, Name.FullName, Role, DateTime.UtcNow));
+        PersonalData = personalData;
+        BusinessRole = EBusinessRole.Technician;
+        Technician = Technician.Create(TechnicianId.NewTechnicianId(), ProfileId, technicianData.Specialties, technicianData.ExperienceYears, technicianData.AboutMe);
+        Status = EProfileStatus.Active;
 
-        if (HomeOwner != null && HomeOwner.ProfileId == 0)
-        {
-            HomeOwner.SetProfileId(Id);
-            _domainEvents.Add(new HomeOwnerInfoAssignedEvent(Id, HomeOwner.Dni, DateTime.UtcNow));
-        }
-        if (Technician != null && Technician.ProfileId == 0)
-        {
-            Technician.SetProfileId(Id);
-            _domainEvents.Add(new TechnicianInfoAssignedEvent(Id, Technician.Id, Technician.LicenseNumber, Technician.Specialization, DateTime.UtcNow));
-        }
-    }
-    public void AssignHomeOwnerInfo(string dni)
-    {
-        if (Role != Role.HomeOwner)
-            throw new InvalidOperationException("Cannot assign HomeOwner info to a non-HomeOwner profile.");
-        if (HomeOwner == null)
-            HomeOwner = new HomeOwner(Id, dni);
-        else
-            HomeOwner.UpdateDni(dni); 
-        
-        _domainEvents.Add(new HomeOwnerInfoAssignedEvent(Id, dni, DateTime.UtcNow));
+        RaiseDomainEvent(new ProfileCompletedEvent(ProfileId, UserId, BusinessRole.Value, Technician.TechnicianId));
     }
 
-    public void AssignTechnicianInfo(string licenseNumber, string specialization)
+    public void CompleteAsHomeowner(
+        PersonalData personalData,
+        HomeownerData homeownerData,
+        IProfileUniquenessChecker uniquenessChecker)
     {
-        if (Role != Role.Technician)
-            throw new InvalidOperationException("Cannot assign Technician info to a non-Technician profile.");
+        EnsureStatus(EProfileStatus.Incomplete);
+        uniquenessChecker.EnsureEmailIsUnique(personalData.Email, ProfileId);
+        uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
 
-        if (Technician == null)
-            Technician = new Technician(Id,licenseNumber, specialization); 
-        else 
-            Technician.UpdateSpecialization(specialization);
-        
-        _domainEvents.Add(new TechnicianInfoAssignedEvent(Id, Technician.Id, licenseNumber, specialization, DateTime.UtcNow));
+        PersonalData = personalData;
+        BusinessRole = EBusinessRole.HomeOwner;
+        Homeowner = HomeOwner.Create(HomeownerId.NewHomeownerId(), ProfileId, homeownerData.PreferredContactTime, homeownerData.CommunicationPreferences, homeownerData.EmergencyContact);
+        Status = EProfileStatus.Active;
+
+        RaiseDomainEvent(new ProfileCompletedEvent(ProfileId, UserId, BusinessRole.Value, Homeowner.HomeownerId));
     }
     
-    public void UpdateProfileInfo(string firstName, string lastName, string email, string street, string number, string city,
-        string postalCode, string country)
+    public void UpdatePersonalData(string? firstName, string? lastName, PhoneNumber? phone, Address? address)
     {
-        var oldFullName = Name.FullName;
-        var oldEmailAddress = Email.Address;
-        var oldStreetAddress = Address.FullAddress;
+        EnsureStatus(EProfileStatus.Active);
+        PersonalData = PersonalData!.Update(firstName, lastName, phone, address);
+        RaiseDomainEvent(new ProfilePersonalDataUpdatedEvent(ProfileId, PersonalData));
 
-        Name = new PersonName(firstName, lastName);
-        Email = new EmailAddress(email);
-        Address = new StreetAddress(street, number, city, postalCode, country);
-
-        _domainEvents.Add(new ProfileUpdatedEvent(
-            Id,
-            oldFullName, Name.FullName,
-            oldEmailAddress, Email.Address,
-            oldStreetAddress, Address.FullAddress,
-            DateTime.UtcNow
-        ));
     }
 
-
-    public void UpdateTechnicianCoverageArea(string newCoverageAreaDetails)
+    public void UpdateTechnicianData(IEnumerable<ESpecialty>? specialties, int? experienceYears, string? aboutMe)
     {
-        if (Role != Role.Technician || Technician == null)
-            throw new InvalidOperationException("Only technicians can update coverage area.");
-        
-        _domainEvents.Add(new TechnicianCoverageAreaUpdatedEvent(
-            Technician.Id,
-            newCoverageAreaDetails,
-            DateTime.UtcNow
-        ));
-    }
+        EnsureStatus(EProfileStatus.Active);
+        EnsureRole(EBusinessRole.Technician);
 
-    public void UpdateTechnicianSpecialties(IReadOnlyList<string> newSpecialties)
-    {
-        if (Role != Role.Technician || Technician == null)
-            throw new InvalidOperationException("Only technicians can update specialties.");
+        var specialtiesList = specialties?.ToList();
+
+        if (specialtiesList is not null)
+            Technician!.UpdateSpecialties(specialtiesList);
+
+        if (experienceYears.HasValue)
+            Technician!.UpdateExperienceYears(experienceYears.Value);
         
-        Technician.UpdateSpecialization(string.Join(", ", newSpecialties)); 
-        _domainEvents.Add(new TechnicianSpecialtyUpdatedEvent(
-            Technician.Id,
-            newSpecialties,
-            DateTime.UtcNow
-        ));
+        if (aboutMe is not null)
+            Technician!.UpdateAboutMe(aboutMe);
+
+        RaiseDomainEvent(new TechnicianDataUpdatedEvent(
+            ProfileId,
+            specialtiesList,
+            experienceYears,
+            aboutMe,
+            Technician!.TechnicianId));
     }
     
-    public PortfolioItem AddPortfolioItemToTechnician(string title, string description, string imageUrl)
+    public void UpdateHomeOwnerData(EContactTime? preferredContactTime, CommunicationPreferences? preferences, EmergencyContact? emergencyContact)
     {
-        if (Role != Role.Technician || Technician == null)
-            throw new InvalidOperationException("Only technicians can manage portfolio items.");
+        EnsureStatus(EProfileStatus.Active);
+        EnsureRole(EBusinessRole.HomeOwner);
+
+        // Solo aplicar cambios cuando se proporcionan (null => no cambiar)
+        if (preferences != null)
+            Homeowner!.UpdateCommunicationPreferences(preferences);
+
+        if (preferredContactTime != null)
+            Homeowner!.UpdatePreferredContactTime(preferredContactTime.Value);
+
+        if (emergencyContact != null)
+            Homeowner!.UpdateEmergencyContact(emergencyContact);
+
+        RaiseDomainEvent(new HomeownerDataUpdatedEvent(
+            ProfileId,
+            Homeowner!.HomeownerId,
+            preferredContactTime,
+            preferences,
+            emergencyContact));
+    }
+
+    public void Deactivate()
+    {
+        EnsureStatus(EProfileStatus.Active);
         
-        var newPortfolioItem = Technician.AddPortfolioItem(title, description, imageUrl);
-        _domainEvents.Add(new PortfolioItemAddedEvent(
-            Id,
-            newPortfolioItem.WorkId,
-            newPortfolioItem.Title,
-            DateTime.UtcNow
-        ));
-        return newPortfolioItem;
+        Status = EProfileStatus.Deactivated;
+        RaiseDomainEvent(new ProfileDeactivatedEvent(ProfileId, UserId, BusinessRole!.Value));
     }
     
-    public void UpdateTechnicianPortfolioItemDetails(Guid workId, string newTitle, string newDescription, string newImageUrl)
+    public void Reactivate()
     {
-        if (Role != Role.Technician || Technician == null)
-            throw new InvalidOperationException("Only technicians can manage portfolio items.");
-
-        Technician.UpdatePortfolioItemDetails(workId, newTitle, newDescription, newImageUrl);
-        _domainEvents.Add(new PortfolioItemUpdatedEvent(
-            Id,
-            workId,
-            newTitle,
-            DateTime.UtcNow
-        ));
+        EnsureStatus(EProfileStatus.Deactivated);
+        Status = EProfileStatus.Active;
+        RaiseDomainEvent(new ProfileReactivatedEvent(ProfileId, UserId, BusinessRole!.Value));
+    }
+    
+    
+    // ── Helper Methods for State Validation ────────────────────────────────
+    private void EnsureStatus(EProfileStatus expected)
+    {
+        if (Status != expected)
+            throw new InvalidProfileStatusException(ProfileId, expected, Status);
     }
 
-    public void RemoveTechnicianPortfolioItem(Guid workId)
+    private void EnsureRole(EBusinessRole expected)
     {
-        if (Role != Role.Technician || Technician == null)
-            throw new InvalidOperationException("Only technicians can manage portfolio items.");
-
-        Technician.RemovePortfolioItem(workId);
-        _domainEvents.Add(new PortfolioItemRemovedEvent(
-            Id,
-            workId,
-            DateTime.UtcNow
-        ));
-    }
-    public void ClearDomainEvents()
-    {
-        _domainEvents.Clear();
+        if (BusinessRole != expected)
+            throw new InvalidBusinessRoleException(ProfileId, expected, BusinessRole);
     }
 }
 

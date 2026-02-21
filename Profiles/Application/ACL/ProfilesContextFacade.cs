@@ -5,6 +5,7 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.ACL;
 
@@ -16,104 +17,86 @@ public class ProfilesContextFacade(
     IProfileQueryService profileQueryService, IProfileRepository profileRepository
 ) : IProfilesContextFacade
 {
-    public async Task<int> CreateProfile(
-        int userId,
-        string firstName,
-        string lastName,
-        string email,
-        string street,
-        string number,
-        string city,
-        string postalCode,
-        string country,
-        string role,
-        string? dni,
-        string? licenseNumber,
-        string? specialization)
+    public async Task<string> CreateProfile(
+        string userId)
     {
-        // Validar rol
-        var parsedRole = Enum.TryParse<Role>(role, true, out var finalRole) ? finalRole : Role.HomeOwner;
 
         var createProfileCommand = new CreateProfileCommand(
-            userId,
-            firstName,
-            lastName,
-            email,
-            street,
-            number,
-            city,
-            postalCode,
-            country,
-            finalRole,
-            dni,
-            licenseNumber,
-            specialization
+            userId
         );
 
         var profile = await profileCommandService.Handle(createProfileCommand);
-        return profile?.Id ?? 0;
+        return profile?.ProfileId.Value ?? string.Empty;
     }
 
-    public async Task<int> FetchProfileIdByEmail(string email)
+    public async Task<string> FetchProfileIdByEmail(string email)
     {
-        var getProfileByEmailQuery = new GetProfileByEmailQuery(new EmailAddress(email));
-        var profile = await profileQueryService.Handle(getProfileByEmailQuery);
-        return profile?.Id ?? 0;
+        var getProfileByEmailQuery = new GetProfileByEmailQuery(Email.From(email));
+        var profile = await profileQueryService.Handle(getProfileByEmailQuery) ?? throw new Exception($"No profile found for email {email}");
+        return profile.ProfileId.Value ?? string.Empty;
     }
     
-    public async Task<Guid?> GetTechnicianIdByProfileIdAsync(int profileId)
+    public async Task<string?> GetTechnicianIdByUserIdAsync(string userId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
+        var profile = await profileRepository.FindByUserIdAsync(UserId.From(userId));
 
-        if (profile is null || profile.Role != Role.Technician || profile.Technician is null)
+        if (profile is null || profile.BusinessRole != EBusinessRole.Technician || profile.Technician is null)
             return null;
 
-        return profile.Technician.Id; // esto sí es un GUID, y está bien
+        return profile.Technician.TechnicianId.Value; 
     }
     
-    public async Task<(Guid technicianId, int userId)?> GetTechnicianInfoByProfileIdAsync(int profileId)
+    public async Task<(string technicianId, string userId)?> GetTechnicianInfoByProfileIdAsync(string userId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
-        if (profile is null || profile.Role != Role.Technician || profile.Technician is null)
+        var profile = await profileRepository.FindByUserIdAsync(UserId.From(userId));
+        if (profile is null || profile.BusinessRole != EBusinessRole.Technician || profile.Technician is null)
             return null;
 
-        return (profile.Technician.Id, profile.Id);
+        return (profile.Technician.TechnicianId.Value, profile.UserId.Value);
     }
 
-    public async Task<bool> ExistsTechnicianProfileByUserIdAsync(int userId)
+    public async Task<bool> ExistsTechnicianProfileByUserIdAsync(string userId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(userId);
-        return profile is not null && profile.Role == Role.Technician;
+        var profile = await profileRepository.FindByUserIdAsync(UserId.From(userId));
+        return profile is not null && profile.BusinessRole == EBusinessRole.Technician;
     }
     
-    public async Task<string> GetProfileEmailAsync(int profileId)
+    public async Task<string> GetProfileEmailAsync(string profileId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
-        return profile?.EmailAddress ?? string.Empty;
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId)) ?? throw new Exception($"No profile found for ID {profileId}");
+        
+        if (profile.PersonalData is null)
+            return string.Empty;
+        
+        return profile.PersonalData.Email.Value ?? string.Empty;
     }
     
-    public async Task<string> GetProfileFullNameAsync(int profileId)
+    public async Task<string> GetProfileFullNameAsync(string profileId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
-        return profile?.FullName ?? string.Empty;
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId)) ?? throw new Exception($"No profile found for ID {profileId}");
+        
+        if (profile.PersonalData is null)
+            return string.Empty;
+        
+        return profile?.PersonalData.FullName ?? string.Empty;
     }
     
-    public async Task<string> GetProfilePhoneAsync(int profileId)
+    public async Task<string> GetProfilePhoneAsync(string profileId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
         // TODO: Add Phone property to Profile aggregate if it doesn't exist
         return string.Empty; // or profile?.Phone ?? string.Empty;
     }
     
-    public async Task<string> GetProfileRoleAsync(int profileId)
+    public async Task<string> GetProfileRoleAsync(string profileId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
-        return profile?.Role.ToString() ?? string.Empty;
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
+        return profile?.BusinessRole.ToString() ?? string.Empty;
     }
 
-    public async Task<bool> ProfileExistsAsync(int profileId)
+    public async Task<bool> ProfileExistsAsync(string profileId)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(profileId);
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
         return profile is not null;
     }
     

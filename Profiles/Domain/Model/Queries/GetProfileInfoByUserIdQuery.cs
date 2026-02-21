@@ -1,3 +1,5 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record GetProfileInfoByUserIdQuery(int UserId);
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
+
+public record GetProfileInfoByUserIdQuery(UserId UserId);

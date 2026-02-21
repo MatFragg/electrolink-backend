@@ -1,9 +1,8 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.ReadModels;
-
+﻿namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
 
 public sealed record MyProfileReadModel(
-    Guid ProfileId,
-    Guid UserId,
+    string ProfileId,
+    string UserId,
     string? BusinessRole,
     string Status,
     PersonalDataReadModel? PersonalData,

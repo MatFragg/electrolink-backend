@@ -1,9 +1,11 @@
 using Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using MediatR;
 
@@ -15,144 +17,189 @@ public class ProfileCommandService(
   ExternalIamService externalIamService,
   IUnitOfWork unitOfWork,
   IMediator mediator,
+  IProfileUniquenessChecker uniquenessChecker,
   ILogger<ProfileCommandService> logger)
   : IProfileCommandService
 {
   public async Task<Profile?> Handle(CreateProfileCommand command)
   { 
-      
+      logger.LogInformation("Creating profile for User {UserId}", command.UserId);
+      var userId = UserId.From(command.UserId);
       if (!await externalIamService.UserExistsAsync(command.UserId))
-      {
-          logger.LogWarning("[ProfileCommandService] Failed to create profile: IAM User ID {UserId} does not exist in IAM Bounded Context.", command.UserId);
-          throw new ArgumentException($"User with ID {command.UserId} does not exist in Identity and Access Management.");
-      }
+          throw new UserNotFoundException(command.UserId);
       
-      var emailAddress = new EmailAddress(command.Email); 
-      if (await profileRepository.ExistsByEmailAsync(emailAddress.Address)) 
-      {
-          logger.LogWarning("[ProfileCommandService] Attempt to create profile with duplicate email: {Email}", command.Email);
-          throw new InvalidOperationException($"A profile with the email {command.Email} already exists.");
-      } 
+      if (await profileRepository.ExistsByUserIdAsync(userId))
+        throw new ProfileAlreadyExistsException(command.UserId);
       
-      if (await profileRepository.FindByProfileIdAsync(command.UserId) != null) 
-      {
-          logger.LogWarning("[ProfileCommandService] Attempt to create profile for already existing IAM User ID (Profile ID): {UserId}", command.UserId);
-          throw new InvalidOperationException($"User already exists.");
-      }
-      
-      var profile = new Profile(command.UserId, command); 
-      await profileRepository.AddAsync(profile); 
-      await unitOfWork.CompleteAsync(); 
-      
-      profile.SetIdAfterPersistence(profile.Id);
-      
-      if (profile.Role == Role.Technician && profile.Technician != null)
-      {
-          await externalAssetService.CreateTechnicianInventoryAsync(profile.Technician.Id);
-          logger.LogInformation("[ProfileCommandService] Created inventory for new technician: {TechnicianId}", profile.Technician.Id);
-      }
-      
-      foreach (var domainEvent in profile.DomainEvents)
-      {
-          logger.LogInformation("[ProfileCommandService] Publishing domain event: {EventType} (ID: {EventId})", 
-              domainEvent.GetType().Name, domainEvent.EventId);
-          await mediator.Publish(domainEvent, CancellationToken.None);
-      }
-      profile.ClearDomainEvents();
-    
-      logger.LogInformation("[ProfileCommandService] Successfully created profile for email: {Email} with ID: {ProfileId}", 
-          command.Email, profile.Id);
+      var profile = Profile.Create(userId);
+      await profileRepository.AddAsync(profile);
+      await unitOfWork.CompleteAsync();
       return profile;
   }
-  public async Task<bool> Handle(UpdateProfileCommand command)
+
+  public Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      profile.UpdateProfileInfo(command.FirstName, command.LastName, command.Email, command.Street, command.Number, command.City, command.PostalCode, command.Country);
-      await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+      throw new NotImplementedException();
   }
 
-  public async Task<bool> Handle(AssignHomeOwnerInfoCommand command)
+  public async Task<Profile> Handle(CompleteProfileAsTechnicianCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      if (profile.Role != Role.HomeOwner) throw new InvalidOperationException("Profile is not a HomeOwner.");
-      profile.AssignHomeOwnerInfo(command.Dni);
+      var profile = await profileRepository.FindByUserIdAsync(
+          UserId.From(command.UserId));
+      
+      if (profile is null)
+          throw new ArgumentException("Profile not found.");
+      
+      var personalData = PersonalData.Create(
+          command.FirstName, 
+          command.LastName, 
+          Email.From(command.Email), 
+          PhoneNumber.From(command.PhoneNumber), 
+          Dni.From(command.Dni),
+          DateOfBirth.From(command.DateOfBirth), 
+          Address.Create(command.Street, command.District, command.City, command.Country, command.PostalCode));
+      
+      var technicianData = TechnicianData.Create(
+          command.Specialties, 
+          command.ExperienceYears,
+          command.AboutMe);
+      
+      profile.CompleteAsTechnician(personalData, technicianData, uniquenessChecker);
+
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+      return profile;
   }
 
-  public async Task<bool> Handle(AssignTechnicianInfoCommand command)
+  public async Task<Profile> Handle(CompleteProfileAsHomeownerCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
-      profile.AssignTechnicianInfo(command.LicenseNumber, command.Specialization);
+      var profile = await profileRepository.FindByUserIdAsync(
+          UserId.From(command.UserId));
+
+      if (profile is null)
+          throw new ArgumentException("Profile not found.");
+
+      var personalData = PersonalData.Create(
+          command.FirstName,
+          command.LastName,
+          Email.From(command.Email),
+          PhoneNumber.From(command.PhoneNumber),
+          Dni.From(command.Dni),
+          DateOfBirth.From(command.DateOfBirth),
+          Address.Create(command.Street, command.District, command.City, command.Country, command.PostalCode)
+      );
+
+      var homeownerData = HomeownerData.Create(
+          command.PreferredContactTime,
+          command.CommunicationPreferences,
+          command.EmergencyContact
+      );
+
+      profile.CompleteAsHomeowner(personalData, homeownerData, uniquenessChecker);
+
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+      return profile;
   }
 
-  public async Task<bool> Handle(UpdateTechnicianCoverageCommand command)
+  public async Task<Profile> Handle(UpdateProfilePersonalDataCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
-      profile.UpdateTechnicianCoverageArea(command.NewCoverageAreaDetails);
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+      
+      EnsureOwnership(profile, command.UserId);
+
+      Address? address = null;
+      
+      if (command.Street is not null || command.District is not null ||
+          command.City   is not null || command.Country  is not null ||
+          command.PostalCode is not null)
+      {
+          var current = profile.PersonalData!.Address;
+          address = Address.Create(
+              command.Street     ?? current.Street,
+              command.District   ?? current.District,
+              command.City       ?? current.City,
+              command.Country    ?? current.Country,
+              command.PostalCode ?? current.PostalCode);
+      }
+      
+      var phone = command.PhoneNumber is not null
+          ? PhoneNumber.From(command.PhoneNumber)
+          : null;
+
+      profile.UpdatePersonalData(command.FirstName, command.LastName, phone, address);
+
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+      return profile;
   }
 
-  public async Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command)
+  public async Task<Profile> Handle(UpdateTechnicianDataCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      if (profile.Role != Role.Technician) throw new InvalidOperationException("Profile is not a Technician.");
-      profile.UpdateTechnicianSpecialties(command.NewSpecialties);
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+      
+      EnsureOwnership(profile, command.UserId);
+
+      profile.UpdateTechnicianData(
+          command.Specialties,
+          command.ExperienceYears, 
+          command.AboutMe);
+      
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
-  }
-  public async Task<Guid> Handle(AddPortfolioItemCommand command)
-  {
-    var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId); 
-    if (profile is null) throw new ArgumentException("Profile not found.");
-    var newPortfolioItem = profile.AddPortfolioItemToTechnician(command.Title, command.Description, command.ImageUrl);
-    await unitOfWork.CompleteAsync();
-    foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-    profile.ClearDomainEvents();
-    return newPortfolioItem.WorkId;
+      return profile;
   }
 
-  public async Task<bool> Handle(UpdatePortfolioItemDetailsCommand command)
+  public async Task<Profile> Handle(UpdateCommunicationPreferencesCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      profile.UpdateTechnicianPortfolioItemDetails(command.WorkId, command.NewTitle, command.NewDescription, command.NewImageUrl);
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+      
+      EnsureOwnership(profile, command.UserId);
+
+      var current = profile.Homeowner!.CommunicationPreferences;
+      var preferences = CommunicationPreferences.Create(
+          command.SmsNotifications   ?? current.SmsNotifications,
+          command.EmailNotifications ?? current.EmailNotifications,
+          command.PushNotifications  ?? current.PushNotifications,
+          command.PreferredContactTime ?? profile.Homeowner!.PreferredContactTime);
+
+      var emergencyContact = command.EmergencyContact;
+      
+      profile.UpdateHomeOwnerData(
+          command.PreferredContactTime,
+          preferences,
+          emergencyContact);
+      
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+
+      return profile;
   }
 
-  public async Task<bool> Handle(RemovePortfolioItemCommand command)
+  public async Task Handle(DeactivateProfileCommand command)
   {
-      var profile = await profileRepository.FindByProfileIdAsync(command.ProfileId);
-      if (profile is null) throw new ArgumentException("Profile not found.");
-      profile.RemoveTechnicianPortfolioItem(command.WorkId);
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+      
+      EnsureOwnership(profile, command.UserId);
+      
+      profile.Deactivate();
+      profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-      foreach (var domainEvent in profile.DomainEvents) { await mediator.Publish(domainEvent, CancellationToken.None); }
-      profile.ClearDomainEvents();
-      return true;
+  }
+
+  public Task Handle(ReactivateProfileCommand command)
+  {
+      throw new NotImplementedException();
+  }
+  
+  private static void EnsureOwnership(Profile profile, string userId)
+  {
+      if (profile.UserId != UserId.From(userId))
+          throw new UnauthorizedProfileAccessException();
   }
 }
 

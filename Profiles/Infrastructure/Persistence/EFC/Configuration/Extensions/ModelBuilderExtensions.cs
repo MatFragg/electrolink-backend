@@ -1,66 +1,173 @@
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 public static class ModelBuilderExtensions
 {
+    // ── Conversores reutilizables ──────────────────────────────────────────
+    private static readonly ValueConverter<ProfileId, string> ProfileIdConverter =
+        new(id => id.Value, raw => ProfileId.From(raw));
+
+    private static readonly ValueConverter<UserId, string> UserIdConverter =
+        new(id => id.Value, raw => UserId.From(raw));
+
+    private static readonly ValueConverter<HomeownerId, string> HomeownerIdConverter =
+        new(id => id.Value, raw => HomeownerId.From(raw));
+
+    private static readonly ValueConverter<TechnicianId, string> TechnicianIdConverter =
+        new(id => id.Value, raw => TechnicianId.From(raw));
+
     public static void ApplyProfilesConfiguration(this ModelBuilder builder)
     {
+        builder.Entity<Profile>(b =>
+        {
+            b.HasKey(p => p.ProfileId);
+            b.Property(p => p.ProfileId)
+                .HasConversion(ProfileIdConverter)
+                .HasColumnName("profile_id")   // <-- nombre explícito en la PK
+                .IsRequired();
 
-        builder.Entity<Profile>().HasKey(p => p.Id);
-        builder.Entity<Profile>().Property(p => p.Id).IsRequired().ValueGeneratedOnAdd();
-        builder.Entity<Profile>().OwnsOne(p => p.Name,
-            n =>
-            {
-                n.WithOwner().HasForeignKey("Id");
-                n.Property(p => p.FirstName).HasColumnName("FirstName");
-                n.Property(p => p.LastName).HasColumnName("LastName");
-            });
-        
-        builder.Entity<Profile>().OwnsOne(p => p.Email,
-            e =>
-            {
-                e.WithOwner().HasForeignKey("Id");
-                e.Property(a => a.Address).HasColumnName("EmailAddress");
-            });
-        
-        builder.Entity<Profile>().OwnsOne(p => p.Address,
-            a =>
-            {
-                a.WithOwner().HasForeignKey("Id");
-                a.Property(s => s.Street).HasColumnName("AddressStreet");
-                a.Property(s => s.Number).HasColumnName("AddressNumber");
-                a.Property(s => s.City).HasColumnName("AddressCity");
-                a.Property(s => s.PostalCode).HasColumnName("AddressPostalCode");
-                a.Property(s => s.Country).HasColumnName("AddressCountry"); 
-            });
-        
-        builder.Entity<HomeOwner>().HasKey(ho => ho.Id);
-        builder.Entity<HomeOwner>().Property(ho => ho.Id).IsRequired().ValueGeneratedOnAdd();
-        builder.Entity<HomeOwner>().Property(ho => ho.Dni).IsRequired().HasMaxLength(20);
+            b.Property(p => p.UserId)
+                .HasConversion(UserIdConverter)
+                .HasColumnName("user_id")
+                .IsRequired();
 
-        builder.Entity<Technician>().HasKey(t => t.Id);
-        builder.Entity<Technician>().Property(t => t.Id).IsRequired().ValueGeneratedNever();
-        builder.Entity<Technician>().Property(t => t.ProfileId).IsRequired();
-        builder.Entity<Technician>().Property(t => t.LicenseNumber)
-            .IsRequired().HasMaxLength(50);
-        builder.Entity<Technician>().Property(t => t.Specialization)
-            .IsRequired().HasMaxLength(100);
-        builder.Entity<Technician>()
-            .HasMany(t => t.PortfolioItems)
-            .WithOne()
-            .HasForeignKey(pi => pi.TechnicianId)
-            .IsRequired();
+            b.Property(p => p.Status)
+                .HasConversion<string>()
+                .HasColumnName("status")
+                .IsRequired();
 
-        builder.Entity<PortfolioItem>().HasKey(pi => pi.Id);
-        builder.Entity<PortfolioItem>().Property(pi => pi.Id).IsRequired().ValueGeneratedNever();
-        builder.Entity<PortfolioItem>().Property(pi => pi.WorkId).IsRequired();
-        builder.Entity<PortfolioItem>().HasIndex(pi => pi.WorkId).IsUnique();
-        builder.Entity<PortfolioItem>().Property(pi => pi.Title).IsRequired().HasMaxLength(100);
-        builder.Entity<PortfolioItem>().Property(pi => pi.Description).HasMaxLength(1000);
-        builder.Entity<PortfolioItem>().Property(pi => pi.ImageUrl).HasMaxLength(500);
-        builder.Entity<PortfolioItem>().Property(pi => pi.TechnicianId).IsRequired();
+            b.Property(p => p.BusinessRole)
+                .HasConversion<string>()
+                .HasColumnName("business_role");
+
+            b.OwnsOne(p => p.PersonalData, n =>
+            {
+                n.WithOwner().HasForeignKey("profile_id"); 
+
+                n.Property(pd => pd.FirstName).HasColumnName("first_name").IsRequired();
+                n.Property(pd => pd.LastName).HasColumnName("last_name").IsRequired();
+
+                n.OwnsOne(pd => pd.Email, e =>
+                {
+                    e.WithOwner().HasForeignKey("profile_id");
+                    e.Property(em => em.Value)
+                        .HasColumnName("email")
+                        .IsRequired();
+                });
+
+                n.OwnsOne(pd => pd.PhoneNumber, pn =>
+                {
+                    pn.WithOwner().HasForeignKey("profile_id");
+                    pn.Property(v => v.Value)
+                        .HasColumnName("phone_number")
+                        .IsRequired();
+                });
+
+                n.OwnsOne(pd => pd.Dni, d =>
+                {
+                    d.WithOwner().HasForeignKey("profile_id");
+                    d.Property(v => v.Value)
+                        .HasColumnName("dni")
+                        .IsRequired();
+                });
+
+                n.OwnsOne(pd => pd.DateOfBirth, db =>
+                {
+                    db.WithOwner().HasForeignKey("profile_id");
+                    db.Property(v => v.Value)
+                        .HasColumnName("date_of_birth")
+                        .IsRequired();
+                });
+
+                n.OwnsOne(pd => pd.Address, a =>
+                {
+                    a.WithOwner().HasForeignKey("profile_id");
+                    a.Property(s => s.Street);
+                    a.Property(s => s.District);
+                    a.Property(s => s.City);
+                    a.Property(s => s.PostalCode);
+                    a.Property(s => s.Country);
+                });
+            });
+
+            b.HasOne(p => p.Homeowner)
+                .WithOne()
+                .HasForeignKey<HomeOwner>(ho => ho.ProfileId);
+
+            b.HasOne(p => p.Technician)
+                .WithOne()
+                .HasForeignKey<Technician>(t => t.ProfileId);
+        });
+
+        // ── HomeOwner ─────────────────────────────────────────────────────
+        builder.Entity<HomeOwner>(b =>
+        {
+            b.HasKey(ho => ho.HomeownerId);
+            b.Property(ho => ho.HomeownerId)
+             .HasConversion(HomeownerIdConverter)
+             .IsRequired();
+
+            b.Property(ho => ho.ProfileId)
+             .HasConversion(ProfileIdConverter)
+             .IsRequired();
+
+            b.Property(ho => ho.PreferredContactTime)
+             .HasConversion<string>()
+             .IsRequired();
+
+            b.OwnsOne(ho => ho.CommunicationPreferences, cp =>
+            {
+                cp.Property(c => c.SmsNotifications);
+                cp.Property(c => c.EmailNotifications);
+                cp.Property(c => c.PushNotifications);
+                cp.Property(c => c.PreferredContactTime).HasConversion<string>();
+            });
+
+            b.OwnsOne(ho => ho.EmergencyContact);
+        });
+
+        // ── Technician ────────────────────────────────────────────────────
+        builder.Entity<Technician>(b =>
+        {
+            b.HasKey(t => t.TechnicianId);
+            b.Property(t => t.TechnicianId)
+             .HasConversion(TechnicianIdConverter)
+             .IsRequired();
+
+            b.Property(t => t.ProfileId)
+             .HasConversion(ProfileIdConverter)
+             .IsRequired();
+
+            b.Property(t => t.ExperienceYears).IsRequired();
+            b.Property(t => t.AboutMe).HasMaxLength(2000);
+
+            b.HasMany(typeof(TechnicianSpecialty), "_specialtyEntities")
+             .WithOne(nameof(TechnicianSpecialty.Technician))
+             .HasForeignKey("TechnicianId")
+             .IsRequired();
+        });
+
+        // ── TechnicianSpecialty ───────────────────────────────────────────
+        builder.Entity<TechnicianSpecialty>(b =>
+        {
+            b.HasKey(nameof(TechnicianSpecialty.TechnicianId), nameof(TechnicianSpecialty.Specialty));
+
+            b.Property(ts => ts.TechnicianId)
+             .HasConversion(TechnicianIdConverter)
+             .IsRequired();
+
+            b.Property(ts => ts.Specialty)
+             .HasConversion<int>()
+             .IsRequired();
+
+            b.HasOne(ts => ts.Technician)
+             .WithMany("_specialtyEntities")
+             .HasForeignKey(ts => ts.TechnicianId);
+        });
     }
 }

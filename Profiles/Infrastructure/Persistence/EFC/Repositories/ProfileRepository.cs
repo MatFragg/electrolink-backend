@@ -1,6 +1,7 @@
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -10,50 +11,60 @@ namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Rep
 public class ProfileRepository(AppDbContext context)
   : BaseRepository<Profile, int>(context), IProfileRepository
 {
-  public async Task<Profile?> FindByEmailAsync(string email)
+  public async Task<Profile?> FindByEmailAsync(Email email)
   {
     return await Context.Set<Profile>()
-      .Include(p => p.HomeOwner)
-      .Include(p => p.Technician)
-      .FirstOrDefaultAsync(p => p.Email.Address == email);
+      .FirstOrDefaultAsync(p => p.PersonalData != null && p.PersonalData.Email.Value == email.Value);
   }
 
-  public async Task<IEnumerable<Profile>> FindByRoleAsync(Role role)
+  public async Task<IEnumerable<Profile>> FindByRoleAsync(EBusinessRole role)
   {
     return await Context.Set<Profile>()
-      .Include(p => p.HomeOwner)
-      .Include(p => p.Technician)
-      .Where(p => p.Role == role)
+      .Where(p => p.BusinessRole != null && p.BusinessRole.Value == role)
       .ToListAsync();
   }
-  public async Task<bool> ExistsByIamUserIdAsync(int userId)
+
+  public async Task<bool> ExistsByUserIdAsync(UserId userId)
   {
-    return await Context.Set<Profile>().AnyAsync(p => p.Id == userId);
+    return await Context.Set<Profile>().AnyAsync(p => p.UserId.Value == userId.Value);
   }
 
-  public async Task<bool> ExistsByEmailAsync(string email)
-  {
-    return await Context.Set<Profile>().AnyAsync(p => p.Email.Address == email);
-  }
-
-  public async Task<Profile?> FindByProfileIdAsync(int id)
+  public async Task<bool> EmailExistsAsync(Email email, ProfileId? excludeProfileId = null)
   {
     return await Context.Set<Profile>()
-      .Include(p => p.HomeOwner)  
-      .Include(p => p.Technician)
-      .FirstOrDefaultAsync(p => p.Id == id);
+      .AnyAsync(p => p.PersonalData != null
+                     && p.PersonalData.Email.Value == email.Value
+                     && (excludeProfileId == null || p.ProfileId.Value != excludeProfileId.Value));
   }
 
-  public Task<Profile?> FindByUserIdAsync(int userId)
-  {
-    throw new NotImplementedException();
-  }
-
-  public async Task<IEnumerable<Profile>> ListWithDetailsAsync()
+  public async Task<bool> DniExistsAsync(Dni dni, ProfileId? excludeProfileId = null)
   {
     return await Context.Set<Profile>()
-      .Include(p => p.HomeOwner)
-      .Include(p => p.Technician)
-      .ToListAsync();
+      .AnyAsync(p => p.PersonalData != null
+                     && p.PersonalData.Dni.Value == dni.Value
+                     && (excludeProfileId == null || p.ProfileId.Value != excludeProfileId.Value));
+  }
+
+  public async Task<bool> IsHomeownerActiveAsync(HomeownerId homeownerId)
+  {
+    return await Context.Set<Profile>()
+      .AnyAsync(p => p.Homeowner != null && p.Homeowner.HomeownerId.Value == homeownerId.Value);
+  }
+
+  public async Task<bool> ExistsByEmailAsync(Email email)
+  {
+    return await Context.Set<Profile>().AnyAsync(p => p.PersonalData != null && p.PersonalData.Email.Value == email.Value);
+  }
+
+  public async Task<Profile?> FindByUserIdAsync(UserId userId)
+  {
+    return await Context.Set<Profile>()
+      .FirstOrDefaultAsync(p => p.UserId.Value == userId.Value);
+  }
+
+  public async Task<Profile?> FindByIdAsync(ProfileId id)
+  {
+    return await Context.Set<Profile>()
+      .FirstOrDefaultAsync(p => p.ProfileId.Value == id.Value);
   }
 }

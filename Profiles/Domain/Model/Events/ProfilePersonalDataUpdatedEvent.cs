@@ -1,24 +1,23 @@
 ﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events;
 
-[Serializable]
-public sealed class ProfilePersonalDataUpdatedEvent
+public sealed class ProfilePersonalDataUpdatedEvent : IEvent
 {
+    public Guid EventId { get; }
+
     public ProfileId ProfileId { get; }
     public PersonalData PersonalData { get; }
 
-    // Parameterless ctor for serializers / frameworks
-    public ProfilePersonalDataUpdatedEvent()
-    {
-        ProfileId = default!;
-        PersonalData = default!;
-    }
+    public DateTime OccurredOn { get; }
 
     public ProfilePersonalDataUpdatedEvent(ProfileId profileId, PersonalData personalData)
     {
-        ProfileId = profileId ?? throw new ArgumentNullException(nameof(profileId));
-        PersonalData = personalData ?? throw new ArgumentNullException(nameof(personalData));
+        EventId = Guid.NewGuid();
+        ProfileId = profileId;
+        PersonalData = personalData;
+        OccurredOn = DateTime.UtcNow;
     }
 }

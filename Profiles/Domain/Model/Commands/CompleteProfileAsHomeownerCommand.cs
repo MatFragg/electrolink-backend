@@ -1,3 +1,20 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 
-public record CompleteProfileAsHomeownerCommand();
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+
+public record CompleteProfileAsHomeownerCommand(
+    string UserId,
+    string FirstName,
+    string LastName,
+    string Email,
+    string PhoneNumber,
+    string Dni,
+    string DateOfBirth,
+    string Street,
+    string District,
+    string City,
+    string Country,
+    string PostalCode,
+    EContactTime PreferredContactTime,
+    CommunicationPreferences CommunicationPreferences,
+    EmergencyContact? EmergencyContact = null);

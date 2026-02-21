@@ -4,7 +4,7 @@ namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServi
 
 public class ExternalIamService(IIamContextFacade iamContextFacade)
 {
-    public async Task<bool> UserExistsAsync(int userId)
+    public async Task<bool> UserExistsAsync(string userId)
     {
         return await iamContextFacade.UserExistsAsync(userId);
     }

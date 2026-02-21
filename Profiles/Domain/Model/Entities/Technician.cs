@@ -1,75 +1,60 @@
 using System.ComponentModel.DataAnnotations;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 
 public class Technician
 {
   [Key]
-  public Guid Id { get; private set; }
-  public int ProfileId { get; private set; }
-  public string LicenseNumber { get; private set; } 
-  public string Specialization { get; private set; }
-  private readonly List<PortfolioItem> _portfolioItems = new();
-  public IReadOnlyList<PortfolioItem> PortfolioItems => _portfolioItems.AsReadOnly();
-  protected Technician()
-  {
-    Id = Guid.NewGuid();
-    LicenseNumber = string.Empty;
-    Specialization = string.Empty;
-    ProfileId = 0;
-  }
+  public TechnicianId TechnicianId { get; private set; }
+  public ProfileId ProfileId { get; private set; }
 
-  public Technician(string licenseNumber, string specialization) : this() 
-  {
-    if (string.IsNullOrWhiteSpace(licenseNumber)) throw new ArgumentException("License Number cannot be null or empty.", nameof(licenseNumber));
-    if (string.IsNullOrWhiteSpace(specialization)) throw new ArgumentException("Specialization cannot be null or empty.", nameof(specialization));
-    LicenseNumber = licenseNumber;
-    Specialization = specialization;
-  }
+  public IReadOnlyList<ESpecialty> Specialties => _specialtyEntities.Select(e => e.Specialty).ToList().AsReadOnly();
+  public int ExperienceYears { get; private set; }   
+  public string AboutMe { get; private set; }
 
-  public Technician(int profileId, string licenseNumber, string specialization) : this() 
-  {
-    if (profileId <= 0) throw new ArgumentException("ProfileId must be a positive integer.", nameof(profileId));
-    if (string.IsNullOrWhiteSpace(licenseNumber)) throw new ArgumentException("License Number cannot be null or empty.", nameof(licenseNumber));
-    if (string.IsNullOrWhiteSpace(specialization)) throw new ArgumentException("Specialization cannot be null or empty.", nameof(specialization));
+  private List<TechnicianSpecialty> _specialtyEntities = new();
 
-    ProfileId = profileId;
-    LicenseNumber = licenseNumber;
-    Specialization = specialization;
-  }
-  public void SetProfileId(int profileId)
+  public static Technician Create(
+    TechnicianId id,
+    ProfileId profileId,
+    IEnumerable<ESpecialty> specialties,
+    int experienceYears,
+    string aboutMe)
   {
-    if (ProfileId != 0) throw new InvalidOperationException("ProfileId has already been set.");
-    ProfileId = profileId;
-  }
-  public void UpdateSpecialization(string specialization)
-  {
-    if (string.IsNullOrWhiteSpace(specialization)) throw new ArgumentException("Specialization cannot be null or empty.", nameof(specialization));
-    Specialization = specialization;
+    var specialtiesList = specialties?.ToList() ?? new List<ESpecialty>();
+    if (specialtiesList.Count == 0)
+      throw new AtLeastOneSpecialtyRequiredException();
+
+    var technician = new Technician
+    {
+      TechnicianId    = id,
+      ProfileId       = profileId,
+      _specialtyEntities = specialtiesList.Select(s => new TechnicianSpecialty(id, s)).ToList(),
+      ExperienceYears = experienceYears,
+      AboutMe         = aboutMe ?? string.Empty,
+    };
+    return technician;
   }
   
-  public PortfolioItem AddPortfolioItem(string title, string description, string imageUrl)
+  public void UpdateExperienceYears(int experienceYears)
   {
-    var newPortfolioItem = new PortfolioItem(title, description, imageUrl, Id); 
-    _portfolioItems.Add(newPortfolioItem);
-    return newPortfolioItem;
+    ExperienceYears = experienceYears;
   }
-
-  public void UpdatePortfolioItemDetails(Guid workId, string newTitle, string newDescription, string newImageUrl)
+  
+  public void UpdateSpecialties(IEnumerable<ESpecialty> specialties)
   {
-    var existingItem = _portfolioItems.FirstOrDefault(item => item.WorkId == workId);
-    if (existingItem == null)
-      throw new ArgumentException($"Portfolio item with WorkId {workId} not found.");
+    var list = specialties?.ToList() ?? new List<ESpecialty>();
+    if (list.Count == 0)
+      throw new AtLeastOneSpecialtyRequiredException();
 
-    existingItem.UpdateDetails(newTitle, newDescription, newImageUrl);
+    _specialtyEntities = list.Select(s => new TechnicianSpecialty(TechnicianId, s)).ToList();
   }
-
-  public void RemovePortfolioItem(Guid workId)
+  
+  public void UpdateAboutMe(string? aboutMe)
   {
-    var itemToRemove = _portfolioItems.FirstOrDefault(item => item.WorkId == workId);
-    if (itemToRemove == null)
-      throw new ArgumentException($"Portfolio item with WorkId {workId} not found.");
-
-    _portfolioItems.Remove(itemToRemove);
+    AboutMe = aboutMe ?? string.Empty;
   }
 }

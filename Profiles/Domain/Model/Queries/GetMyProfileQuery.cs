@@ -1,3 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 
-public record GetMyProfileQuery();
+public record GetMyProfileQuery(string UserId);

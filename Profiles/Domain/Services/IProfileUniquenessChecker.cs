@@ -1,6 +1,10 @@
-﻿namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
+﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
 
 public interface IProfileUniquenessChecker
 {
-    
+    void EnsureEmailIsUnique(Email email, ProfileId excludedProfileId);
+    void EnsureDniIsUnique(Dni dni, ProfileId excludedProfileId);
 }

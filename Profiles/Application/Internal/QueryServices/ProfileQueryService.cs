@@ -1,53 +1,92 @@
+using Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.QueryServices;
 
 /// <summary>
 /// Application-level query service for Profiles.
 /// </summary>
-public class ProfileQueryService(IProfileRepository profileRepository, ILogger<ProfileQueryService> logger) : IProfileQueryService
+public class ProfileQueryService(IProfileRepository profileRepository) : IProfileQueryService
 {
-    public async Task<IEnumerable<Profile>> Handle(GetAllProfilesQuery query)
-        => await profileRepository.ListWithDetailsAsync();
-
-    public async Task<IEnumerable<Profile>> Handle(GetProfilesByRoleQuery query)
-    {
-        var allProfiles = await profileRepository.ListAsync();
-        return allProfiles.Where(p => p.Role == query.Role);
-    }
-
     public async Task<Profile?> Handle(GetProfileByIdQuery query)
     {
-        return await profileRepository.FindByProfileIdAsync(query.Id);
+        return await profileRepository.FindByIdAsync(ProfileId.From(query.ProfileId));
     }
 
     public async Task<Profile?> Handle(GetProfileByEmailQuery query)
     {
-      return await profileRepository.FindByEmailAsync(query.Email.Address);
+        return await profileRepository.FindByEmailAsync(Email.From(query.Email.Value));
     }
 
-    public async  Task<Profile?> Handle(GetProfileInfoByUserIdQuery query)
+    public async Task<Profile?> Handle(GetProfileInfoByUserIdQuery query)
     {
         return await profileRepository.FindByUserIdAsync(query.UserId);
     }
 
-    public async Task<PortfolioItem?> Handle(GetPortfolioItemByWorkIdQuery query)
+    public async Task<Profile?> Handle(GetMyProfileQuery query)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(query.ProfileId);
-        if (profile is null) { logger.LogWarning($"Profile not found with ID: {query.ProfileId}."); return null; }
-        if (profile.Technician == null) { logger.LogWarning($"Profile ID {query.ProfileId} is not a technician, no portfolio."); return null; }
-        return profile.Technician.PortfolioItems.FirstOrDefault(item => item.WorkId == query.WorkId);
+        var profile = await profileRepository.FindByUserIdAsync(UserId.From(query.UserId));
+        return profile;
     }
 
-    public async Task<IReadOnlyList<PortfolioItem>> Handle(GetAllPortfolioItemsByProfileIdQuery query)
+    public async Task<ProfileStatusReadModel?> Handle(GetProfileStatusQuery query)
     {
-        var profile = await profileRepository.FindByProfileIdAsync(query.ProfileId);
-        if (profile is null) { logger.LogWarning($"Profile not found with ID: {query.ProfileId}. Returning empty list."); return new List<PortfolioItem>(); }
-        if (profile.Technician == null) { logger.LogWarning($"Profile ID {query.ProfileId} is not a technician, no portfolio. Returning empty list."); return new List<PortfolioItem>(); }
-        return profile.Technician.PortfolioItems;
+        var profile = await profileRepository.FindByUserIdAsync(UserId.From(query.UserId));
+        if (profile is null) return null;
+
+        return new ProfileStatusReadModel(
+            ProfileId:            profile.ProfileId.Value,
+            UserId:               profile.UserId.Value,
+            Status:               profile.Status.ToString(),
+            CompletionPercentage: CalculateCompletion(profile));
     }
+
+    public async Task<bool> Handle(IsHomeownerActiveQuery query)
+    {
+        return await profileRepository.IsHomeownerActiveAsync(query.HomeownerId);
+    }
+    
+    private static int CalculateCompletion(Profile profile) =>
+        profile.Status switch
+        {
+            EProfileStatus.Active => 100,
+            EProfileStatus.Deactivated => 100,
+            EProfileStatus.Incomplete => 50,
+            EProfileStatus.Rejected => 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(profile.Status), profile.Status, "Invalid profile status")
+        };
+
+    private static MyProfileReadModel MapToMyProfileReadModel(Profile profile)
+    {
+        return new MyProfileReadModel(
+            ProfileId:    profile.ProfileId.Value,
+            UserId:       profile.UserId.Value,
+            BusinessRole: profile.BusinessRole?.ToString(),
+            Status:       profile.Status.ToString(),
+            PersonalData: profile.PersonalData is null ? null : MapPersonalData(profile.PersonalData),
+            Technician:   profile.Technician   is null ? null : MapTechnician(profile.Technician),
+            Homeowner:    profile.Homeowner    is null ? null : MapHomeowner(profile.Homeowner));
+    }
+
+    private static PersonalDataReadModel MapPersonalData(PersonalData personalData) =>
+        new(personalData.FirstName, personalData.LastName, personalData.Email.Value, personalData.PhoneNumber.Value,
+            personalData.Address.ToString(), personalData.DateOfBirth.Value.ToString("yyyy-MM-dd"));
+
+    private static TechnicianReadModel MapTechnician(Technician technician) =>
+        new(technician.TechnicianId.Value,
+            technician.Specialties.Select(s => s.ToString()).ToList(),
+            technician.ExperienceYears, technician.AboutMe);
+
+    private static HomeownerReadModel MapHomeowner(HomeOwner homeowner) =>
+        new(homeowner.HomeownerId.Value,
+            homeowner.PreferredContactTime.ToString(),
+            homeowner.CommunicationPreferences.SmsNotifications,
+            homeowner.CommunicationPreferences.EmailNotifications,
+            homeowner.CommunicationPreferences.PushNotifications);
 }

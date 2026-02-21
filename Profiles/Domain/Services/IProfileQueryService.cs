@@ -13,7 +13,7 @@ public interface IProfileQueryService
   Task<Profile?> Handle(GetProfileByIdQuery query);
   Task<Profile?> Handle(GetProfileByEmailQuery query);
   Task<Profile?> Handle(GetProfileInfoByUserIdQuery query);
-  Task<MyProfileReadModel?>Handle(GetMyProfileQuery query);
+  Task<Profile?>Handle(GetMyProfileQuery query);
   Task<ProfileStatusReadModel?>Handle(GetProfileStatusQuery query);
   Task<bool>Handle(IsHomeownerActiveQuery query);
 }
