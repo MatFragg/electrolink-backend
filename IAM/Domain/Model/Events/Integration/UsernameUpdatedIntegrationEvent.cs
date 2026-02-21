@@ -3,7 +3,7 @@
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Integration;
 
 public record UsernameUpdatedIntegrationEvent(
-    int UserId,
+    string UserId,
     string NewUsername,
     DateTime OccurredOn
 ) : IIntegrationEvent

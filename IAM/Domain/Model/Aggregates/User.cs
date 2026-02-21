@@ -14,19 +14,25 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
  *     This class is used to represent a user
  * </remarks>
  */
-public partial class User(string username, string passwordHash) : BaseAggregateRoot
+public class User : BaseAggregateRoot
 {
-    public User() : this(string.Empty, string.Empty)
+    public UserId Id { get; private set; }
+    public string Username { get; private set; }
+
+    [JsonIgnore] public string PasswordHash { get; private set; }
+    protected User() { }
+    public User(string username, string passwordHash)
     {
-    }   
+        Id = UserId.NewUserId(); 
+        Username = username;
+        PasswordHash = passwordHash;
 
-    public UserId Id { get; }
-    public string Username { get; private set; } = username;
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-
-    [JsonIgnore] public string PasswordHash { get; private set; } = passwordHash;
-
+        RaiseDomainEvent(new UserRegisteredEvent(
+            Id.Value,
+            username,
+            DateTime.UtcNow
+        ));
+    }
     /**
      * <summary>
      *     Update the username
@@ -43,7 +49,7 @@ public partial class User(string username, string passwordHash) : BaseAggregateR
         Username = newUsername;
 
         // Registra el evento de dominio
-        _domainEvents.Add(new UsernameUpdatedEvent(Id.Value, oldUsername, newUsername, DateTime.UtcNow));
+        RaiseDomainEvent(new UsernameUpdatedEvent(Id.Value, oldUsername, newUsername, DateTime.UtcNow));
     }
 
     /**
@@ -61,7 +67,7 @@ public partial class User(string username, string passwordHash) : BaseAggregateR
         PasswordHash = newPasswordHash;
 
         // Registra el evento de dominio
-        _domainEvents.Add(new UserPasswordChangedEvent(Id.Value, DateTime.UtcNow));
+        RaiseDomainEvent(new UserPasswordChangedEvent(Id.Value, DateTime.UtcNow));
     }
 
     /**
@@ -71,14 +77,6 @@ public partial class User(string username, string passwordHash) : BaseAggregateR
      */
     public void RecordSignIn()
     {
-        _domainEvents.Add(new UserSignedInEvent(Id.Value, DateTime.UtcNow));
-    }
-
-    /// <summary>
-    /// Cleans the domain events list.
-    /// </summary>
-    public void ClearDomainEvents()
-    {
-        _domainEvents.Clear();
+        RaiseDomainEvent(new UserSignedInEvent(Id.Value, DateTime.UtcNow));
     }
 }

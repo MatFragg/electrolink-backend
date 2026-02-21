@@ -2,6 +2,7 @@ using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attributes;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Components;
 
@@ -48,7 +49,7 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
         var userId = await tokenService.ValidateToken(token);
         if (userId == null) throw new Exception("Invalid token");
 
-        var getUserByIdQuery = new GetUserByIdQuery(userId.Value.ToString());
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
         var user = await userQueryService.Handle(getUserByIdQuery);
 
         context.Items["User"] = user;

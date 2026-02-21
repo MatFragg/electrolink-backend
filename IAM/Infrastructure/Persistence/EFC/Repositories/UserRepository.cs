@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Reposito
  *     This repository is used to manage users
  * </remarks>
  */
-public class UserRepository(AppDbContext context) : BaseRepository<User, string>(context), IUserRepository
+public class UserRepository(AppDbContext context) : BaseRepository<User, UserId>(context), IUserRepository
 {
     /**
      * <summary>

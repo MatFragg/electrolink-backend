@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.IAM.Domain.Repositories;
@@ -11,7 +12,7 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Repositories;
  *     This repository is used to manage users
  * </remarks>
  */
-public interface IUserRepository : IBaseRepository<User, string>
+public interface IUserRepository : IBaseRepository<User, UserId>
 {
     /**
      * <summary>

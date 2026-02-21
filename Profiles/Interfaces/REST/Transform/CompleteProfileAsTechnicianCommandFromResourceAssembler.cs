@@ -1,0 +1,6 @@
+﻿namespace Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Transform;
+
+public class CompleteProfileAsTechnicianCommandFromResourceAssembler
+{
+    
+}

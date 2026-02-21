@@ -2,6 +2,7 @@ using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.IAM.Application.Internal.QueryServices;
 
@@ -24,7 +25,7 @@ public class UserQueryService(IUserRepository userRepository) : IUserQueryServic
      */
     public async Task<User?> Handle(GetUserByIdQuery query)
     {
-        return await userRepository.FindByIdAsync(query.UserId);
+        return await userRepository.FindByIdAsync(UserId.From(query.UserId));
     }
 
     /**

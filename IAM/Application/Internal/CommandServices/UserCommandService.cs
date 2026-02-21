@@ -4,6 +4,7 @@ using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Domain.Services;
 using MediatR;
@@ -100,7 +101,7 @@ public class UserCommandService(
     
     public async Task<bool> Handle(UpdateUsernameCommand command)
     {
-        var user = await userRepository.FindByIdAsync(command.UserId); 
+        var user = await userRepository.FindByIdAsync(UserId.From(command.UserId)); 
         if (user == null) throw new ArgumentException("User not found.");
 
         user.UpdateUsername(command.NewUsername); 
@@ -119,7 +120,7 @@ public class UserCommandService(
 
     public async Task<bool> Handle(UpdatePasswordCommand command)
     {
-        var user = await userRepository.FindByIdAsync(command.UserId); 
+        var user = await userRepository.FindByIdAsync(UserId.From(command.UserId));
         if (user == null) throw new ArgumentException("User not found.");
 
         var newHashedPassword = hashingService.HashPassword(command.NewPassword);
