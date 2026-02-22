@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 
@@ -11,14 +12,17 @@ public record Email
 
     private Email(string value) => Value = value;
 
-    public static Email Create(string raw)
+    public static Email From(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
             throw new ArgumentException("Email cannot be empty.");
 
-        if (!EmailRegex.IsMatch(raw))
-            throw new ArgumentException("Email must be a valid email address.");
+        if (!IsValidEmail(raw))
+            throw new InvalidEmailException(raw);
 
         return new Email(raw.ToLowerInvariant().Trim());
     }
+    
+    private static bool IsValidEmail(string email)
+        => EmailRegex.IsMatch(email);
 }

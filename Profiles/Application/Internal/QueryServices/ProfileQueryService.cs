@@ -14,20 +14,12 @@ namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.QueryServices
 /// </summary>
 public class ProfileQueryService(IProfileRepository profileRepository) : IProfileQueryService
 {
-    public async Task<Profile?> Handle(GetProfileByIdQuery query)
-    {
-        return await profileRepository.FindByIdAsync(ProfileId.From(query.ProfileId));
-    }
+    public async Task<Profile?> Handle(GetProfileByIdQuery query) => 
+        await profileRepository.FindByIdAsync(ProfileId.From(query.ProfileId));
+    
 
-    public async Task<Profile?> Handle(GetProfileByEmailQuery query)
-    {
-        return await profileRepository.FindByEmailAsync(Email.From(query.Email.Value));
-    }
-
-    public async Task<Profile?> Handle(GetProfileInfoByUserIdQuery query)
-    {
-        return await profileRepository.FindByUserIdAsync(query.UserId);
-    }
+    public async Task<Profile?> Handle(GetProfileInfoByUserIdQuery query) =>
+        await profileRepository.FindByUserIdAsync(query.UserId);
 
     public async Task<Profile?> Handle(GetMyProfileQuery query)
     {
@@ -47,10 +39,8 @@ public class ProfileQueryService(IProfileRepository profileRepository) : IProfil
             CompletionPercentage: CalculateCompletion(profile));
     }
 
-    public async Task<bool> Handle(IsHomeownerActiveQuery query)
-    {
-        return await profileRepository.IsHomeownerActiveAsync(query.HomeownerId);
-    }
+    public async Task<bool> Handle(IsHomeownerActiveQuery query) => 
+        await profileRepository.IsHomeownerActiveAsync(query.HomeownerId);
     
     private static int CalculateCompletion(Profile profile) =>
         profile.Status switch
@@ -75,7 +65,7 @@ public class ProfileQueryService(IProfileRepository profileRepository) : IProfil
     }
 
     private static PersonalDataReadModel MapPersonalData(PersonalData personalData) =>
-        new(personalData.FirstName, personalData.LastName, personalData.Email.Value, personalData.PhoneNumber.Value,
+        new(personalData.FirstName, personalData.LastName,  personalData.PhoneNumber.Value,
             personalData.Address.ToString(), personalData.DateOfBirth.Value.ToString("yyyy-MM-dd"));
 
     private static TechnicianReadModel MapTechnician(Technician technician) =>

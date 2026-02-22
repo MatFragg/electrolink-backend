@@ -11,12 +11,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Rep
 public class ProfileRepository(AppDbContext context)
   : BaseRepository<Profile, int>(context), IProfileRepository
 {
-  public async Task<Profile?> FindByEmailAsync(Email email)
-  {
-    return await Context.Set<Profile>()
-      .FirstOrDefaultAsync(p => p.PersonalData != null && p.PersonalData.Email.Value == email.Value);
-  }
-
   public async Task<IEnumerable<Profile>> FindByRoleAsync(EBusinessRole role)
   {
     return await Context.Set<Profile>()
@@ -28,15 +22,7 @@ public class ProfileRepository(AppDbContext context)
   {
     return await Context.Set<Profile>().AnyAsync(p => p.UserId.Value == userId.Value);
   }
-
-  public async Task<bool> EmailExistsAsync(Email email, ProfileId? excludeProfileId = null)
-  {
-    return await Context.Set<Profile>()
-      .AnyAsync(p => p.PersonalData != null
-                     && p.PersonalData.Email.Value == email.Value
-                     && (excludeProfileId == null || p.ProfileId.Value != excludeProfileId.Value));
-  }
-
+  
   public async Task<bool> DniExistsAsync(Dni dni, ProfileId? excludeProfileId = null)
   {
     return await Context.Set<Profile>()
@@ -49,11 +35,6 @@ public class ProfileRepository(AppDbContext context)
   {
     return await Context.Set<Profile>()
       .AnyAsync(p => p.Homeowner != null && p.Homeowner.HomeownerId.Value == homeownerId.Value);
-  }
-
-  public async Task<bool> ExistsByEmailAsync(Email email)
-  {
-    return await Context.Set<Profile>().AnyAsync(p => p.PersonalData != null && p.PersonalData.Email.Value == email.Value);
   }
 
   public async Task<Profile?> FindByUserIdAsync(UserId userId)

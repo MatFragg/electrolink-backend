@@ -9,26 +9,34 @@ public static class ModelBuilderExtensions
 {
     public static void ApplyIamConfiguration(this ModelBuilder builder)
     {
-        builder.Entity<User>(b =>
-        {
-            // Mapear el ValueObject `Id` mediante conversión a su valor primitivo.
-            // Ajusta `UserId` y `Value` según la implementación real si difieren.
-            b.Property(u => u.Id)
-                .HasConversion(
-                    id => id.Value,
-                    value => UserId.From(value))
-                .HasColumnName("Id")
-                .IsRequired()
-                .ValueGeneratedNever();
+        builder.Entity<User>().HasKey(u => u.Id);
 
-            // Clave primaria sobre la propiedad mapeada `Id` (ya es un primitivo vía conversión)
-            b.HasKey(u => u.Id);
+        builder.Entity<User>()
+            .Property(u => u.Id)
+            .HasConversion(
+                id => id.Value,
+                value => UserId.From(value))
+            .HasColumnName("Id")
+            .IsRequired()
+            .ValueGeneratedOnAdd();
 
-            b.Property(u => u.Email)
-                .HasConversion(
-                    username => username.Value,
-                    value => Email.Create(value)).IsRequired();
-            b.Property(u => u.PasswordHash).IsRequired();
-        });
+        builder.Entity<User>()
+            .Property(u => u.PasswordHash)
+            .IsRequired();
+
+        builder.Entity<User>()
+            .OwnsOne(u => u.Email, e =>
+            {
+                e.WithOwner()
+                    .HasForeignKey("Id");
+                e.HasKey("Id");
+
+                e.Property(x => x.Value)
+                    .HasColumnName("Email")
+                    .IsRequired();
+
+                e.HasIndex(x => x.Value)
+                    .IsUnique();
+            });
     }
 }

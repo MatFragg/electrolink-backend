@@ -11,7 +11,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
 public interface IProfileQueryService
 {
   Task<Profile?> Handle(GetProfileByIdQuery query);
-  Task<Profile?> Handle(GetProfileByEmailQuery query);
   Task<Profile?> Handle(GetProfileInfoByUserIdQuery query);
   Task<Profile?>Handle(GetMyProfileQuery query);
   Task<ProfileStatusReadModel?>Handle(GetProfileStatusQuery query);

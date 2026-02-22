@@ -71,10 +71,6 @@ public class ExternalProfileService(IProfilesContextFacade profilesContextFacade
     public async Task<bool> IsTechnicianAsync(string profileId) 
         => await profilesContextFacade.ExistsTechnicianProfileByUserIdAsync(profileId);
     
-    public async Task<string> FetchProfileEmail(string userId) 
-        => await profilesContextFacade.GetProfileEmailAsync(userId);
-    
-    
     public async Task<string> FetchProfileFullName(string userId)
         => await profilesContextFacade.GetProfileFullNameAsync(userId);
     

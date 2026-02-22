@@ -53,7 +53,6 @@ public class ProfileCommandService(
       var personalData = PersonalData.Create(
           command.FirstName, 
           command.LastName, 
-          Email.From(command.Email), 
           PhoneNumber.From(command.PhoneNumber), 
           Dni.From(command.Dni),
           DateOfBirth.From(command.DateOfBirth), 
@@ -82,7 +81,6 @@ public class ProfileCommandService(
       var personalData = PersonalData.Create(
           command.FirstName,
           command.LastName,
-          Email.From(command.Email),
           PhoneNumber.From(command.PhoneNumber),
           Dni.From(command.Dni),
           DateOfBirth.From(command.DateOfBirth),

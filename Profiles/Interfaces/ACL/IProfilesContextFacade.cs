@@ -11,11 +11,6 @@ public interface IProfilesContextFacade
     /// </summary>
     Task<string> CreateProfile(
         string userId);
-
-    /// <summary>
-    /// Fetch the profile id by email   
-    /// </summary>
-    Task<string> FetchProfileIdByEmail(string email);
     
     /// <summary>
     /// Gets technician ID (Guid as string) by profile ID.
@@ -33,12 +28,6 @@ public interface IProfilesContextFacade
     /// Checks if a technician profile exists for a given user ID.
     /// </summary>
     Task<bool> ExistsTechnicianProfileByUserIdAsync(string userId);
-    
-    /// <summary>
-    /// Gets profile email by profile ID.
-    /// </summary>
-    /// <returns>Email or empty string if not found</returns>
-    Task<string> GetProfileEmailAsync(string profileId);
 
     /// <summary>
     /// Gets profile full name by profile ID.

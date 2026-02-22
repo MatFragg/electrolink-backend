@@ -3,7 +3,6 @@
 public record PersonalDataResource(
     string FirstName,
     string LastName,
-    string Email,
     string PhoneNumber,
     string Dni,
     string DateOfBirth,

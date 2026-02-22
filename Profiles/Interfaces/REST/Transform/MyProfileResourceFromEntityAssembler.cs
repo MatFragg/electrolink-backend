@@ -20,7 +20,6 @@ public class MyProfileResourceFromEntityAssembler
     private static PersonalDataResource MapPersonalData(PersonalData pd) =>
         new(pd.FirstName,
             pd.LastName,
-            pd.Email.Value,
             pd.PhoneNumber.Value,
             pd.Dni.Value,
             pd.DateOfBirth.Value.ToString("yyyy-MM-dd"),

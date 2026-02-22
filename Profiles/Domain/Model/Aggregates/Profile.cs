@@ -58,7 +58,6 @@ public partial class Profile : BaseAggregateRoot
         )
     {
         EnsureStatus(EProfileStatus.Incomplete);
-        uniquenessChecker.EnsureEmailIsUnique(personalData.Email, ProfileId);
         uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
 
         PersonalData = personalData;
@@ -75,7 +74,6 @@ public partial class Profile : BaseAggregateRoot
         IProfileUniquenessChecker uniquenessChecker)
     {
         EnsureStatus(EProfileStatus.Incomplete);
-        uniquenessChecker.EnsureEmailIsUnique(personalData.Email, ProfileId);
         uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
 
         PersonalData = personalData;

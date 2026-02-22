@@ -27,7 +27,7 @@ public class UserRepository(AppDbContext context) : BaseRepository<User, UserId>
      */
     public async Task<User?> FindByEmailAsync(string email)
     {
-        return await Context.Set<User>().FirstOrDefaultAsync(user => user.Email.Equals(email));
+        return await Context.Set<User>().FirstOrDefaultAsync(u => u.Email.Value == email);
     }
 
     /**
@@ -37,8 +37,8 @@ public class UserRepository(AppDbContext context) : BaseRepository<User, UserId>
      * <param name="email">The username to search</param>
      * <returns>True if the user exists, false otherwise</returns>
      */
-    public bool ExistsByEmail(string email)
+    public async Task<bool> ExistsByEmail(string email)
     {
-        return Context.Set<User>().Any(user => user.Email.Equals(email));
+        return await Context.Set<User>().AnyAsync(u => u.Email.Value == email);
     }
 }

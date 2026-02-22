@@ -9,16 +9,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Ser
 
 public class ProfileUniquenessChecker(AppDbContext context) : IProfileUniquenessChecker
 {
-    public void EnsureEmailIsUnique(Email email, ProfileId excludedProfileId)
-    {
-        var exists = context.Set<Profile>()
-            .Any(p => p.PersonalData!.Email == email
-                      && p.ProfileId != excludedProfileId);
-
-        if (exists)
-            throw new EmailAlreadyInUseException(email);
-    }
-
     public void EnsureDniIsUnique(Dni dni, ProfileId excludedProfileId)
     {
         var exists = context.Set<Profile>()

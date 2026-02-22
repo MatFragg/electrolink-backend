@@ -30,5 +30,5 @@ public interface IUserRepository : IBaseRepository<User, UserId>
      * <param name="email">The username to search</param>
      * <returns>True if the user exists, false otherwise</returns>
      */
-    bool ExistsByEmail(string email);
+    Task<bool> ExistsByEmail(string email);
 }

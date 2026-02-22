@@ -28,13 +28,6 @@ public class ProfilesContextFacade(
         var profile = await profileCommandService.Handle(createProfileCommand);
         return profile?.ProfileId.Value ?? string.Empty;
     }
-
-    public async Task<string> FetchProfileIdByEmail(string email)
-    {
-        var getProfileByEmailQuery = new GetProfileByEmailQuery(Email.From(email));
-        var profile = await profileQueryService.Handle(getProfileByEmailQuery) ?? throw new Exception($"No profile found for email {email}");
-        return profile.ProfileId.Value ?? string.Empty;
-    }
     
     public async Task<string?> GetTechnicianIdByUserIdAsync(string userId)
     {
@@ -59,16 +52,6 @@ public class ProfilesContextFacade(
     {
         var profile = await profileRepository.FindByUserIdAsync(UserId.From(userId));
         return profile is not null && profile.BusinessRole == EBusinessRole.Technician;
-    }
-    
-    public async Task<string> GetProfileEmailAsync(string profileId)
-    {
-        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId)) ?? throw new Exception($"No profile found for ID {profileId}");
-        
-        if (profile.PersonalData is null)
-            return string.Empty;
-        
-        return profile.PersonalData.Email.Value ?? string.Empty;
     }
     
     public async Task<string> GetProfileFullNameAsync(string profileId)
@@ -99,5 +82,4 @@ public class ProfilesContextFacade(
         var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
         return profile is not null;
     }
-    
 }

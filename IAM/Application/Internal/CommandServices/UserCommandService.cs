@@ -39,10 +39,13 @@ public class UserCommandService(
      */
     public async Task<(User user, string token)> Handle(SignInCommand command)
     {
-        var user = await userRepository.FindByEmailAsync(command.Username);
+        var user = await userRepository.FindByEmailAsync(command.Email);
 
-        if (user == null || !hashingService.VerifyPassword(command.Password, user.PasswordHash))
+        if (!hashingService.VerifyPassword(command.Password, user.PasswordHash))
+        {
+            logger.LogWarning($"[IAM BC] Intento de inicio de sesión fallido para {command.Email}: contraseña inválida.");
             throw new Exception("Invalid username or password");
+        }
 
         var token = tokenService.GenerateToken(user);
 
@@ -57,7 +60,7 @@ public class UserCommandService(
 
         user.ClearDomainEvents();
 
-    logger.LogInformation($"[IAM BC] Usuario {command.Username} inició sesión exitosamente.");
+    logger.LogInformation($"[IAM BC] Usuario {command.Email} inició sesión exitosamente.");
         return (user, token);
     }
 
@@ -70,13 +73,17 @@ public class UserCommandService(
      */
     public async Task Handle(SignUpCommand command)
     {
+        if (string.IsNullOrWhiteSpace(command.Email) || string.IsNullOrWhiteSpace(command.Password) || string.IsNullOrWhiteSpace(command.PasswordConfirmation))
+            throw new ArgumentException("Username and passwords cannot be empty");
+        
         if (command.Password != command.PasswordConfirmation)
             throw new ArgumentException("Password and confirmation do not match.");
         
-        if (userRepository.ExistsByEmail(command.Email))
+        if (await userRepository.ExistsByEmail(command.Email))
             throw new InvalidOperationException($"Email '{command.Email}' is already taken.");
         
-        var user = User.Create(Email.Create(command.Email), command.Password);
+        var hashedPassword = hashingService.HashPassword(command.Password);
+        var user = User.Create(Email.From(command.Email), hashedPassword);
         
         await userRepository.AddAsync(user);
         await unitOfWork.CompleteAsync();

@@ -52,14 +52,6 @@ public static class ModelBuilderExtensions
                 n.Property(pd => pd.FirstName).HasColumnName("first_name").IsRequired();
                 n.Property(pd => pd.LastName).HasColumnName("last_name").IsRequired();
 
-                n.OwnsOne(pd => pd.Email, e =>
-                {
-                    e.WithOwner().HasForeignKey("profile_id");
-                    e.Property(em => em.Value)
-                        .HasColumnName("email")
-                        .IsRequired();
-                });
-
                 n.OwnsOne(pd => pd.PhoneNumber, pn =>
                 {
                     pn.WithOwner().HasForeignKey("profile_id");

@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Serialization;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
+namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Exceptions;
 
 [Serializable]
 public class EmailAlreadyInUseException : Exception

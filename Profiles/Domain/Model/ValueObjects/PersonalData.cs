@@ -4,7 +4,6 @@ public record PersonalData
 {
     public string FirstName { get; init; }
     public string LastName { get; init; }
-    public Email Email { get; init; }
     public PhoneNumber PhoneNumber { get; init; }
     public Dni Dni { get; init; }
     public DateOfBirth DateOfBirth { get; init; }
@@ -14,12 +13,11 @@ public record PersonalData
 
     private PersonalData() { }
 
-    public static PersonalData Create(string firstName, string lastName, Email email, PhoneNumber phoneNumber, Dni dni, DateOfBirth dateOfBirth, Address address) =>
+    public static PersonalData Create(string firstName, string lastName, PhoneNumber phoneNumber, Dni dni, DateOfBirth dateOfBirth, Address address) =>
         new()
         {
             FirstName   = firstName.Trim(),
             LastName    = lastName.Trim(),
-            Email       = email,
             PhoneNumber = phoneNumber,
             Dni         = dni,
             DateOfBirth = dateOfBirth,
@@ -33,6 +31,5 @@ public record PersonalData
             LastName    = lastName?.Trim()  ?? LastName,
             PhoneNumber = phoneNumber         ?? PhoneNumber,
             Address     = address             ?? Address,
-            // Email y Dni son inmutables — no se tocan
         };
 }

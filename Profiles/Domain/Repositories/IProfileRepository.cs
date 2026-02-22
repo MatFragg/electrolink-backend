@@ -11,12 +11,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 public interface IProfileRepository : IBaseRepository<Profile, ProfileId>
 {
   /// <summary>
-  /// Finds a profile by email.
-  /// </summary>
-  /// <param name="email"></param>
-  /// <returns></returns>
-  Task<Profile?> FindByEmailAsync(Email email);
-  /// <summary>
   /// Finds a profile by the associated IAM user ID.
   /// </summary>
   /// <param name="userId">The IAM user ID to search for.</param>
@@ -29,21 +23,7 @@ public interface IProfileRepository : IBaseRepository<Profile, ProfileId>
   /// <param name="userId">The IAM user ID to check for existence.</param>
   /// <returns></returns>
   Task<bool>ExistsByUserIdAsync(UserId userId);
-  
-  /// <summary>
-  /// Checks if an email is already associated with a profile, excluding a specific profile ID if provided.
-  /// </summary>
-  /// <param name="email">The email to check for existence.</param>
-  /// <param name="excludeProfileId">The profile ID to exclude from the check, if any.</param>
-  /// <returns>True if the email exists, otherwise false.</returns>
-  Task<bool>EmailExistsAsync(Email email, ProfileId? excludeProfileId = null);
 
-  /// <summary>
-  /// Checks if an email is already associated with a profile.
-  /// </summary>
-  /// <param name="email"></param>
-  /// <returns></returns>
-  Task<bool> ExistsByEmailAsync(Email email);
   /// <summary>
   /// Checks if a DNI is already associated with a profile, excluding a specific profile ID if provided.
   /// </summary>
