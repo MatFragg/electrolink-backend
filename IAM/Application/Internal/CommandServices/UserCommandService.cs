@@ -68,7 +68,7 @@ public class UserCommandService(
      * <param name="command">The sign-up command</param>
      * <returns>A confirmation message on successful creation.</returns>
      */
-    public async Task Handle(SignUpCommand command)
+    public async Task<(User user, string token)> Handle(SignUpCommand command)
     {
         if (string.IsNullOrWhiteSpace(command.Email) || string.IsNullOrWhiteSpace(command.Password) || string.IsNullOrWhiteSpace(command.PasswordConfirmation))
             throw new ArgumentException("Username and passwords cannot be empty");
@@ -88,6 +88,10 @@ public class UserCommandService(
         foreach (var domainEvent in user.DomainEvents)
             await mediator.Publish(domainEvent, CancellationToken.None);
         user.ClearDomainEvents();
+        
+        var token = tokenService.GenerateToken(user);
+
+        return (user, token);
     }
 
     public async Task<bool> Handle(UpdatePasswordCommand command)

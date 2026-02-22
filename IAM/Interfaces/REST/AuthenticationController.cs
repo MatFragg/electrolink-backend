@@ -66,11 +66,12 @@ public class AuthenticationController(IUserCommandService userCommandService) : 
     [SwaggerResponse(StatusCodes.Status200OK, "The user was created successfully")]
     public async Task<IActionResult> SignUp([FromBody] SignUpResource signUpResource)
     {
-        try
-        {
+        try {
             var signUpCommand = SignUpCommandFromResourceAssembler.ToCommandFromResource(signUpResource);
-            await userCommandService.Handle(signUpCommand);
-            return Ok(new { message = "User created successfully" });    
+            var authenticatedUser = await userCommandService.Handle(signUpCommand);
+            var resource = AuthenticatedUserResourceFromEntityAssembler.ToResourceFromEntity(authenticatedUser.user,
+                authenticatedUser.token);
+            return Ok(resource);
         } catch (Exception ex)
         {
             return BadRequest(new
@@ -79,6 +80,5 @@ public class AuthenticationController(IUserCommandService userCommandService) : 
                 error = ex.Message
             });
         }
-        
     }
 }

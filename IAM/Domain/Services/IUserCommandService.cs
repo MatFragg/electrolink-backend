@@ -29,7 +29,7 @@ public interface IUserCommandService
         * <param name="command">The sign up command</param>
         * <returns>A confirmation message on successful creation.</returns>
         */
-    Task Handle(SignUpCommand command);
+    Task<(User user, string token)> Handle(SignUpCommand command);
 
     /**
      * <summary>

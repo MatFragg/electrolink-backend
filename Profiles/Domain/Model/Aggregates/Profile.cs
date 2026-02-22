@@ -65,7 +65,12 @@ public partial class Profile : BaseAggregateRoot
         Technician = Technician.Create(TechnicianId.NewTechnicianId(), ProfileId, technicianData.Specialties, technicianData.ExperienceYears, technicianData.AboutMe);
         Status = EProfileStatus.Active;
 
-        RaiseDomainEvent(new ProfileCompletedEvent(ProfileId, UserId, BusinessRole.Value, Technician.TechnicianId));
+        RaiseDomainEvent(new ProfileCompletedEvent(
+            ProfileId.Value,
+            UserId.Value,
+            Technician!.TechnicianId.Value,
+            "TECHNICIAN",
+            DateTime.UtcNow));
     }
 
     public void CompleteAsHomeowner(
@@ -81,7 +86,12 @@ public partial class Profile : BaseAggregateRoot
         Homeowner = HomeOwner.Create(HomeownerId.NewHomeownerId(), ProfileId, homeownerData.PreferredContactTime, homeownerData.CommunicationPreferences, homeownerData.EmergencyContact);
         Status = EProfileStatus.Active;
 
-        RaiseDomainEvent(new ProfileCompletedEvent(ProfileId, UserId, BusinessRole.Value, Homeowner.HomeownerId));
+        RaiseDomainEvent(new ProfileCompletedEvent(
+            ProfileId.Value,
+            UserId.Value,
+            Technician!.TechnicianId.Value,
+            "HOMEOWNER",
+            DateTime.UtcNow));
     }
     
     public void UpdatePersonalData(string? firstName, string? lastName, PhoneNumber? phone, Address? address)

@@ -36,7 +36,7 @@ public class TokenService(IOptions<TokenSettings> tokenSettings) : ITokenService
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.Sid, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.Value),
                 new Claim(ClaimTypes.Email, user.Email.Value)
             }),
             Expires = DateTime.UtcNow.AddDays(7),
@@ -79,7 +79,7 @@ public class TokenService(IOptions<TokenSettings> tokenSettings) : ITokenService
             });
 
             var jwtToken = (JsonWebToken)tokenValidationResult.SecurityToken;
-            var userId = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.Sid).Value;
+            var userId = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value;
             return userId;
         }
         catch (Exception e)

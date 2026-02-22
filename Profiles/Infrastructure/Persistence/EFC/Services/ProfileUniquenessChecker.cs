@@ -12,7 +12,7 @@ public class ProfileUniquenessChecker(AppDbContext context) : IProfileUniqueness
     public void EnsureDniIsUnique(Dni dni, ProfileId excludedProfileId)
     {
         var exists = context.Set<Profile>()
-            .Any(p => p.PersonalData!.Dni == dni
+            .Any(p => p.PersonalData!.Dni.Value == dni.Value
                       && p.ProfileId != excludedProfileId);
 
         if (exists)

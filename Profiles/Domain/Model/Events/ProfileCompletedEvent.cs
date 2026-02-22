@@ -1,25 +1,14 @@
-﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events;
 
-public sealed class ProfileCompletedEvent : IEvent
+public record ProfileCompletedEvent(
+    string ProfileId,
+    string UserId,
+    string TechnicianId, 
+    string BusinessRole,
+    DateTime OccurredOn
+) : IEvent
 {
-    public Guid EventId { get; }
-    public ProfileId ProfileId { get; }
-    public UserId UserId { get; }
-    public EBusinessRole BusinessRole { get; }
-    public object SubjectId { get; }
-    public DateTime OccurredOn { get; }
-    
-    public ProfileCompletedEvent(ProfileId profileId, UserId userId, EBusinessRole businessRole, object subjectId)
-    {
-        EventId = Guid.NewGuid();
-        ProfileId = profileId;
-        UserId = userId;
-        BusinessRole = businessRole;
-        SubjectId = subjectId;
-        OccurredOn = DateTime.UtcNow;
-    }
+    public Guid EventId { get; init; } = Guid.NewGuid();
 }
