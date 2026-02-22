@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -17,39 +18,26 @@ namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 public class User : BaseAggregateRoot
 {
     public UserId Id { get; private set; }
-    public string Username { get; private set; }
+    public Email Email { get; private set; }
 
     [JsonIgnore] public string PasswordHash { get; private set; }
-    protected User() { }
-    public User(string username, string passwordHash)
+    private User() { }
+    
+    public static User Create(Email email, string passwordHash)
     {
-        Id = UserId.NewUserId(); 
-        Username = username;
-        PasswordHash = passwordHash;
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash cannot be empty or null.", nameof(passwordHash));
 
-        RaiseDomainEvent(new UserRegisteredEvent(
-            Id.Value,
-            username,
-            DateTime.UtcNow
-        ));
-    }
-    /**
-     * <summary>
-     *     Update the username
-     * </summary>
-     * <param name="newUsername">The new username</param>
-     * <returns>The updated user</returns>
-     */
-    public void UpdateUsername(string newUsername)
-    {
-        if (string.IsNullOrWhiteSpace(newUsername))
-            throw new ArgumentException("Username cannot be empty or null.", nameof(newUsername));
-        
-        var oldUsername = Username;
-        Username = newUsername;
+        var user = new User
+        {
+            Id = UserId.NewUserId(),
+            Email = email,
+            PasswordHash = passwordHash
+        };
 
-        // Registra el evento de dominio
-        RaiseDomainEvent(new UsernameUpdatedEvent(Id.Value, oldUsername, newUsername, DateTime.UtcNow));
+        user.RaiseDomainEvent(new UserRegisteredEvent(user.Id.Value, user.Email.Value, DateTime.UtcNow));
+
+        return user;
     }
 
     /**
