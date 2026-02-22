@@ -33,10 +33,10 @@ public interface IUserQueryService
     
     /**
      * <summary>
-     *     Handle get user by username query
+     *     Handle get user by email query
      * </summary>
-     * <param name="query">The get user by username query</param>
+     * <param name="query">The get user by email query</param>
      * <returns>The user if found, null otherwise</returns>
      */
-    Task<User?> Handle(GetUserByUsernameQuery query);
+    Task<User?> Handle(GetUserByEmailQuery query);
 }

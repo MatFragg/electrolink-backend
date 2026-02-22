@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using EntityFrameworkCore.CreatedUpdatedDate.Contracts;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 
-public abstract class BaseAggregateRoot
+public abstract class BaseAggregateRoot : IEntityWithCreatedUpdatedDate
 {
     private readonly List<IEvent> _domainEvents = [];
 

@@ -18,17 +18,17 @@ public interface IUserRepository : IBaseRepository<User, UserId>
      * <summary>
      *     Find a user by id
      * </summary>
-     * <param name="username">The username to search</param>
+     * <param name="email">The username to search</param>
      * <returns>The user</returns>
      */
-    Task<User?> FindByUsernameAsync(string username);
+    Task<User?> FindByEmailAsync(string email);
 
     /**
      * <summary>
      *     Check if a user exists by username
      * </summary>
-     * <param name="username">The username to search</param>
+     * <param name="email">The username to search</param>
      * <returns>True if the user exists, false otherwise</returns>
      */
-    bool ExistsByUsername(string username);
+    bool ExistsByEmail(string email);
 }

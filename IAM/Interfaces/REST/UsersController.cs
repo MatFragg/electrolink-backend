@@ -45,47 +45,7 @@ public class UsersController(IUserQueryService userQueryService, IUserCommandSer
         var userResources = users.Select(UserResourceFromEntityAssembler.ToResourceFromEntity);
         return Ok(userResources);
     }
-    
-    [HttpPut("{id}/username")]
-    [SwaggerOperation(
-        Summary = "Update a user's username",
-        Description = "Allows an authenticated user to update their username.",
-        OperationId = "UpdateUsername")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Username updated successfully")]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid username or user not found")]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized")]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "Forbidden - User ID in token does not match route ID")]
-    public async Task<IActionResult> UpdateUsername(string id, [FromBody] UpdateUsernameResource resource)
-    {
-        try
-        {
-            // **CORRECCIÓN**: Obtener el usuario desde HttpContext.Items
-            var authenticatedUser = HttpContext.Items["User"] as User;
-            if (authenticatedUser == null || authenticatedUser.Id.Value != id)
-            {
-                logger.LogWarning($"[IAM Controller] Intento de actualizar username por usuario no autorizado. TokenUserId: {authenticatedUser?.Id}, RouteId: {id}.");
-                return StatusCode(StatusCodes.Status403Forbidden, new
-                {
-                    message = "No estás autorizado para actualizar el username de este usuario."
-                });
-            }
 
-            var command = UpdateUsernameCommandFromResourceAssembler.ToCommandFromResource(id, resource);
-            await userCommandService.Handle(command);
-            return Ok(new { message = "Username actualizado correctamente" });
-        }
-        catch (ArgumentException ex)
-        {
-            logger.LogError(ex, $"[IAM Controller] Error al actualizar username para ID: {id}. Mensaje: {ex.Message}.");
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, $"[IAM Controller] Error inesperado al actualizar username para ID: {id}.");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred.", error = ex.Message });
-        }
-    }
-    
     [HttpPut("{id}/password")]
     [SwaggerOperation(
         Summary = "Update a user's password",

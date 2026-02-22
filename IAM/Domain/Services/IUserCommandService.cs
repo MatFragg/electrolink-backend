@@ -33,15 +33,6 @@ public interface IUserCommandService
 
     /**
      * <summary>
-     *     Handle update username command
-     * </summary>
-     * <param name="command">The update username command</param>
-     * <returns>True if the username was updated successfully, otherwise false.</returns>
-     */
-    Task<bool> Handle(UpdateUsernameCommand command);
-            
-    /**
-     * <summary>
      *     Handle update password command
      * </summary>
      * <param name="command">The update password command</param>

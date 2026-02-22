@@ -22,23 +22,23 @@ public class UserRepository(AppDbContext context) : BaseRepository<User, UserId>
      * <summary>
      *     Find a user by username
      * </summary>
-     * <param name="username">The username to search</param>
+     * <param name="email">The username to search</param>
      * <returns>The user</returns>
      */
-    public async Task<User?> FindByUsernameAsync(string username)
+    public async Task<User?> FindByEmailAsync(string email)
     {
-        return await Context.Set<User>().FirstOrDefaultAsync(user => user.Username.Equals(username));
+        return await Context.Set<User>().FirstOrDefaultAsync(user => user.Email.Equals(email));
     }
 
     /**
      * <summary>
      *     Check if a user exists by username
      * </summary>
-     * <param name="username">The username to search</param>
+     * <param name="email">The username to search</param>
      * <returns>True if the user exists, false otherwise</returns>
      */
-    public bool ExistsByUsername(string username)
+    public bool ExistsByEmail(string email)
     {
-        return Context.Set<User>().Any(user => user.Username.Equals(username));
+        return Context.Set<User>().Any(user => user.Email.Equals(email));
     }
 }

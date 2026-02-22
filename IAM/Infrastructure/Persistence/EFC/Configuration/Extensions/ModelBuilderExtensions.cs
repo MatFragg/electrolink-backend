@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +24,10 @@ public static class ModelBuilderExtensions
             // Clave primaria sobre la propiedad mapeada `Id` (ya es un primitivo vía conversión)
             b.HasKey(u => u.Id);
 
-            b.Property(u => u.Username).IsRequired();
+            b.Property(u => u.Email)
+                .HasConversion(
+                    username => username.Value,
+                    value => Email.Create(value)).IsRequired();
             b.Property(u => u.PasswordHash).IsRequired();
         });
     }

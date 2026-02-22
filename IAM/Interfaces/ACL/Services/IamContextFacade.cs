@@ -6,27 +6,27 @@ namespace Hampcoders.Electrolink.API.IAM.Interfaces.ACL.Services;
 
 public class IamContextFacade(IUserCommandService userCommandService, IUserQueryService userQueryService) : IIamContextFacade
 {
-    public async Task<string> CreateUser(string username, string password)
+    public async Task<string> CreateUser(string email, string password, string passwordConfirmation)
     {
-        var signUpCommand = new SignUpCommand(username, password);
+        var signUpCommand = new SignUpCommand(email, password, passwordConfirmation);
         await userCommandService.Handle(signUpCommand);
-        var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
-        var result = await userQueryService.Handle(getUserByUsernameQuery);
+        var getUserByEmailQuery = new GetUserByEmailQuery(email);
+        var result = await userQueryService.Handle(getUserByEmailQuery);
         return result?.Id.Value ?? string.Empty;
     }
 
-    public async Task<string> FetchUserIdByUsername(string username)
+    public async Task<string> FetchUserIdByEmail(string email)
     {
-        var getUserByUsernameQuery = new GetUserByUsernameQuery(username);
-        var result = await userQueryService.Handle(getUserByUsernameQuery);
+        var getUserByEmailQuery = new GetUserByEmailQuery(email);
+        var result = await userQueryService.Handle(getUserByEmailQuery);
         return result?.Id.Value ?? string.Empty;
     }
 
-    public async Task<string> FetchUsernameByUserId(string userId)
+    public async Task<string> FetchEmailByUserId(string userId)
     {
         var getUserByIdQuery = new GetUserByIdQuery(userId);
         var result = await userQueryService.Handle(getUserByIdQuery);
-        return result?.Username ?? string.Empty;
+        return result?.Email.Value ?? string.Empty;
     }
     
     public async Task<bool> UserExistsAsync(string userId) {

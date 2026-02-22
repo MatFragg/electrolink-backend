@@ -2,6 +2,7 @@ using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -38,7 +39,7 @@ public class UserCommandService(
      */
     public async Task<(User user, string token)> Handle(SignInCommand command)
     {
-        var user = await userRepository.FindByUsernameAsync(command.Username);
+        var user = await userRepository.FindByEmailAsync(command.Username);
 
         if (user == null || !hashingService.VerifyPassword(command.Password, user.PasswordHash))
             throw new Exception("Invalid username or password");
@@ -47,15 +48,16 @@ public class UserCommandService(
 
         user.RecordSignIn();
 
-        // 2. Publicar eventos de dominio registrados por el AR
-        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del inicio de sesión.");
+        logger.LogInformation(
+            $"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del inicio de sesión.");
         foreach (var domainEvent in user.DomainEvents)
         {
             await mediator.Publish(domainEvent, CancellationToken.None);
         }
-        user.ClearDomainEvents(); // Limpiar eventos después de publicar
 
-        logger.LogInformation($"[IAM BC] Usuario {command.Username} inició sesión exitosamente.");
+        user.ClearDomainEvents();
+
+    logger.LogInformation($"[IAM BC] Usuario {command.Username} inició sesión exitosamente.");
         return (user, token);
     }
 
@@ -68,54 +70,20 @@ public class UserCommandService(
      */
     public async Task Handle(SignUpCommand command)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(command.Username) || string.IsNullOrWhiteSpace(command.Password))
-                throw new ArgumentException("Username and password cannot be empty");
-                
-            if (userRepository.ExistsByUsername(command.Username))
-                throw new Exception($"Username {command.Username} is already taken");
-
-            var hashedPassword = hashingService.HashPassword(command.Password);
-            var user = new User(command.Username, hashedPassword);
+        if (command.Password != command.PasswordConfirmation)
+            throw new ArgumentException("Password and confirmation do not match.");
         
-            await userRepository.AddAsync(user);
-            await unitOfWork.CompleteAsync();
-            
-            var userRegisteredEvent = new UserRegisteredEvent(
-                user.Id.Value,
-                user.Username,
-                DateTime.UtcNow
-            );
-            logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del registro de usuario.");
-            
-            await mediator.Publish(userRegisteredEvent, CancellationToken.None);
-            
-            logger.LogInformation($"[IAM BC] Usuario {command.Username} registrado exitosamente con ID: {user.Id}.");
-        }
-        catch (Exception e)
-        {
-            throw new Exception($"An error occurred while creating user: {e.Message}");
-        }
-    }
-    
-    public async Task<bool> Handle(UpdateUsernameCommand command)
-    {
-        var user = await userRepository.FindByIdAsync(UserId.From(command.UserId)); 
-        if (user == null) throw new ArgumentException("User not found.");
-
-        user.UpdateUsername(command.NewUsername); 
+        if (userRepository.ExistsByEmail(command.Email))
+            throw new InvalidOperationException($"Email '{command.Email}' is already taken.");
+        
+        var user = User.Create(Email.Create(command.Email), command.Password);
+        
+        await userRepository.AddAsync(user);
         await unitOfWork.CompleteAsync();
-
-        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después de actualizar username.");
+        
         foreach (var domainEvent in user.DomainEvents)
-        {
             await mediator.Publish(domainEvent, CancellationToken.None);
-        }
         user.ClearDomainEvents();
-
-        logger.LogInformation($"[IAM BC] Username del usuario {command.UserId} actualizado a {command.NewUsername}.");
-        return true;
     }
 
     public async Task<bool> Handle(UpdatePasswordCommand command)

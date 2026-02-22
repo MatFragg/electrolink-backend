@@ -30,7 +30,7 @@ public class UserQueryService(IUserRepository userRepository) : IUserQueryServic
 
     /**
      * <summary>
-     *     Handle get user by username query
+     *     Handle get user by email query
      * </summary>
      * <param name="query">The query object for getting all users</param>
      * <returns>The user</returns>
@@ -42,13 +42,13 @@ public class UserQueryService(IUserRepository userRepository) : IUserQueryServic
 
     /**
      * <summary>
-     *     Handle get user by username query
+     *     Handle get user by email query
      * </summary>
-     * <param name="query">The query object containing the username to search</param>
+     * <param name="query">The query object containing the email to search</param>
      * <returns>The user</returns>
      */
-    public async Task<User?> Handle(GetUserByUsernameQuery query)
+    public async Task<User?> Handle(GetUserByEmailQuery query)
     {
-        return await userRepository.FindByUsernameAsync(query.Username);
+        return await userRepository.FindByEmailAsync(query.Email);
     }
 }
