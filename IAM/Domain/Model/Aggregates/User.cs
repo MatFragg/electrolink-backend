@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.Events;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;

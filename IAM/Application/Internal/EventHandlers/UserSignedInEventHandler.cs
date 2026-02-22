@@ -1,4 +1,4 @@
-﻿using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
+﻿using Hampcoders.Electrolink.API.IAM.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Shared.Application.Internal.EventHandler;
 
 namespace Hampcoders.Electrolink.API.IAM.Application.Internal.EventHandlers;

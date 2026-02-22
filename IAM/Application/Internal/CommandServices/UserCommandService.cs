@@ -1,13 +1,11 @@
 using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Domain;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Hampcoders.Electrolink.API.Shared.Domain.Services;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.IAM.Application.Internal.CommandServices;
@@ -26,7 +24,6 @@ public class UserCommandService(
     IHashingService hashingService,
     IUnitOfWork unitOfWork,
     IMediator mediator, 
-    IIntegrationEventPublisher integrationEventPublisher,
     ILogger<UserCommandService> logger)
     : IUserCommandService
 {

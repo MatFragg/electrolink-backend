@@ -20,32 +20,32 @@ public class ProfileRepository(AppDbContext context)
 
   public async Task<bool> ExistsByUserIdAsync(UserId userId)
   {
-    return await Context.Set<Profile>().AnyAsync(p => p.UserId.Value == userId.Value);
+    return await Context.Set<Profile>().AnyAsync(p => p.UserId == userId);
   }
   
   public async Task<bool> DniExistsAsync(Dni dni, ProfileId? excludeProfileId = null)
   {
     return await Context.Set<Profile>()
       .AnyAsync(p => p.PersonalData != null
-                     && p.PersonalData.Dni.Value == dni.Value
-                     && (excludeProfileId == null || p.ProfileId.Value != excludeProfileId.Value));
+                     && p.PersonalData.Dni == dni
+                     && (excludeProfileId == null || p.ProfileId != excludeProfileId));
   }
 
   public async Task<bool> IsHomeownerActiveAsync(HomeownerId homeownerId)
   {
     return await Context.Set<Profile>()
-      .AnyAsync(p => p.Homeowner != null && p.Homeowner.HomeownerId.Value == homeownerId.Value);
+      .AnyAsync(p => p.Homeowner != null && p.Homeowner.HomeownerId == homeownerId);
   }
 
   public async Task<Profile?> FindByUserIdAsync(UserId userId)
   {
     return await Context.Set<Profile>()
-      .FirstOrDefaultAsync(p => p.UserId.Value == userId.Value);
+      .FirstOrDefaultAsync(p => p.UserId == userId);
   }
 
   public async Task<Profile?> FindByIdAsync(ProfileId id)
   {
     return await Context.Set<Profile>()
-      .FirstOrDefaultAsync(p => p.ProfileId.Value == id.Value);
+      .FirstOrDefaultAsync(p => p.ProfileId == id);
   }
 }

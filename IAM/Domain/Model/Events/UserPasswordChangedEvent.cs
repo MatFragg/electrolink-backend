@@ -1,12 +1,11 @@
 ﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
-namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events.Integration;
+namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Events;
 
-public record UserRegisteredIntegrationEvent(
+public record UserPasswordChangedEvent(
     string UserId,
-    string Username,
     DateTime OccurredOn
-) : IIntegrationEvent
+) : IEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
 };

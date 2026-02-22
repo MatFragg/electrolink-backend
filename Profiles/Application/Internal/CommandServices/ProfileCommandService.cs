@@ -23,17 +23,18 @@ public class ProfileCommandService(
 {
   public async Task<Profile?> Handle(CreateProfileCommand command)
   { 
-      logger.LogInformation("Creating profile for User {UserId}", command.UserId);
       var userId = UserId.From(command.UserId);
-      if (!await externalIamService.UserExistsAsync(command.UserId))
-          throw new UserNotFoundException(command.UserId);
       
       if (await profileRepository.ExistsByUserIdAsync(userId))
-        throw new ProfileAlreadyExistsException(command.UserId);
+      {
+          logger.LogWarning("[Profiles BC] Perfil ya existe para {UserId}. Evento duplicado ignorado.", command.UserId);
+          return await profileRepository.FindByUserIdAsync(userId);
+      }
       
       var profile = Profile.Create(userId);
       await profileRepository.AddAsync(profile);
       await unitOfWork.CompleteAsync();
+      
       return profile;
   }
 
