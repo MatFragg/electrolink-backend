@@ -1,3 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
-public record GetPropertyAddressQuery(String PropertyId);
+public record GetPropertyAddressQuery(string PropertyId);

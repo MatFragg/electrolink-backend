@@ -4,7 +4,7 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 /// Query to retrieve all properties that belong to a specific owner.
 /// </summary>
 public record GetAllPropertiesByOwnerIdQuery(
-    String HomeownerId, 
+    string HomeownerId, 
     string? City, 
     string? District, 
     string? Region, 

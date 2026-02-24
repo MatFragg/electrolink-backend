@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record CreatePropertyCommand(string HomeownerId, Address Address, Region Region, District District);
+public record CreatePropertyCommand(HomeownerId HomeownerId, Address Address, Region Region, District District);

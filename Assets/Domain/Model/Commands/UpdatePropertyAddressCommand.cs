@@ -1,5 +1,5 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record UpdatePropertyAddressCommand(string Id, Address NewAddress);
+public record UpdatePropertyAddressCommand(string PropertyId, Address NewAddress);

@@ -1,32 +1,39 @@
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.TechnicianInventories;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
-public partial class TechnicianInventory
+public class TechnicianInventory : BaseAggregateRoot
 {
     // --- PROPIEDADES ---
-    public Guid Id { get; private set; }
+    public TechnicianInventoryId Id { get; private set; }
     public TechnicianId TechnicianId { get; private set; }
 
     private readonly List<ComponentStock> _stockItems;
     public IReadOnlyCollection<ComponentStock> StockItems => _stockItems.AsReadOnly();
-    
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
+
     private TechnicianInventory()
     {
         _stockItems = new List<ComponentStock>();
         TechnicianId = null!;
     }
 
-    public TechnicianInventory(CreateTechnicianInventoryCommand command) : this()
+    public static TechnicianInventory Create(TechnicianId technicianId)
     {
-        Id = Guid.NewGuid();
-        TechnicianId = new TechnicianId(command.TechnicianId);
+        if (technicianId == null || technicianId.Value == string.Empty) throw new ArgumentException("Technician ID must be valid.", nameof(technicianId));
+        
+        var inventory = new TechnicianInventory
+        {
+            Id = TechnicianInventoryId.NewTechnicianInventoryId(),
+            TechnicianId = technicianId
+        };
+        
+        inventory.RaiseDomainEvent(new TechnicianInventoryCreatedEvent(inventory.Id, inventory.TechnicianId, DateTime.UtcNow));
+        return inventory;
     }
 
     private ComponentStock? GetStockItemByComponentId(ComponentId componentId)
@@ -36,58 +43,38 @@ public partial class TechnicianInventory
 
     public void Handle(AddStockToInventoryCommand command)
     {
-        var componentId = new ComponentId(command.ComponentId);
+        var componentId = ComponentId.From(command.ComponentId);
         if (GetStockItemByComponentId(componentId) != null)
         {
             throw new InvalidOperationException($"Stock for component {componentId} already exists.");
         }
-        var newStockItem = new ComponentStock(this.Id, componentId, command.Quantity, command.AlertThreshold);
+        var newStockItem = ComponentStock.Create(Id, componentId, command.Quantity, command.AlertThreshold);
         _stockItems.Add(newStockItem);
     }
     public void Handle(DecreaseStockCommand command)
     {
-        var stockItem = GetStockItemByComponentId(new(command.ComponentId)) 
+        var stockItem = GetStockItemByComponentId(ComponentId.From(command.ComponentId)) 
             ?? throw new KeyNotFoundException("Component not found in inventory.");
         
         stockItem.DecreaseQuantity(command.AmountToDecrease);
         
-        _domainEvents.Add(new ComponentStockDecreasedEvent(
-            stockItem.Id, 
-            stockItem.ComponentId, 
-            command.AmountToDecrease, 
-            stockItem.QuantityAvailable, 
-            DateTime.UtcNow));
-        
         if (stockItem.QuantityAvailable <= stockItem.AlertThreshold)
         {
-            _domainEvents.Add(new ComponentStockLowEvent(
-                stockItem.Id, 
-                stockItem.ComponentId, 
-                stockItem.QuantityAvailable, 
-                stockItem.AlertThreshold, 
-                DateTime.UtcNow));
         }
     }
     
     public void Handle(IncreaseStockCommand command)
     {
-        var stockItem = GetStockItemByComponentId(new(command.ComponentId)) 
+        var stockItem = GetStockItemByComponentId(ComponentId.From(command.ComponentId)) 
             ?? throw new KeyNotFoundException("Component not found in inventory.");
 
         // La validación de la cantidad ahora está dentro del método IncreaseQuantity.
         stockItem.IncreaseQuantity(command.AmountToAdd);
-        
-        _domainEvents.Add(new ComponentStockIncreasedEvent(
-            stockItem.Id, 
-            stockItem.ComponentId, 
-            command.AmountToAdd, 
-            stockItem.QuantityAvailable, 
-            DateTime.UtcNow));
     }
     
     public void Handle(UpdateComponentStockCommand command)
     {
-        var stockItem = GetStockItemByComponentId(new ComponentId(command.ComponentId))
+        var stockItem = GetStockItemByComponentId(ComponentId.From(command.ComponentId))
                         ?? throw new KeyNotFoundException($"Component with ID {command.ComponentId} not found in inventory.");
 
         int oldQuantity = stockItem.QuantityAvailable;
@@ -100,67 +87,44 @@ public partial class TechnicianInventory
             if (difference > 0)
             {
                 stockItem.IncreaseQuantity(difference);
-                _domainEvents.Add(new ComponentStockIncreasedEvent(
-                    stockItem.Id,
-                    stockItem.ComponentId,
-                    difference,
-                    stockItem.QuantityAvailable,
-                    DateTime.UtcNow));
             }
             else
             {
                 stockItem.DecreaseQuantity(-difference);
-                _domainEvents.Add(new ComponentStockDecreasedEvent(
-                    stockItem.Id,
-                    stockItem.ComponentId,
-                    -difference,
-                    stockItem.QuantityAvailable,
-                    DateTime.UtcNow));
             }
         }
 
         if (stockItem.AlertThreshold != command.NewAlertThreshold)
         {
             stockItem.UpdateAlertThreshold(command.NewAlertThreshold);
-            _domainEvents.Add(new ComponentStockThresholdUpdatedEvent(
-                stockItem.Id,
-                stockItem.ComponentId,
-                stockItem.AlertThreshold,
-                DateTime.UtcNow));
         }
 
         if (stockItem.QuantityAvailable <= stockItem.AlertThreshold)
         {
-            _domainEvents.Add(new ComponentStockLowEvent(
-                stockItem.Id,
-                stockItem.ComponentId,
-                stockItem.QuantityAvailable,
-                stockItem.AlertThreshold,
-                DateTime.UtcNow));
         }
     }
     
     public void Handle(RemoveComponentStockCommand command)
     {
-        var componentId = new ComponentId(command.ComponentId);
+        var componentId = ComponentId.From(command.ComponentId);
         var stockItem = GetStockItemByComponentId(componentId);
         if (stockItem == null)
         {
-            throw new KeyNotFoundException($"Component with ID {componentId.Id} not found in inventory.");
+            throw new KeyNotFoundException($"Component with ID {componentId.Value} not found in inventory.");
         }
 
         if (stockItem.QuantityAvailable > 0)
         {
-            throw new InvalidOperationException($"Cannot remove component {componentId.Id} from inventory while stock is greater than 0.");
+            throw new InvalidOperationException($"Cannot remove component {componentId.Value} from inventory while stock is greater than 0.");
         }
 
         _stockItems.Remove(stockItem);
         // _domainEvents.Add(new ComponentStockRemovedEvent(stockItem.Id, stockItem.ComponentId, DateTime.UtcNow)); // Define este evento
     }
   
-    public void AdjustComponentQuantity(Guid componentId, int quantityAdjustment)
+    public void AdjustComponentQuantity(string componentId, int quantityAdjustment)
     {
-        var componentIdValueObject = new ComponentId(componentId);
+        var componentIdValueObject = ComponentId.From(componentId);
         var existingComponent = _stockItems.FirstOrDefault(c => c.ComponentId == componentIdValueObject);
 
         if (existingComponent != null)
@@ -183,11 +147,5 @@ public partial class TechnicianInventory
             }
             // Si el ajuste es negativo y el componente no existe, no hacemos nada (no se puede tener cantidad negativa).
         }
-    }
-
-    
-    public void ClearDomainEvents()
-    {
-        _domainEvents.Clear();
     }
 }

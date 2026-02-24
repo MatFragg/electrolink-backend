@@ -1,3 +1,3 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.Properties;
+﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
 public record ActivatePropertyCommand(string PropertyId);

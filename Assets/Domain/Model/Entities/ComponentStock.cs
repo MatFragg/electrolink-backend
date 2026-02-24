@@ -1,13 +1,14 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 
 public class ComponentStock
 {
-    public Guid Id { get; private set; }
-    public Guid TechnicianInventoryId { get; private set; }
-    public ComponentId ComponentId { get; private set; }
+    public ComponentStockId Id { get; private set; }
+    public TechnicianInventoryId TechnicianInventoryId { get; private set; }
+    public ComponentId ComponentId { get; private set; } = null!;
     public int QuantityAvailable { get; private set; }
     public int AlertThreshold { get; private set; }
     public DateTime LastUpdated { get; private set; }
@@ -16,14 +17,19 @@ public class ComponentStock
 
 
     // Constructor para la creación de un nuevo item
-    internal ComponentStock(Guid technicianInventoryId,ComponentId componentId, int quantity, int alertThreshold)
+    public static ComponentStock Create(TechnicianInventoryId technicianInventoryId,ComponentId componentId, int quantity, int alertThreshold)
     {
-        Id = Guid.NewGuid();
-        TechnicianInventoryId = technicianInventoryId;
-        ComponentId = componentId;
-        QuantityAvailable = quantity;
-        AlertThreshold = alertThreshold;
-        LastUpdated = DateTime.UtcNow;
+        var stock = new ComponentStock
+        {
+            Id = ComponentStockId.NewComponentStockId(),
+            TechnicianInventoryId = technicianInventoryId,
+            ComponentId = componentId,
+            QuantityAvailable = quantity,
+            AlertThreshold = alertThreshold,
+            LastUpdated = DateTime.UtcNow
+        };
+        
+        return stock;
     }
 
     public ComponentStock(ComponentId componentId, int quantity)
@@ -64,6 +70,5 @@ public class ComponentStock
     // Constructor privado para uso exclusivo de Entity Framework Core
     private ComponentStock() 
     {
-        ComponentId = new ComponentId(Guid.Empty);
     }
 }

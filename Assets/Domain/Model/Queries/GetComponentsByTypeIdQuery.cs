@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
-public record GetComponentsByTypeIdQuery(String ComponentTypeId);
+public record GetComponentsByTypeIdQuery(string ComponentTypeId);
