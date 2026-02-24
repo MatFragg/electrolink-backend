@@ -1,18 +1,16 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 
-public interface IPropertyRepository : IBaseRepository<Property, Guid>
+public interface IPropertyRepository : IBaseRepository<Property, PropertyId>
 {
-    Task<Property?> FindByIdAsync(PropertyId id);
-
-    Task<Property?> FindByIdAndOwnerIdAsync(PropertyId propertyId, OwnerId ownerId);
+    Task<IEnumerable<Property>> FindByHomeownerIdAsync(HomeownerId homeownerId);
+    Task<Property?> FindByIdAndOwnerIdAsync(PropertyId propertyId, HomeownerId homeownerId);
     
     Task<IEnumerable<Property>> GetAllFilteredAsync(
-        OwnerId ownerId, 
+        HomeownerId ownerId, 
         string? city, 
         string? district, 
         string? region, 
