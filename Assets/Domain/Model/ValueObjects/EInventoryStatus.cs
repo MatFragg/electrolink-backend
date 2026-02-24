@@ -2,5 +2,5 @@
 
 public enum EInventoryStatus
 {
-    
+    Empty, Active, Inactive
 }

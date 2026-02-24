@@ -1,3 +1,20 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Exceptions;
+
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-public record ComponentTypeId(int Id);
+public record ComponentTypeId{
+    public string Value { get; init; }
+
+    private ComponentTypeId(string value) => Value = value;
+
+    public static ComponentTypeId NewComponentTypeId() => new($"comptype-{Guid.NewGuid()}");
+
+    public static ComponentTypeId From(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("comptype-"))
+            throw new InvalidIdException("ComponentTypeId", value);
+        return new ComponentTypeId(value);
+    }
+
+    public override string ToString() => Value;
+}

@@ -1,3 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-public record EOccupancyStatus();
+public enum EOccupancyStatus   { OwnerOccupied, Rented, Vacant, UnderRenovation }

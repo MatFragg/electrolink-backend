@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-public struct EComponentStatus
-{
-    
-}
+public enum EComponentStatus  { Created, InInventory, Reserved, Consumed, Archived }
