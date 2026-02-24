@@ -1,2 +1,0 @@
-namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.TechnicianInventories;
-public record UpdateComponentStockCommand(Guid TechnicianId,Guid ComponentId, int NewQuantity, int NewAlertThreshold);

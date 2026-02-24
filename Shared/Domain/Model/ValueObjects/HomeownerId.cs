@@ -2,7 +2,7 @@
 
 namespace Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public class HomeownerId
+public record HomeownerId
 {
     public string Value { get; init; }
 
