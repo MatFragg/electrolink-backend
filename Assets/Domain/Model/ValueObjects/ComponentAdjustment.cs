@@ -1,13 +1,15 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
 public record ComponentAdjustment
 {
-    public Guid ComponentId { get; init; }
-    public int Quantity { get; init; } // Cantidad a ajustar (positiva para añadir, negativa para sustraer)
+    public ComponentId ComponentId { get; init; }
+    public int Quantity { get; init; } 
 
-    public ComponentAdjustment(Guid componentId, int quantity)
+    public ComponentAdjustment(ComponentId componentId, int quantity)
     {
-        if (componentId == Guid.Empty) 
+        if (componentId.Value == string.Empty) 
             throw new ArgumentException("Component ID cannot be empty.", nameof(componentId));
         
         

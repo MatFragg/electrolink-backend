@@ -1,3 +1,11 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record PropertyPortfolioCreatedEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+
+public record PropertyPortfolioCreatedEvent(PropertyPortfolioId PropertyPortfolioId, HomeownerId HomeownerId, DateTime OccurredOn
+) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+};

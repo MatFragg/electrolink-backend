@@ -10,10 +10,7 @@ public class ReservationItem
     public ComponentId ComponentId { get; private set; } = null!;
     public int Quantity { get; private set; }
 
-    private ReservationItem()
-    {
-
-    }
+    private ReservationItem() { }
 
     public static ReservationItem Create(
         ComponentReservationId reservationId,

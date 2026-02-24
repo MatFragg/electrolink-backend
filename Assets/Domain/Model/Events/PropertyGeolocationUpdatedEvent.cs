@@ -1,3 +1,9 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record PropertyGeolocationUpdatedEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+
+public record PropertyGeolocationUpdatedEvent(PropertyId PropertyId, HomeownerId HomeownerId, Geolocation PreviousGeolocation, Geolocation NewGeolocation, DateTime OccurredOn) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+}

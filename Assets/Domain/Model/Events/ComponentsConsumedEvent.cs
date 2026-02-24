@@ -1,3 +1,14 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record ComponentsConsumedEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+
+public record ComponentsConsumedEvent(
+    TechnicianInventoryId TechnicianInventoryId,
+    ServiceId ServiceId,
+    IEnumerable<ComponentAdjustment> Items,
+    DateTime OccurredOn) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+}

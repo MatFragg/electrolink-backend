@@ -1,3 +1,10 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record ComponentStockThresholdUpdatedEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+
+public record ComponentStockThresholdUpdatedEvent(ComponentStockId ComponentStockId, ComponentId ComponentId, int AlertThreshold, DateTime OccurredOn) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+}

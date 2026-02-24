@@ -1,3 +1,10 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record ComponentsReservedForServiceEvent();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
+
+public record ComponentsReservedForServiceEvent(TechnicianInventoryId TechnicianInventoryId, ServiceId ServiceId, IReadOnlyList<ComponentAdjustment> Items, DateTime ExpiresAt, DateTime OccurredOn) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+}

@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using PropertyId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.PropertyId;
@@ -9,94 +10,80 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 public class Property : BaseAggregateRoot
 {
     public PropertyId Id { get; private set; } = null!;
-    public HomeownerId OwnerId { get; private set; }
-    public Address Address { get; private set; }
-    public Region Region { get; private set; }
-    public District District { get; private set; }
+    public HomeownerId OwnerId { get; private set; } = null!;
+    public Address Address { get; private set; } = null!;
+    public Geolocation Geolocation { get; private set; } = null!;
+    public Region Region { get; private set; } = null!;
+    public District District { get; private set; } = null!;
+    public EPropertyStatus Status { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    public Property()
-    {
-
-    }
+    private Property() { }
     
-    public Property(HomeownerId ownerId, Address address, Region region, District district) : this()
+    public static Property Create(HomeownerId ownerId, Address address, Geolocation geolocation, Region region, District district)
     {
-        if (ownerId == null || ownerId.Value == string.Empty) throw new ArgumentException("Owner ID must be valid.", nameof(ownerId));
-        if (address == null) throw new ArgumentNullException(nameof(address));
-        if (region == null) throw new ArgumentNullException(nameof(region));
-        if (district == null) throw new ArgumentNullException(nameof(district));
-        
-        OwnerId = ownerId;
-        Address = address;
-        Region = region;
-        District = district;
+        if (ownerId is null || string.IsNullOrWhiteSpace(ownerId.Value))
+            throw new ArgumentException("OwnerId must be valid.");
+        if (address is null)    throw new ArgumentNullException(nameof(address));
+        if (geolocation is null) throw new ArgumentNullException(nameof(geolocation));
+
+        var property = new Property
+        {
+            Id = PropertyId.NewPropertyId(),
+            OwnerId = ownerId,
+            Address = address,
+            Geolocation = geolocation,
+            Region = region,
+            District = district,
+            Status = EPropertyStatus.Created,
+            IsActive = true,
+        };
+
+        property.RaiseDomainEvent(new PropertyCreatedEvent(property.Id, property.OwnerId, property.Address, property.Geolocation, DateTime.UtcNow));
+
+        return property;
     }
 
-    public Property(CreatePropertyCommand command) : this(command.HomeownerId,command.Address,command.Region,command.District)
+    internal void UpdateAddress(Address newAddress)
     {
-    }
-    
-     public void Handle(UpdatePropertyAddressCommand command)
-    {
-        
-        if (PropertyId.From(command.PropertyId) != Id) 
-            throw new InvalidOperationException($"Command ID {command.PropertyId} does not match Property ID {Id.Value}.");
-
-        UpdateAddress(command.NewAddress); 
-    }
-
-    public void Handle(UpdatePropertyCommand command)
-    {
-        if (PropertyId.From(command.PropertyId) != Id) return;
-
-        // Validaciones de negocio (ej. si la propiedad debe estar activa para actualizar)
-        // if (!IsActive) throw new InvalidOperationException("No se puede actualizar una propiedad inactiva.");
-        if (command.HomeownerId == string.Empty) throw new ArgumentException("New Owner ID must be valid.", nameof(command.HomeownerId));
-        if (command.Address == null) throw new ArgumentNullException(nameof(command.Address));
-        if (command.RegionName == null) throw new ArgumentNullException(nameof(command.RegionName));
-        if (command.DistrictName == null) throw new ArgumentNullException(nameof(command.DistrictName));
-
-        OwnerId = HomeownerId.From(command.HomeownerId);
-
-        Address = command.Address;
-
-        Region = new Region(command.RegionName);
-        District = new District(command.DistrictName);
-    }
-    
-    public void Handle(DeactivatePropertyCommand command)
-    {
-        if (PropertyId.From(command.PropertyId) != Id) return; 
-
-        Deactivate(); 
-    }
-
-    public void Handle(ActivatePropertyCommand command)
-    {
-        if (PropertyId.From(command.PropertyId) != Id) return; 
-
-        Activate(); 
-    }
-    
-    private void UpdateAddress(Address newAddress)
-    {
-        if (newAddress == null) throw new ArgumentNullException(nameof(newAddress));
-
-        if (Address.Equals(newAddress)) return; 
-
+        if (Address.Equals(newAddress)) return;
         Address = newAddress;
+        RaiseDomainEvent(new PropertyAddressUpdatedEvent(Id, newAddress, DateTime.UtcNow));
     }
-    private void Deactivate()
+    
+    internal void UpdateGeolocation(Geolocation newGeolocation)
     {
-        if (!IsActive) return; 
-
-        IsActive = false;
+        var previous = Geolocation;
+        Geolocation  = newGeolocation;
+        RaiseDomainEvent(new PropertyGeolocationUpdatedEvent(
+            Id, OwnerId, previous, newGeolocation, DateTime.UtcNow));
     }
-    private void Activate()
+    internal void Activate()
     {
-        if (IsActive) return; 
-
+        if (IsActive) return;
         IsActive = true;
+        RaiseDomainEvent(new PropertyActivatedEvent(Id, DateTime.UtcNow));
     }
+
+    internal void Deactivate()
+    {
+        if (!IsActive) return;
+        IsActive = false;
+        RaiseDomainEvent(new PropertyDeactivatedEvent(Id, DateTime.UtcNow));
+    }
+    
+    internal void Archive(string reason)
+    {
+        if (Status == EPropertyStatus.Archived) return;
+        Status   = EPropertyStatus.Archived;
+        IsActive = false;
+        RaiseDomainEvent(new PropertyArchivedEvent(Id, OwnerId, reason, DateTime.UtcNow));
+    }
+    
+    internal void RecordMaintenance(ServiceId serviceId, string technicianId, string workSummary, DateTime completedAt)
+    {
+        RaiseDomainEvent(new PropertyMaintenanceRecordedEvent(
+            Id, serviceId, technicianId, workSummary, completedAt, DateTime.UtcNow));
+    }
+
 }

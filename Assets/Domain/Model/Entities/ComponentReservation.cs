@@ -19,27 +19,17 @@ public class ComponentReservation
 
     private ComponentReservation() { }
     
-    public static ComponentReservation Create(
-        TechnicianInventoryId inventoryId,
-        ServiceId serviceId,
-        TimeSpan reservationDuration)
+    public static ComponentReservation Create(TechnicianInventoryId inventoryId, ServiceId serviceId, DateTime expiresAt)
     {
-        if (reservationDuration <= TimeSpan.Zero)
-            throw new ArgumentException("Reservation duration must be positive.", nameof(reservationDuration));
-
-        var reservation = new ComponentReservation
+        return new ComponentReservation
         {
             Id = ComponentReservationId.NewComponentReservationId(),
             InventoryId = inventoryId,
-            ServiceId = serviceId,
-            ExpiresAt = DateTime.UtcNow.Add(reservationDuration),
-            IsConsumed = false,
-            IsReleased = false,
-            ConsumedAt = null,
-            ReleasedAt = null
+            ServiceId   = serviceId,
+            ExpiresAt   = expiresAt,
+            IsConsumed  = false,
+            IsReleased  = false,
         };
-
-        return reservation;
     }
 
     public bool IsExpired => !IsConsumed && !IsReleased && DateTime.UtcNow > ExpiresAt;
