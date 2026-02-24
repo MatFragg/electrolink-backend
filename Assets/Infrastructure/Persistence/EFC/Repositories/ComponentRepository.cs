@@ -1,19 +1,15 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
 
-public class ComponentRepository(AppDbContext context) : BaseRepository<Component, Guid>(context), IComponentRepository
+public class ComponentRepository(AppDbContext context) : BaseRepository<Component, ComponentId>(context), IComponentRepository
 {
-    public async Task<Component?> FindByIdAsync(ComponentId id)
-    {
-        return await Context.Set<Component>().FirstOrDefaultAsync(c => c.Id == id);
-    }
-
     public async Task<IEnumerable<Component>> FindByTypeIdAsync(ComponentTypeId typeId)
     {
         return await Context.Set<Component>()

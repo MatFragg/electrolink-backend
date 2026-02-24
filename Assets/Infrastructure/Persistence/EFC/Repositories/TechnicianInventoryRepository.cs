@@ -1,14 +1,14 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
 
-public class TechnicianInventoryRepository(AppDbContext context) : BaseRepository<TechnicianInventory, Guid>(context), ITechnicianInventoryRepository
+public class TechnicianInventoryRepository(AppDbContext context) : BaseRepository<TechnicianInventory, TechnicianInventoryId>(context), ITechnicianInventoryRepository
 {
     public async Task<TechnicianInventory?> FindByTechnicianIdAsync(TechnicianId technicianId)
     {
