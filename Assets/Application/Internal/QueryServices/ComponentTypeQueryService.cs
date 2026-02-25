@@ -10,7 +10,7 @@ public class ComponentTypeQueryService(IComponentTypeRepository componentTypeRep
 {
     public async Task<ComponentType?> Handle(GetComponentTypeByIdQuery query)
     {
-        var componentTypeId = new ComponentTypeId(query.Id);
+        var componentTypeId = new ComponentTypeId(query.ComponentTypeId);
         return await componentTypeRepository.FindByIdAsync(componentTypeId);
     }
 
