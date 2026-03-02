@@ -1,3 +1,8 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices.ReadModels;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
-public record TechnicianInventoryReadModel();
+namespace Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices.ReadModels;
+
+public record TechnicianInventoryReadModel(
+    TechnicianInventory Inventory,
+    IReadOnlyDictionary<string, string> ComponentNames
+);

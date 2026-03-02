@@ -1,21 +1,17 @@
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands.Properties;
-using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Properties;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class PropertyCommandService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher) : IPropertyCommandService
+public class PropertyCommandService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork, IMediator mediator) : IPropertyCommandService
 {
     public async Task<Property?> Handle(CreatePropertyCommand command)
     {
-        var property = new Property(command);
+        var property = Property.Create(command.HomeownerId, command.Address, command.Geolocation);
         await propertyRepository.AddAsync(property);
         await unitOfWork.CompleteAsync();
         
@@ -43,10 +39,10 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
 
     public async Task<Property?> Handle(UpdatePropertyAddressCommand command)
     {
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.Id));
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property is null) throw new ArgumentException("Property not found.");
 
-        property.Handle(command);
+        property.UpdateAddress(command.NewAddress);
         await unitOfWork.CompleteAsync();
         
         foreach (var domainEvent in property.DomainEvents)
@@ -57,12 +53,17 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         return property;
     }
 
+    public Task<Property?> Handle(UpdatePropertyGeolocationCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<Property?> Handle(DeactivatePropertyCommand command)
     {
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.PropertyId));
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property == null) return null;
 
-        property.Handle(command); // El AR registra PropertyDeactivatedEvent
+        property.Deactivate();
         await unitOfWork.CompleteAsync();
             
         // Publicar eventos de dominio
@@ -74,13 +75,18 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
             
         return property;
     }
-    
+
+    public Task<Property?> Handle(ArchivePropertyCommand command)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<Property?> Handle(ActivatePropertyCommand command)
     {
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.PropertyId));
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property == null) return null;
 
-        property.Handle(command); // El AR registra PropertyActivatedEvent
+        property.Activate(); 
         await unitOfWork.CompleteAsync();
             
         // Publicar eventos de dominio
@@ -95,14 +101,9 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     
     public async Task<Property?> Handle(UpdatePropertyCommand command)
     {
-        var property = await propertyRepository.FindByIdAndOwnerIdAsync(
-            new PropertyId(command.Id), 
-            new OwnerId(command.OwnerId)
-        );
+        var property = await propertyRepository.FindByIdAndOwnerIdAsync(command.PropertyId, command.HomeownerId);
         
         if (property is null) return null; 
-
-        property.Handle(command);
 
         await unitOfWork.CompleteAsync();
         
@@ -117,13 +118,16 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     
     public async Task<bool> Handle(DeletePropertyCommand command)
     {
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.Id));
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property is null) return false;
 
         propertyRepository.Remove(property);
         await unitOfWork.CompleteAsync();
         return true;
     }
-    
-    
+
+    public Task<Property?> Handle(RecordMaintenanceForPropertyCommand command)
+    {
+        throw new NotImplementedException();
+    }
 }

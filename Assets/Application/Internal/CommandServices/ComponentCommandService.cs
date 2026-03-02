@@ -1,52 +1,24 @@
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.Components;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Hampcoders.Electrolink.API.Shared.Domain.Services;
-using Microsoft.Extensions.Logging; // Asegúrate de tener este using
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class ComponentCommandService : IComponentCommandService
+public class ComponentCommandService(IComponentRepository componentRepository, IComponentTypeRepository componentTypeRepository, IUnitOfWork unitOfWork, IMediator mediator, ILogger<ComponentCommandService> logger) : IComponentCommandService
 {
-    private readonly IComponentRepository componentRepository;
-    private readonly IComponentTypeRepository componentTypeRepository;
-    private readonly IUnitOfWork unitOfWork;
-    private readonly IMediator mediator;
-    private readonly IIntegrationEventPublisher integrationEventPublisher;
-    private readonly ILogger<ComponentCommandService> logger;
-
-    public ComponentCommandService(
-        IComponentRepository componentRepository,
-        IComponentTypeRepository componentTypeRepository,
-        IUnitOfWork unitOfWork,
-        IMediator mediator,
-        IIntegrationEventPublisher integrationEventPublisher,
-        ILogger<ComponentCommandService> logger)
-    {
-        this.componentRepository = componentRepository;
-        this.componentTypeRepository = componentTypeRepository;
-        this.unitOfWork = unitOfWork;
-        this.mediator = mediator;
-        this.integrationEventPublisher = integrationEventPublisher;
-        this.logger = logger;
-
-        logger.LogInformation($"[ComponentCommandService CTOR] Tipo de IMediator inyectado: {mediator.GetType().FullName}");
-    }
-
     public async Task<Component?> Handle(CreateComponentCommand command)
     {
-        var componentType = await componentTypeRepository.FindByIdAsync(new ComponentTypeId(command.ComponentTypeId));
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
         if (componentType is null)
             throw new ArgumentException($"Component type with id {command.ComponentTypeId} not found.");
 
         if (await componentRepository.ExistsByNameAsync(command.Name))
             throw new ArgumentException($"A component with the name '{command.Name}' already exists.");
 
-        var component = new Component(command); 
+        var component = Component.Create(command.Name, command.Description,command.IsActive, componentType.Id); 
         await componentRepository.AddAsync(component);
         await unitOfWork.CompleteAsync();
 
@@ -63,7 +35,7 @@ public class ComponentCommandService : IComponentCommandService
 
     public async Task<Component?> Handle(UpdateComponentCommand command)
     {
-        var component = await componentRepository.FindByIdAsync(new ComponentId(command.Id)); 
+        var component = await componentRepository.FindByIdAsync(command.ComponentId); 
         if (component is null) throw new ArgumentException("Component not found.");
 
         component.UpdateInfo(command); 
@@ -80,7 +52,7 @@ public class ComponentCommandService : IComponentCommandService
 
     public async Task<bool> Handle(DeleteComponentCommand command)
     {
-        var component = await componentRepository.FindByIdAsync(new ComponentId(command.Id)); 
+        var component = await componentRepository.FindByIdAsync(command.ComponentId); 
         if (component is null)
         {
             return false;

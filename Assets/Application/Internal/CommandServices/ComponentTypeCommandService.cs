@@ -1,17 +1,14 @@
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Assets.Domain.ModeL.Commands.ComponentTypes;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Events.ComponentTypes;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Hampcoders.Electrolink.API.Shared.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator, IIntegrationEventPublisher integrationEventPublisher,ILogger<ComponentTypeCommandService> logger) : IComponentTypeCommandService
+public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator,ILogger<ComponentTypeCommandService> logger) : IComponentTypeCommandService
 {
     public async Task<ComponentType?> Handle(CreateComponentTypeCommand command)
     {
@@ -21,7 +18,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
             throw new ArgumentException($"A component type with the name {command.Name} already exists.");
         }
 
-        var componentType = new ComponentType(command);
+        var componentType = ComponentType.Create(command.Name, command.Description);
         await componentTypeRepository.AddAsync(componentType);
         await unitOfWork.CompleteAsync();
         var createdEvent = new ComponentTypeCreatedEvent(
@@ -30,7 +27,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
             DateTime.UtcNow
         );
         
-        logger.LogInformation($"[Assets BC] Publicando evento de dominio ComponentTypeCreatedEvent (ID: {createdEvent.EventId}) para TipoComponenteId: {createdEvent.ComponentTypeId.Id}");
+        logger.LogInformation($"[Assets BC] Publicando evento de dominio ComponentTypeCreatedEvent (ID: {createdEvent.EventId}) para TipoComponenteId: {createdEvent.ComponentTypeId}");
         await mediator.Publish(createdEvent, CancellationToken.None);
 
         componentType.ClearDomainEvents();
@@ -40,8 +37,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
     public async Task<ComponentType?> Handle(UpdateComponentTypeCommand command)
     {
         // Envuelve el 'int' en su Value Object antes de pasarlo al repositorio.
-        var componentTypeId = new ComponentTypeId(command.Id);
-        var componentType = await componentTypeRepository.FindByIdAsync(componentTypeId);
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
         if (componentType is null) throw new ArgumentException("Component type not found.");
 
         componentType.Update(command);
@@ -58,8 +54,7 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
 
     public async Task<bool> Handle(DeleteComponentTypeCommand command)
     {
-        var componentTypeId = new ComponentTypeId(command.Id);
-        var componentType = await componentTypeRepository.FindByIdAsync(componentTypeId);
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
         if (componentType is null)
         {
             return false;
