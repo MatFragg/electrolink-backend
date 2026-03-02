@@ -15,12 +15,7 @@ public class PropertyRepository(AppDbContext context) : BaseRepository<Property,
             .Where(p => p.OwnerId == homeownerId)
             .ToListAsync();
     }
-
-    public Task<Property?> FindByIdAndOwnerIdAsync(Domain.Model.ValueObjects.PropertyId propertyId, HomeownerId homeownerId)
-    {
-        throw new NotImplementedException();
-    }
-
+    
     public async Task<IEnumerable<Property>> FindByCityAsync(string city)
     {
         // Implementar la lógica para buscar propiedades por ciudad
@@ -38,42 +33,13 @@ public class PropertyRepository(AppDbContext context) : BaseRepository<Property,
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Property>> FindByRegionAsync(string regionName)
-    {
-        // Implementar la lógica para buscar propiedades por región
-        return await Context.Properties
-            .Where(p => p.Region.Name == regionName)
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Property>> FindByDistrictAsync(string districtName)
-    {
-        // Implementar la lógica para buscar propiedades por distrito
-        return await Context.Properties
-            .Where(p => p.District.Name == districtName)
-            .ToListAsync();
-    }
-    
-    /*public async Task<Property?> Handle(DeactivatePropertyCommand command)
-    {
-        var property = await FindByIdAsync(new PropertyId(command.Id));
-        if (property == null) return null;
-        
-        property.Handle(command);
-        await Context.SaveChangesAsync();
-        return property;
-    }*/
-    
     public async Task<Property?> FindByIdAndOwnerIdAsync(PropertyId propertyId, HomeownerId ownerId)
     {
         return await Context.Set<Property>()
             .FirstOrDefaultAsync(p => p.Id == propertyId && p.OwnerId == ownerId);
     }
-    public async Task<IEnumerable<Property>> GetAllFilteredAsync(
-        HomeownerId ownerId, 
-        string? city, 
-        string? district, 
-        string? region, 
+    public async Task<IEnumerable<Property>> GetAllFilteredAsync(HomeownerId ownerId,
+        string? city,
         string? street)
     {
         var query = Context.Set<Property>().Where(p => p.OwnerId == ownerId);
@@ -81,14 +47,6 @@ public class PropertyRepository(AppDbContext context) : BaseRepository<Property,
         if (!string.IsNullOrWhiteSpace(city))
         {
             query = query.Where(p => p.Address.City.Contains(city));
-        }
-        if (!string.IsNullOrWhiteSpace(district))
-        {
-            query = query.Where(p => p.District.Name == district);
-        }
-        if (!string.IsNullOrWhiteSpace(region))
-        {
-            query = query.Where(p => p.Region.Name == region);
         }
         if (!string.IsNullOrWhiteSpace(street))
         {
