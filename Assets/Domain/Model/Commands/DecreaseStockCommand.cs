@@ -1,2 +1,4 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-public record DecreaseStockCommand(string TechnicianId, string ComponentId, int AmountToDecrease);
+public record DecreaseStockCommand(TechnicianId TechnicianId, ComponentId ComponentId, int AmountToDecrease);

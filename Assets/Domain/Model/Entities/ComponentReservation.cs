@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 public class ComponentReservation
 {
     public ComponentReservationId Id { get; private set; } = null!;
-    public TechnicianInventoryId InventoryId { get; private set; } = null!;
+    public TechnicianInventoryId TechnicianInventoryId { get; private set; } = null!;
     public ServiceId ServiceId { get; private set; } = null!;
     public DateTime ExpiresAt { get; private set; }
     public bool IsConsumed { get; private set; }
@@ -24,7 +24,7 @@ public class ComponentReservation
         return new ComponentReservation
         {
             Id = ComponentReservationId.NewComponentReservationId(),
-            InventoryId = inventoryId,
+            TechnicianInventoryId = inventoryId,
             ServiceId   = serviceId,
             ExpiresAt   = expiresAt,
             IsConsumed  = false,

@@ -1,2 +1,4 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
-public record DeactivatePropertyCommand(string PropertyId);
+public record DeactivatePropertyCommand(PropertyId PropertyId);

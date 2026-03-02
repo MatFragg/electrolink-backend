@@ -1,9 +1,7 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
-using PropertyId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.PropertyId;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
@@ -13,14 +11,12 @@ public class Property : BaseAggregateRoot
     public HomeownerId OwnerId { get; private set; } = null!;
     public Address Address { get; private set; } = null!;
     public Geolocation Geolocation { get; private set; } = null!;
-    public Region Region { get; private set; } = null!;
-    public District District { get; private set; } = null!;
     public EPropertyStatus Status { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     private Property() { }
     
-    public static Property Create(HomeownerId ownerId, Address address, Geolocation geolocation, Region region, District district)
+    public static Property Create(HomeownerId ownerId, Address address, Geolocation geolocation)
     {
         if (ownerId is null || string.IsNullOrWhiteSpace(ownerId.Value))
             throw new ArgumentException("OwnerId must be valid.");
@@ -33,8 +29,6 @@ public class Property : BaseAggregateRoot
             OwnerId = ownerId,
             Address = address,
             Geolocation = geolocation,
-            Region = region,
-            District = district,
             Status = EPropertyStatus.Created,
             IsActive = true,
         };

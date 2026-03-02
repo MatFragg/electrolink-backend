@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
@@ -6,11 +7,13 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 
 public class Component : BaseAggregateRoot
 {
-    public ComponentId Id { get; private set; }
+    public ComponentId Id { get; private set; } = null!;
+    [Column(TypeName = "varchar(100)")]
     public string Name { get; private set; } = string.Empty;
+    [Column(TypeName = "varchar(500)")]
     public string Description { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
-    public ComponentTypeId TypeId { get; private set; } 
+    public ComponentTypeId TypeId { get; private set; } = null!;
     
     private Component() {}
     
@@ -41,8 +44,8 @@ public class Component : BaseAggregateRoot
     public void UpdateInfo(UpdateComponentCommand command)
     {
         Name = command.Name;
-        Description = command.Description;
-        TypeId = ComponentTypeId.From(command.ComponentTypeId);
+        Description = command.Description ?? string.Empty;
+        TypeId = command.ComponentTypeId;
         IsActive = command.IsActive;
 
     }

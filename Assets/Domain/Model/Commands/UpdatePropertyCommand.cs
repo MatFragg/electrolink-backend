@@ -1,5 +1,5 @@
-using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record UpdatePropertyCommand(string PropertyId, string HomeownerId, Address Address, string RegionName, string RegionCode, string DistrictName, string DistrictUbigeo);
+public record UpdatePropertyCommand(PropertyId PropertyId, HomeownerId HomeownerId, Address Address);

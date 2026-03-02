@@ -2,4 +2,4 @@
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record ActivatePropertyCommand(PropertyId PropertyId);
+public record ReleaseReservationCommand(TechnicianId TechnicianId, ServiceId ServiceId, string Reason);

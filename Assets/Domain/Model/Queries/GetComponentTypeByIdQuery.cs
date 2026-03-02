@@ -1,3 +1,5 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
-public record GetComponentTypeByIdQuery(string ComponentTypeId);
+public record GetComponentTypeByIdQuery(ComponentTypeId ComponentTypeId);
