@@ -11,5 +11,8 @@ public interface ITechnicianInventoryCommandService
     Task<TechnicianInventory?> Handle(DecreaseStockCommand command);
     Task<TechnicianInventory?> Handle(UpdateComponentStockCommand command);
     Task<bool> Handle(RemoveComponentStockCommand command);
+    Task<TechnicianInventory?> Handle(ReserveComponentsForServiceCommand command);
+    Task<TechnicianInventory?> Handle(ConsumeComponentsForServiceCommand command);
+    Task<bool> Handle(ReleaseReservationCommand command);
     Task<TechnicianInventory?> Handle(AdjustTechnicianInventoryCommand command);
 }

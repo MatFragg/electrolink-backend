@@ -1,10 +1,10 @@
-﻿using Hampcoders.Electrolink.API.Assets.Interface.ACL;
+﻿using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices;
 
 public class ExternalAssetService(IAssetsContextFacade assetsContextFacade)
 {
-    public async Task<Guid> CreateTechnicianInventoryAsync(Guid technicianId)
+    public async Task<string> CreateTechnicianInventoryAsync(string technicianId)
     {
         if (await assetsContextFacade.ExistsInventoryForTechnician(technicianId))
         {

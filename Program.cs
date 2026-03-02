@@ -16,7 +16,7 @@ using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
-using Hampcoders.Electrolink.API.Assets.Interface.ACL;
+using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
 using Hampcoders.Electrolink.API.IAM.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Application.Internal.QueryServices;

@@ -1,3 +1,9 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Services;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
-public record IPropertyPortfolioQueryService();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Services;
+
+public interface IPropertyPortfolioQueryService
+{
+    Task<PropertyPortfolio?> Handle(GetPortfolioByOwnerIdQuery query);
+}

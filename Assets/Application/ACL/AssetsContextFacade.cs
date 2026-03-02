@@ -1,7 +1,7 @@
 ﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
-using Hampcoders.Electrolink.API.Assets.Interface.ACL;
+using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using TechnicianId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.TechnicianId;

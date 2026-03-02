@@ -12,8 +12,6 @@ public interface IPropertyRepository : IBaseRepository<Property, PropertyId>
     Task<IEnumerable<Property>> GetAllFilteredAsync(
         HomeownerId ownerId, 
         string? city, 
-        string? district, 
-        string? region, 
         string? street
     );
 }
