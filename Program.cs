@@ -266,6 +266,9 @@ builder.Services.AddScoped<IPropertyQueryService, PropertyQueryService>();
 builder.Services.AddScoped<ITechnicianInventoryQueryService, TechnicianInventoryQueryService>();
 builder.Services.AddScoped<IComponentQueryService, ComponentQueryService>();
 builder.Services.AddScoped<IComponentTypeQueryService, ComponentTypeQueryService>();
+builder.Services.AddScoped<IPropertyPortfolioCommandService, PropertyPortfolioCommandService>();
+builder.Services.AddScoped<IPropertyPortfolioQueryService, PropertyPortfolioQueryService>();
+builder.Services.AddScoped<IPropertyPortfolioRepository, PropertyPortfolioRepository>();
 
 // Assets ACL
 builder.Services.AddScoped<IAssetsContextFacade, AssetsContextFacade>();
@@ -334,5 +337,5 @@ app.MapControllers();
 // Uncomment the following line to enable OpenAPI documentation (Development Server)
 app.Urls.Add("http://*:8088");
 // app.Urls.Add("http://*:8080");
-
+builder.Logging.AddConsole();
 app.Run();

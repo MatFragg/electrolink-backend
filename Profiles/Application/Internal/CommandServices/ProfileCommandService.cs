@@ -68,6 +68,7 @@ public class ProfileCommandService(
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
       return profile;
   }
 
@@ -193,6 +194,13 @@ public class ProfileCommandService(
   public Task Handle(ReactivateProfileCommand command)
   {
       throw new NotImplementedException();
+  }
+  
+  private async Task PublishAndClearEventsAsync(Profile profile)
+  {
+      foreach (var domainEvent in profile.DomainEvents)
+          await mediator.Publish(domainEvent, CancellationToken.None);
+      profile.ClearDomainEvents();
   }
   
   private static void EnsureOwnership(Profile profile, string userId)

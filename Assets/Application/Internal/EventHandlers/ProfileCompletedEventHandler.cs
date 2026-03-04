@@ -1,6 +1,5 @@
 ﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
-using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;

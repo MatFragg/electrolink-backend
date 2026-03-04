@@ -69,7 +69,7 @@ public partial class Profile : BaseAggregateRoot
             ProfileId.Value,
             UserId.Value,
             Technician!.TechnicianId.Value,
-            "TECHNICIAN",
+            EBusinessRole.Technician,
             DateTime.UtcNow));
     }
 
@@ -90,7 +90,7 @@ public partial class Profile : BaseAggregateRoot
             ProfileId.Value,
             UserId.Value,
             Technician!.TechnicianId.Value,
-            "HOMEOWNER",
+            EBusinessRole.HomeOwner,
             DateTime.UtcNow));
     }
     

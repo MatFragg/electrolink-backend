@@ -1,12 +1,13 @@
-﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Events;
 
 public record ProfileCompletedEvent(
     string ProfileId,
     string UserId,
-    string TechnicianId, 
-    string BusinessRole,
+    object SubjectId, 
+    EBusinessRole BusinessRole,
     DateTime OccurredOn
 ) : IEvent
 {
