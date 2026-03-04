@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -25,9 +26,6 @@ public class Component : BaseAggregateRoot
         if (string.IsNullOrWhiteSpace(description))
             throw new ArgumentException("Description cannot be null or empty.", nameof(description));
         
-        if (typeId == null || typeId.Value == string.Empty)
-            throw new ArgumentException("TypeId must be a valid ComponentTypeId.", nameof(typeId));
-
         var component = new Component
         {
             Id = ComponentId.NewComponentId(),
@@ -37,6 +35,8 @@ public class Component : BaseAggregateRoot
             TypeId = typeId
         };
         
+        component.RaiseDomainEvent(new ComponentCreatedEvent(
+            component.Id, component.TypeId, component.Name, DateTime.UtcNow));
         
         return component;
     }
@@ -47,18 +47,21 @@ public class Component : BaseAggregateRoot
         Description = command.Description ?? string.Empty;
         TypeId = command.ComponentTypeId;
         IsActive = command.IsActive;
-
+        
+        RaiseDomainEvent(new ComponentUpdatedEvent(Id, Name, Description, TypeId, DateTime.UtcNow));
     }
 
     public void Deactivate()
     {
         if (!IsActive) return;
         IsActive = false;
+        RaiseDomainEvent(new ComponentActivatedEvent(Id, DateTime.UtcNow));
     }
     
     public void Activate()
     {
         if (IsActive) return;
         IsActive = true;
+        RaiseDomainEvent(new ComponentActivatedEvent(Id, DateTime.UtcNow));
     }
 }

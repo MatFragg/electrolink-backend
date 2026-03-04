@@ -113,7 +113,6 @@ public class TechnicianInventory : BaseAggregateRoot
         ServiceId serviceId,
         IReadOnlyList<ComponentAdjustment> items)
     {
-        // Validación atómica: todos los componentes deben tener stock suficiente
         foreach (var item in items)
         {
             var stock = FindStockOrThrow(item.ComponentId);
