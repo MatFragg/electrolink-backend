@@ -17,9 +17,8 @@ public class ProfileCompletedEventHandler(
     {
         logger.LogInformation("[Assets BC] ProfileCompleted → Creating inventory for technician {Id}", notification.SubjectId);
 
-        try
-        {
-            await inventoryCommandService.Handle(notification.SubjectId.ToString()!);
+        try {
+            await inventoryCommandService.Handle(new CreateTechnicianInventoryCommand(TechnicianId.From(notification.SubjectId.ToString()!)));
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
         {
