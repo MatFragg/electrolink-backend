@@ -14,6 +14,8 @@ public class ProfileRepository(AppDbContext context)
   public async Task<IEnumerable<Profile>> FindByRoleAsync(EBusinessRole role)
   {
     return await Context.Set<Profile>()
+      .Include(p => p.Homeowner)
+      .Include(p => p.Technician)
       .Where(p => p.BusinessRole != null && p.BusinessRole.Value == role)
       .ToListAsync();
   }
@@ -26,9 +28,7 @@ public class ProfileRepository(AppDbContext context)
   public async Task<bool> DniExistsAsync(Dni dni, ProfileId? excludeProfileId = null)
   {
     return await Context.Set<Profile>()
-      .AnyAsync(p => p.PersonalData != null
-                     && p.PersonalData.Dni == dni
-                     && (excludeProfileId == null || p.ProfileId != excludeProfileId));
+      .AnyAsync(p => p.PersonalData != null && p.PersonalData.Dni == dni && (excludeProfileId == null || p.ProfileId != excludeProfileId));
   }
 
   public async Task<bool> IsHomeownerActiveAsync(HomeownerId homeownerId)
@@ -40,12 +40,16 @@ public class ProfileRepository(AppDbContext context)
   public async Task<Profile?> FindByUserIdAsync(UserId userId)
   {
     return await Context.Set<Profile>()
+      .Include(p => p.Homeowner)
+      .Include(p => p.Technician)
       .FirstOrDefaultAsync(p => p.UserId == userId);
   }
 
   public async Task<Profile?> FindByIdAsync(ProfileId id)
   {
     return await Context.Set<Profile>()
+      .Include(p => p.Homeowner)
+      .Include(p => p.Technician)
       .FirstOrDefaultAsync(p => p.ProfileId == id);
   }
 }

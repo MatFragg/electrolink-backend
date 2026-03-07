@@ -191,9 +191,18 @@ public class ProfileCommandService(
       await unitOfWork.CompleteAsync();
   }
 
-  public Task Handle(ReactivateProfileCommand command)
+  public async Task Handle(ReactivateProfileCommand command)
   {
-      throw new NotImplementedException();
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+
+      EnsureOwnership(profile, command.UserId);
+
+      profile.Reactivate();
+
+      profileRepository.Update(profile);
+      await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
   }
   
   private async Task PublishAndClearEventsAsync(Profile profile)

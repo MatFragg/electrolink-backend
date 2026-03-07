@@ -13,9 +13,18 @@ public class MyProfileResourceFromEntityAssembler
             UserId:       entity.UserId.Value,
             Status:       entity.Status.ToString(),
             BusinessRole: entity.BusinessRole?.ToString(),
-            PersonalData: entity.PersonalData is null ? null : MapPersonalData(entity.PersonalData),
-            Technician:   entity.Technician   is null ? null : MapTechnician(entity.Technician),
-            Homeowner:    entity.Homeowner    is null ? null : MapHomeowner(entity.Homeowner));
+            FirstName:    entity.PersonalData?.FirstName,
+            LastName:     entity.PersonalData?.LastName,
+            PhoneNumber:  entity.PersonalData?.PhoneNumber.Value,
+            Dni:          entity.PersonalData?.Dni.Value,
+            DateOfBirth:  entity.PersonalData?.DateOfBirth.Value.ToString("yyyy-MM-dd"),
+            Street:       entity.PersonalData?.Address?.Street,
+            District:     entity.PersonalData?.Address?.District,
+            City:         entity.PersonalData?.Address?.City,
+            Country:      entity.PersonalData?.Address?.Country,
+            PostalCode:   entity.PersonalData?.Address?.PostalCode,
+            Technician:   entity.Technician is null ? null : MapTechnician(entity.Technician),
+            Homeowner:    entity.Homeowner is null ? null : MapHomeowner(entity.Homeowner));
 
     private static PersonalDataResource MapPersonalData(PersonalData pd) =>
         new(pd.FirstName,

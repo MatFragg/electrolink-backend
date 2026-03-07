@@ -89,7 +89,7 @@ public partial class Profile : BaseAggregateRoot
         RaiseDomainEvent(new ProfileCompletedEvent(
             ProfileId.Value,
             UserId.Value,
-            Technician!.TechnicianId.Value,
+            Homeowner!.HomeownerId.Value,
             EBusinessRole.HomeOwner,
             DateTime.UtcNow));
     }
