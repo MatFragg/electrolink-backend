@@ -99,6 +99,7 @@ public class ProfileCommandService(
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
       return profile;
   }
 

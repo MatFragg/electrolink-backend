@@ -38,7 +38,7 @@ public class PropertyPortfolioCommandService(
 
     public async Task<PropertyPortfolio?> Handle(AddPropertyToPortfolioCommand command)
     {
-        var portfolio = await portfolioRepository.FindByOwnerIdAsync(command.HomeownerId)
+        var portfolio = await portfolioRepository.FindByOwnerIdWithEntriesAsync(command.HomeownerId)
             ?? throw new KeyNotFoundException($"Portfolio for owner {command.HomeownerId} not found.");
 
         // Validación de ownership: la propiedad debe pertenecer al mismo owner
@@ -67,7 +67,7 @@ public class PropertyPortfolioCommandService(
 
     public async Task<bool> Handle(RemovePropertyFromPortfolioCommand command)
     {
-        var portfolio = await portfolioRepository.FindByOwnerIdAsync(command.HomeownerId)
+        var portfolio = await portfolioRepository.FindByOwnerIdWithEntriesAsync(command.HomeownerId)
             ?? throw new KeyNotFoundException($"Portfolio for owner {command.HomeownerId} not found.");
 
         portfolio.RemoveProperty(command.PropertyId, command.Reason);

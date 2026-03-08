@@ -13,6 +13,10 @@ public class PropertyPortfolioRepository(AppDbContext context)
 {
     public async Task<PropertyPortfolio?> FindByOwnerIdAsync(HomeownerId homeownerId)
         => await Context.Set<PropertyPortfolio>()
-            .Include(pp => pp.HomeownerId)
+            .FirstOrDefaultAsync(pp => pp.HomeownerId == homeownerId);
+
+    public async Task<PropertyPortfolio?> FindByOwnerIdWithEntriesAsync(HomeownerId homeownerId)
+        => await Context.Set<PropertyPortfolio>()
+            .Include(pp => pp.Entries)
             .FirstOrDefaultAsync(pp => pp.HomeownerId == homeownerId);
 }

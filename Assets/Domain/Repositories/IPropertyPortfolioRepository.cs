@@ -8,4 +8,6 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 public interface IPropertyPortfolioRepository : IBaseRepository<PropertyPortfolio, PropertyPortfolioId>
 {
     Task<PropertyPortfolio?> FindByOwnerIdAsync(HomeownerId homeownerId);
+    Task<PropertyPortfolio?> FindByOwnerIdWithEntriesAsync(HomeownerId homeownerId);
+
 }
