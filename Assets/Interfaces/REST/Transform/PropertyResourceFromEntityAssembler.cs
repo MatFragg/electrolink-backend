@@ -11,7 +11,7 @@ public static class PropertyResourceFromEntityAssembler
             entity.Id.Value,
             entity.OwnerId.Value, 
             new AddressResource(
-                entity.Address.Street, entity.Address.District, entity.Address.City,
+                entity.Address.Street, entity.Address.Number, entity.Address.District, entity.Address.City,
                 entity.Address.Country, entity.Address.PostalCode),
             new GeolocationResource(
                 entity.Geolocation.Latitude, entity.Geolocation.Longitude,

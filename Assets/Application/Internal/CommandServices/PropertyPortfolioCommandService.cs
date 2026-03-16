@@ -54,6 +54,7 @@ public class PropertyPortfolioCommandService(
             command.Nickname,
             command.IsPrimary,
             Enum.Parse<EOccupancyStatus>(command.OccupancyStatus, ignoreCase: true));
+        property.MarkAsInPortfolio();
 
         portfolioRepository.Update(portfolio);
         await unitOfWork.CompleteAsync();
@@ -71,6 +72,9 @@ public class PropertyPortfolioCommandService(
             ?? throw new KeyNotFoundException($"Portfolio for owner {command.HomeownerId} not found.");
 
         portfolio.RemoveProperty(command.PropertyId, command.Reason);
+        
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
+        property?.MarkAsAvailable();
 
         portfolioRepository.Update(portfolio);
         await unitOfWork.CompleteAsync();

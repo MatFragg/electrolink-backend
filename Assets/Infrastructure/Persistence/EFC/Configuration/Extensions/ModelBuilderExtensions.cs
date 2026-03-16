@@ -131,7 +131,7 @@ public static class ModelBuilderExtensions
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Entity<ComponentType>().HasIndex(ct => ct.Name).IsUnique();
+        builder.Entity<ComponentType>().Property(ct => ct.Name).IsRequired();
 
         /*
          * Component
@@ -235,6 +235,7 @@ public static class ModelBuilderExtensions
             addr.WithOwner().HasForeignKey("Id");
     
             addr.Property(s => s.Street).HasColumnName("Street");
+            addr.Property(s => s.Number).HasColumnName("Number");
             addr.Property(s => s.District).HasColumnName("District");
             addr.Property(s => s.City).HasColumnName("City");
             addr.Property(s => s.PostalCode).HasColumnName("PostalCode");

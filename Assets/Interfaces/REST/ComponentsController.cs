@@ -13,54 +13,46 @@ namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST;
 /// Controller for managing components.
 /// </summary>
 [ApiController]
-[Route("api/v1/[controller]")] 
+[Route("api/v1/technicians/{technicianId}/[controller]")]
 [SwaggerTag("Components Management")]
 public class ComponentsController(
     IComponentCommandService componentCommandService,
     IComponentQueryService componentQueryService) : ControllerBase
 {
-    /// <summary>
-    /// Creates a new component.
-    /// </summary>
-    [HttpPost] 
+    [HttpPost]
     [SwaggerOperation(Summary = "Create Component", OperationId = "CreateComponent")]
     [SwaggerResponse(StatusCodes.Status201Created, "Component created", typeof(ComponentResource))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Component could not be created")]
-    public async Task<IActionResult> CreateComponent([FromBody] CreateComponentResource resource)
+    public async Task<IActionResult> CreateComponent(
+        [FromRoute] string technicianId,  
+        [FromBody] CreateComponentResource resource)
     {
         var command = CreateComponentCommandFromResourceAssembler.ToCommandFromResource(resource);
         var component = await componentCommandService.Handle(command);
         if (component is null) return BadRequest();
 
-        var componentResource = ComponentResourceFromEntityAssembler.ToResourceFromEntity(component);
-        return Ok(componentResource);
-
+        return Ok(ComponentResourceFromEntityAssembler.ToResourceFromEntity(component));
     }
-    
-    /// <summary>
-    /// Gets a component by its unique identifier. (¡NUEVO!)
-    /// </summary>
-    [HttpGet("{componentId:guid}", Name = nameof(GetComponentById))]
+
+    [HttpGet("{componentId}", Name = nameof(GetComponentById))]
     [SwaggerOperation(Summary = "Get Component by Id", OperationId = "GetComponentById")]
     [SwaggerResponse(StatusCodes.Status200OK, "Component found", typeof(ComponentResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Component not found")]
-    public async Task<IActionResult> GetComponentById(string componentId)
+    public async Task<IActionResult> GetComponentById(
+        [FromRoute] string technicianId,   
+        [FromRoute] string componentId)
     {
         var query = new GetComponentByIdQuery(ComponentId.From(componentId));
         var component = await componentQueryService.Handle(query);
         if (component is null) return NotFound();
 
-        var resource = ComponentResourceFromEntityAssembler.ToResourceFromEntity(component);
-        return Ok(resource);
+        return Ok(ComponentResourceFromEntityAssembler.ToResourceFromEntity(component));
     }
 
-    /// <summary>
-    /// Gets a list of all components.
-    /// </summary>
-    [HttpGet] 
+    [HttpGet]
     [SwaggerOperation(Summary = "Get All Components", OperationId = "GetAllComponents")]
     [SwaggerResponse(StatusCodes.Status200OK, "List of components retrieved", typeof(IEnumerable<ComponentResource>))]
-    public async Task<IActionResult> GetAllComponents()
+    public async Task<IActionResult> GetAllComponents([FromRoute] string technicianId)  
     {
         var query = new GetAllComponentsQuery();
         var components = await componentQueryService.Handle(query);
@@ -68,31 +60,29 @@ public class ComponentsController(
         return Ok(resources);
     }
 
-    /// <summary>
-    /// Updates an existing component.
-    /// </summary>
-    [HttpPut("{componentId}")] 
+    [HttpPut("{componentId}")]
     [SwaggerOperation(Summary = "Update Component", OperationId = "UpdateComponent")]
     [SwaggerResponse(StatusCodes.Status200OK, "Component updated", typeof(ComponentResource))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Component not found")]
-    public async Task<IActionResult> UpdateComponent(string componentId, [FromBody] UpdateComponentResource resource)
+    public async Task<IActionResult> UpdateComponent(
+        [FromRoute] string technicianId,   
+        [FromRoute] string componentId,
+        [FromBody] UpdateComponentResource resource)
     {
         var command = UpdateComponentCommandFromResourceAssembler.ToCommandFromResource(resource, componentId);
         var component = await componentCommandService.Handle(command);
         if (component is null) return NotFound("Component not found");
 
-        var responseResource = ComponentResourceFromEntityAssembler.ToResourceFromEntity(component);
-        return Ok(responseResource);
+        return Ok(ComponentResourceFromEntityAssembler.ToResourceFromEntity(component));
     }
 
-    /// <summary>
-    /// Deletes a component by its unique identifier.
-    /// </summary>
-    [HttpDelete("{componentId}")] 
+    [HttpDelete("{componentId}")]
     [SwaggerOperation(Summary = "Delete Component", OperationId = "DeleteComponent")]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Component deleted")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Component not found")]
-    public async Task<IActionResult> DeleteComponent(string componentId)
+    public async Task<IActionResult> DeleteComponent(
+        [FromRoute] string technicianId,   
+        [FromRoute] string componentId)
     {
         var command = new DeleteComponentCommand(ComponentId.From(componentId));
         var result = await componentCommandService.Handle(command);

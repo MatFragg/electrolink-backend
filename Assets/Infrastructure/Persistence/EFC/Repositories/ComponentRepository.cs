@@ -22,12 +22,14 @@ public class ComponentRepository(AppDbContext context) : BaseRepository<Componen
         return await Context.Set<Component>().AnyAsync(c => c.Name == name);
     }
 
-    // --- MÉTODO FALTANTE AÑADIDO ---
     public async Task<IEnumerable<Component>> FindByIdsAsync(IEnumerable<ComponentId> ids)
     {
-        // Convertimos la lista de Value Objects a una lista de Guids primitivos
+        var idsList = ids.ToList();
+        
+        if (idsList.Count == 0) return new List<Component>();
+
         return await Context.Set<Component>()
-            .Where(c => ids.Contains(c.Id)) // <-- Compara ComponentId con una lista de ComponentId.
+            .Where(c => idsList.Contains(c.Id))
             .ToListAsync();
     }
 }

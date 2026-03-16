@@ -9,6 +9,7 @@ public static class TechnicianInventoryResourceFromEntityAssembler
     public static TechnicianInventoryResource ToResourceFromReadModel(TechnicianInventoryReadModel readModel)
     {
         var stockItems = readModel.Inventory.StockItems.Select(item => new ComponentStockResource(
+            item.Id.Value,
             item.ComponentId.Value,
             readModel.ComponentNames.GetValueOrDefault(item.ComponentId.Value, "Unknown Component"),
             item.QuantityAvailable,
@@ -19,16 +20,22 @@ public static class TechnicianInventoryResourceFromEntityAssembler
         return new TechnicianInventoryResource(readModel.Inventory.TechnicianId.Value, stockItems);
     }
 
-    public static TechnicianInventoryResource ToResourceFromEntity(TechnicianInventory inventory)
+    public static TechnicianInventoryResource ToResourceFromEntity(TechnicianInventory inventory, IDictionary<string, string>? componentNames = null)
     {
-        var stockItems = inventory.StockItems.Select(item => new ComponentStockResource(
-            item.ComponentId.Value,
-            "Unknown Component", 
-            item.QuantityAvailable,
-            item.AlertThreshold,
-            item.LastUpdated
-        )).ToList();
-
+        var stockItems = inventory.StockItems.Select(item =>
+        {
+            var name = (componentNames != null && componentNames.TryGetValue(item.ComponentId.Value, out var n))
+                ? n
+                : "Unknown Component";
+            
+            return new ComponentStockResource(
+                item.Id.Value,
+                item.ComponentId.Value,
+                name,
+                item.QuantityAvailable,
+                item.AlertThreshold,
+                item.LastUpdated);
+        }).ToList();
         return new TechnicianInventoryResource(inventory.TechnicianId.Value, stockItems);
     }
 }

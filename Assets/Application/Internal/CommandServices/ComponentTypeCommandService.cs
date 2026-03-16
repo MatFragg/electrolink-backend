@@ -70,5 +70,33 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
         return true; 
     }
     
+    public async Task<ComponentType?> Handle(ActivateComponentTypeCommand command)
+    {
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
+        if (componentType is null) return null;
+
+        componentType.Activate();
+        await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in componentType.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        componentType.ClearDomainEvents();
+        
+        return componentType;
+    }
     
+    public async Task<ComponentType?> Handle(DeactivateComponentTypeCommand command) 
+    { 
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId); 
+        if (componentType is null) return null; 
+        
+        componentType.Deactivate(); 
+        await unitOfWork.CompleteAsync();
+        
+        foreach (var domainEvent in componentType.DomainEvents) 
+            await mediator.Publish(domainEvent, CancellationToken.None); 
+        componentType.ClearDomainEvents();
+        
+        return componentType; 
+    }
 }

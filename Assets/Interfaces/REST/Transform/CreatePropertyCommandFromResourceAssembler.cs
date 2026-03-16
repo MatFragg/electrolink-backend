@@ -10,6 +10,7 @@ public static class CreatePropertyCommandFromResourceAssembler
     {
         var address = Address.Create(
             resource.Address.Street, 
+            resource.Address.Number,
             resource.Address.District, 
             resource.Address.City, 
             resource.Address.Country, 

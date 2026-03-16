@@ -1,3 +1,3 @@
 namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 
-public record CreatePropertyResource(AddressResource Address, GeolocationResource Geolocation, string RegionName, string DistrictName);
+public record CreatePropertyResource(AddressResource Address, GeolocationResource Geolocation);

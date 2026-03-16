@@ -53,9 +53,19 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         return property;
     }
 
-    public Task<Property?> Handle(UpdatePropertyGeolocationCommand command)
+    public async Task<Property?> Handle(UpdatePropertyGeolocationCommand command)
     {
-        throw new NotImplementedException();
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
+        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+
+        property.UpdateGeolocation(command.NewGeolocation);
+        await unitOfWork.CompleteAsync();
+
+        foreach (var domainEvent in property.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        property.ClearDomainEvents();
+
+        return property;
     }
 
     public async Task<Property?> Handle(DeactivatePropertyCommand command)
@@ -76,10 +86,21 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         return property;
     }
 
-    public Task<Property?> Handle(ArchivePropertyCommand command)
+    public async Task<Property?> Handle(ArchivePropertyCommand command)
     {
-        throw new NotImplementedException();
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
+        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+
+        property.Archive(command.Reason);
+        await unitOfWork.CompleteAsync();
+
+        foreach (var domainEvent in property.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        property.ClearDomainEvents();
+
+        return property;
     }
+
 
     public async Task<Property?> Handle(ActivatePropertyCommand command)
     {
@@ -102,17 +123,15 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     public async Task<Property?> Handle(UpdatePropertyCommand command)
     {
         var property = await propertyRepository.FindByIdAndOwnerIdAsync(command.PropertyId, command.HomeownerId);
-        
-        if (property is null) return null; 
+        if (property is null) return null;
 
+        property.UpdateAddress(command.Address);
         await unitOfWork.CompleteAsync();
-        
+
         foreach (var domainEvent in property.DomainEvents)
-        {
             await mediator.Publish(domainEvent, CancellationToken.None);
-        }
         property.ClearDomainEvents();
-        
+
         return property;
     }
     
@@ -126,8 +145,18 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         return true;
     }
 
-    public Task<Property?> Handle(RecordMaintenanceForPropertyCommand command)
+    public async Task<Property?> Handle(RecordMaintenanceForPropertyCommand command)
     {
-        throw new NotImplementedException();
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
+        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+
+        property.RecordMaintenance(command.ServiceId, command.TechnicianId.Value, command.WorkSummary, command.CompletedAt);
+        await unitOfWork.CompleteAsync();
+
+        foreach (var domainEvent in property.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        property.ClearDomainEvents();
+
+        return property;
     }
 }

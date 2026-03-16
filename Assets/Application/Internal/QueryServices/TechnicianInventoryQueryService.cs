@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices.ReadModels;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
@@ -22,5 +23,26 @@ public class TechnicianInventoryQueryService(ITechnicianInventoryRepository tech
             : new Dictionary<string, string>();
 
         return new TechnicianInventoryReadModel(inventory, componentNames);
+    }
+
+    public async Task<IEnumerable<ComponentStockDetailReadModel>> Handle(GetStockItemsByTechnicianIdQuery query)
+    {
+        var stockItems = await technicianInventoryRepository.FindStockItemsByTechnicianIdAsync(query.TechnicianId);
+        var stockList = stockItems.ToList();
+        
+        if (stockList.Count == 0) return Enumerable.Empty<ComponentStockDetailReadModel>();
+        
+        var componentIds = stockList.Select(s => s.ComponentId).Distinct();
+        var components = await componentRepository.FindByIdsAsync(componentIds);
+        var componentMap = components.ToDictionary(c => c.Id.Value, c => c.Name);
+
+        return stockList.Select(item => new ComponentStockDetailReadModel(
+            item.Id.Value,
+            item.ComponentId.Value,
+            componentMap.GetValueOrDefault(item.ComponentId.Value, "Unknown Component"),
+            item.QuantityAvailable,
+            item.AlertThreshold,
+            item.LastUpdated
+        ));
     }
 }
