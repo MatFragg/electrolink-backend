@@ -8,11 +8,11 @@ namespace Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Resources;
 public record CompleteProfileAsHomeownerResource(
     string FirstName,
     string LastName,
-    string Email,
     string PhoneNumber,
     string Dni,
     string DateOfBirth,
     string Street,
+    string Number,
     string District,
     string City,
     string Country,

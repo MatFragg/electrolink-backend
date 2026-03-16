@@ -57,7 +57,7 @@ public class ProfileCommandService(
           PhoneNumber.From(command.PhoneNumber), 
           Dni.From(command.Dni),
           DateOfBirth.From(command.DateOfBirth), 
-          Address.Create(command.Street, command.District, command.City, command.Country, command.PostalCode));
+          Address.Create(command.Street, command.Number, command.District, command.City, command.Country, command.PostalCode));
       
       var technicianData = TechnicianData.Create(
           command.Specialties, 
@@ -86,7 +86,7 @@ public class ProfileCommandService(
           PhoneNumber.From(command.PhoneNumber),
           Dni.From(command.Dni),
           DateOfBirth.From(command.DateOfBirth),
-          Address.Create(command.Street, command.District, command.City, command.Country, command.PostalCode)
+          Address.Create(command.Street, command.Number, command.District, command.City, command.Country, command.PostalCode)
       );
 
       var homeownerData = HomeownerData.Create(
@@ -118,10 +118,11 @@ public class ProfileCommandService(
       {
           var current = profile.PersonalData!.Address;
           address = Address.Create(
-              command.Street     ?? current.Street,
-              command.District   ?? current.District,
-              command.City       ?? current.City,
-              command.Country    ?? current.Country,
+              command.Street ?? current.Street, 
+              command.Number ?? current.Number,
+              command.District ?? current.District,
+              command.City ?? current.City,
+              command.Country ?? current.Country,
               command.PostalCode ?? current.PostalCode);
       }
       

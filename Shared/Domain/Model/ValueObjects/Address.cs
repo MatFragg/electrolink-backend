@@ -3,6 +3,7 @@
 public record Address
 {
     public string Street { get; init; }
+    public string Number { get; init; }
     public string District { get; init; }
     public string City { get; init; }
     public string Country { get; init; }
@@ -12,21 +13,23 @@ public record Address
     {
     }
 
-    public static Address Create(string street, string district, string city, string country, string postalCode) =>
+    public static Address Create(string street, string number, string district, string city, string country, string postalCode) =>
         new()
         {
             Street = street.Trim(),
+            Number = number.Trim(),
             District = district.Trim(),
             City = city.Trim(),
             Country = country.Trim(),
             PostalCode = postalCode.Trim()
         };
 
-    public Address Update(string? street = null, string? district = null, string? city = null, string? country = null,
+    public Address Update(string? street = null, string? number = null, string? district = null, string? city = null, string? country = null,
         string? postalCode = null) =>
         this with
         {
             Street = street?.Trim() ?? Street,
+            Number = street?.Trim() ?? Number,
             District = district?.Trim() ?? District,
             City = city?.Trim() ?? City,
             Country = country?.Trim() ?? Country,

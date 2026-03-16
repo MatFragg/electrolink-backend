@@ -24,21 +24,21 @@ public static class CompleteProfileAsHomeownerCommandFromResourceAssembler
                 resource.EmergencyContact.PhoneNumber);
 
         return new CompleteProfileAsHomeownerCommand(
-            UserId:                   userId,
-            FirstName:                resource.FirstName,
-            LastName:                 resource.LastName,
-            Email:                    resource.Email,
-            PhoneNumber:              resource.PhoneNumber,
-            Dni:                      resource.Dni,
-            DateOfBirth:              resource.DateOfBirth,
-            Street:                   resource.Street,
-            District:                 resource.District,
-            City:                     resource.City,
-            Country:                  resource.Country,
-            PostalCode:               resource.PostalCode,
-            PreferredContactTime:     resource.PreferredContactTime,
+            UserId: userId,
+            FirstName: resource.FirstName,
+            LastName: resource.LastName,
+            PhoneNumber: resource.PhoneNumber,
+            Dni: resource.Dni,
+            DateOfBirth: resource.DateOfBirth,
+            Street: resource.Street,
+            Number: resource.Number,
+            District: resource.District,
+            City: resource.City,
+            Country: resource.Country,
+            PostalCode: resource.PostalCode,
+            PreferredContactTime: resource.PreferredContactTime,
             CommunicationPreferences: communicationPreferences,
-            EmergencyContact:         emergencyContact);
+            EmergencyContact: emergencyContact);
     }
 }
 

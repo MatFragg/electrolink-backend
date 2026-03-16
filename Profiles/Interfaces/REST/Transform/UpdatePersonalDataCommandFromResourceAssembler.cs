@@ -16,6 +16,7 @@ public static class UpdatePersonalDataCommandFromResourceAssembler
             LastName:    resource.LastName,
             PhoneNumber: resource.PhoneNumber,
             Street:      resource.Street,
+            Number:      resource.Number,
             District:    resource.District,
             City:        resource.City,
             Country:     resource.Country,

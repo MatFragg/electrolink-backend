@@ -80,6 +80,7 @@ public static class ModelBuilderExtensions
                 {
                     a.WithOwner().HasForeignKey("profile_id");
                     a.Property(s => s.Street);
+                    a.Property(s => s.Number);
                     a.Property(s => s.District);
                     a.Property(s => s.City);
                     a.Property(s => s.PostalCode);
