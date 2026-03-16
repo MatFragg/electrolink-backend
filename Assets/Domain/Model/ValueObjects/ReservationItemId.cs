@@ -7,11 +7,11 @@ public record ReservationItemId {
 
     private ReservationItemId(string value) => Value = value;
 
-    public static ReservationItemId NewReservationItemId() => new($"res-{Guid.NewGuid()}");
+    public static ReservationItemId NewReservationItemId() => new($"ritem-{Guid.NewGuid()}");
 
     public static ReservationItemId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("res-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("ritem-"))
             throw new InvalidIdException("ReservationItemId", value);
         return new ReservationItemId(value);
     }

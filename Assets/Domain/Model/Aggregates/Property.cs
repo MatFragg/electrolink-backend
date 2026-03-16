@@ -80,4 +80,15 @@ public class Property : BaseAggregateRoot
             Id, serviceId, technicianId, workSummary, completedAt, DateTime.UtcNow));
     }
 
+    internal void MarkAsInPortfolio()
+    {
+        if (Status == EPropertyStatus.InPortfolio) return;
+        Status = EPropertyStatus.InPortfolio;
+    }
+    
+    internal void MarkAsAvailable()
+    {
+        if (Status == EPropertyStatus.Created) return;
+        Status = EPropertyStatus.Created;
+    }
 }

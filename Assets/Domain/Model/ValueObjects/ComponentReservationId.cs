@@ -7,11 +7,11 @@ public record ComponentReservationId {
 
     private ComponentReservationId(string value) => Value = value;
 
-    public static ComponentReservationId NewComponentReservationId() => new($"compres-{Guid.NewGuid()}");
+    public static ComponentReservationId NewComponentReservationId() => new($"res-{Guid.NewGuid()}");
 
     public static ComponentReservationId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("compres-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("res-"))
             throw new InvalidIdException("ComponentReservationId", value);
         return new ComponentReservationId(value);
     }

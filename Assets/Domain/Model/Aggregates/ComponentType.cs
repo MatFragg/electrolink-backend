@@ -49,6 +49,12 @@ public class ComponentType : BaseAggregateRoot
 
     }
     
+    public void Activate()
+    {
+        if (IsActive) return;
+        IsActive = true;
+    }
+    
     public void Deactivate()
     {
         if (!IsActive) return;

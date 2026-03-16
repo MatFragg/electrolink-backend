@@ -7,11 +7,11 @@ public record ComponentTypeId{
 
     private ComponentTypeId(string value) => Value = value;
 
-    public static ComponentTypeId NewComponentTypeId() => new($"comptype-{Guid.NewGuid()}");
+    public static ComponentTypeId NewComponentTypeId() => new($"ctype-{Guid.NewGuid()}");
 
     public static ComponentTypeId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("comptype-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("ctype-"))
             throw new InvalidIdException("ComponentTypeId", value);
         return new ComponentTypeId(value);
     }

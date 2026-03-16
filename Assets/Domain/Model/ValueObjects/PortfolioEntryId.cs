@@ -7,11 +7,11 @@ public record PortfolioEntryId{
 
     private PortfolioEntryId(string value) => Value = value;
 
-    public static PortfolioEntryId NewPortfolioEntryId() => new($"portentry-{Guid.NewGuid()}");
+    public static PortfolioEntryId NewPortfolioEntryId() => new($"pentry-{Guid.NewGuid()}");
 
     public static PortfolioEntryId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("portentry-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("pentry-"))
             throw new InvalidIdException("PortfolioEntryId", value);
         return new PortfolioEntryId(value);
     }

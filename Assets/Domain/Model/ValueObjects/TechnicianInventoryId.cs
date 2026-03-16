@@ -8,11 +8,11 @@ public record TechnicianInventoryId
 
     private TechnicianInventoryId(string value) => Value = value;
 
-    public static TechnicianInventoryId NewTechnicianInventoryId() => new($"techinv-{Guid.NewGuid()}");
+    public static TechnicianInventoryId NewTechnicianInventoryId() => new($"inv-{Guid.NewGuid()}");
 
     public static TechnicianInventoryId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("techinv-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("inv-"))
             throw new InvalidIdException("TechnicianInventoryId", value);
         return new TechnicianInventoryId(value);
     }

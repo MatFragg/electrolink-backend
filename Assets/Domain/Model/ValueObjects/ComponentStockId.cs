@@ -7,11 +7,11 @@ public record ComponentStockId{
 
     private ComponentStockId(string value) => Value = value;
 
-    public static ComponentStockId NewComponentStockId() => new($"compstock-{Guid.NewGuid()}");
+    public static ComponentStockId NewComponentStockId() => new($"stock-{Guid.NewGuid()}");
 
     public static ComponentStockId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("compstock-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("stock-"))
             throw new InvalidIdException("ComponentStockId", value);
         return new ComponentStockId(value);
     }

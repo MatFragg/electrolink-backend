@@ -8,11 +8,11 @@ public record PropertyPortfolioId
 
     private PropertyPortfolioId(string value) => Value = value;
 
-    public static PropertyPortfolioId NewPropertyPortfolioId() => new($"ppf-{Guid.NewGuid()}");
+    public static PropertyPortfolioId NewPropertyPortfolioId() => new($"port-{Guid.NewGuid()}");
 
     public static PropertyPortfolioId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("ppf-"))
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("port-"))
             throw new InvalidIdException("PropertyPortfolioId", value);
         return new PropertyPortfolioId(value);
     }

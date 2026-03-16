@@ -8,4 +8,6 @@ public interface IComponentTypeCommandService
     Task<ComponentType?> Handle(CreateComponentTypeCommand command);
     Task<ComponentType?> Handle(UpdateComponentTypeCommand command);
     Task<bool> Handle(DeleteComponentTypeCommand command);
+    Task<ComponentType> Handle(ActivateComponentTypeCommand command);
+    Task<ComponentType> Handle(DeactivateComponentTypeCommand command);
 }

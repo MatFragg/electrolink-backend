@@ -6,4 +6,5 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Services;
 public interface ITechnicianInventoryQueryService
 {
     Task<TechnicianInventoryReadModel?> Handle(GetInventoryByTechnicianIdQuery query);
+    Task<IEnumerable<ComponentStockDetailReadModel>> Handle(GetStockItemsByTechnicianIdQuery query);
 }
