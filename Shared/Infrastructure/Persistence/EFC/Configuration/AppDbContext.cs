@@ -46,7 +46,6 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ServiceRecipe> ServiceRecipes { get; set; }
     public DbSet<ServiceRequest> ServiceRequests { get; set; }
     public DbSet<ServiceAssignment> ServiceAssignments { get; set; }
-    public DbSet<Schedule> Schedules { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
@@ -57,15 +56,15 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.HasPostgresExtension("postgis");
 
         builder.ApplyIamConfiguration();
         builder.ApplyProfilesConfiguration();
         builder.ApplyAssetsConfiguration();
-        builder.ApplyMonitoringConfiguration();
         builder.ApplyServiceDesignAndPlanningConfiguration();
+        builder.ApplyMonitoringConfiguration();
         builder.ApplySubscriptionsConfiguration();
         builder.UseSnakeCaseNamingConvention();
-
     }
     
     

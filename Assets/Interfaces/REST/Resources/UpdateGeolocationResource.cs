@@ -4,8 +4,8 @@
 /// Resource for updating the geolocation of a property.
 /// </summary>
 public record UpdateGeolocationResource(
-    decimal Latitude,
-    decimal Longitude,
+    double Latitude,
+    double Longitude,
     int? Accuracy,
     string Source);
 

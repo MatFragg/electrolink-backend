@@ -8,6 +8,7 @@ public class ComponentStock
     public ComponentStockId Id { get; private set; } = null!;
     public TechnicianInventoryId TechnicianInventoryId { get; private set; } = null!;
     public ComponentId ComponentId { get; private set; } = null!;
+    public ComponentTypeId ComponentTypeId  { get; private set; } = null!;
     public int QuantityAvailable { get; private set; }
     public int ReservedQuantity { get; private set; }
     public int AlertThreshold { get; private set; }
@@ -15,7 +16,7 @@ public class ComponentStock
     public int AvailableForReservation => QuantityAvailable - ReservedQuantity;
     private ComponentStock() { }
 
-    public static ComponentStock Create(TechnicianInventoryId technicianInventoryId,ComponentId componentId, int quantity, int alertThreshold)
+    public static ComponentStock Create(TechnicianInventoryId technicianInventoryId, ComponentId componentId, ComponentTypeId componentTypeId, int quantity, int alertThreshold)
     {
         if (quantity < 0) throw new ArgumentException("Quantity cannot be negative.");
         if (alertThreshold < 0) throw new ArgumentException("Alert threshold cannot be negative.");
@@ -25,6 +26,7 @@ public class ComponentStock
             Id = ComponentStockId.NewComponentStockId(),
             TechnicianInventoryId = technicianInventoryId,
             ComponentId = componentId,
+            ComponentTypeId = componentTypeId,
             QuantityAvailable = quantity,
             AlertThreshold = alertThreshold,
             LastUpdated = DateTime.UtcNow

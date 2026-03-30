@@ -1,8 +1,11 @@
 using System.Net.Mime;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Attributes;
 using Hampcoders.Electrolink.API.IAM.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.IAM.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Interfaces.REST;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -77,6 +80,36 @@ public class AuthenticationController(IUserCommandService userCommandService) : 
             return BadRequest(new
             {
                 message = "An error occurred while creating the user.",
+                error = ex.Message
+            });
+        }
+    }
+    
+    [HttpPost("refresh-claims")]
+    [SwaggerOperation(
+        Summary = "Refresh Claims",
+        Description = "Generates a new JWT with updated profile claims. " +
+                      "Call this after completing your profile.",
+        OperationId = "RefreshClaims")]
+    [SwaggerResponse(StatusCodes.Status200OK, "New token generated", 
+        typeof(RefreshedTokenResource))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Invalid or expired token")]
+    public async Task<IActionResult> RefreshClaims()
+    {
+        try
+        {
+            var userId = User.GetUserId();
+
+            var command = RefreshClaimsCommandFromResourceAssembler.ToCommandFromResource(userId);
+            var newToken = await userCommandService.Handle(command);
+            var resource = RefreshedTokenResourceFromTokenAssembler.ToResourceFromToken(newToken);
+            return Ok(resource);
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(new
+            {
+                message = "Could not refresh claims",
                 error = ex.Message
             });
         }

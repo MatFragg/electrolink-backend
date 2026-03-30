@@ -3,6 +3,7 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -17,7 +18,6 @@ public class PropertiesController(
     IPropertyCommandService commandService,
     IPropertyQueryService   queryService) : ControllerBase
 {
-    /// <summary>Retorna las propiedades de un homeowner (con filtros opcionales)</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PropertyResource>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<PropertyResource>>> GetAll(
@@ -42,8 +42,8 @@ public class PropertiesController(
             var command  = CreatePropertyCommandFromResourceAssembler.ToCommandFromResource(resource, homeownerId);
             var property = await commandService.Handle(command);
             if (property is null) return BadRequest();
-            var res = PropertyResourceFromEntityAssembler.ToResourceFromEntity(property);
-            return CreatedAtRoute(nameof(GetPropertyById), new { homeownerId, propertyId = res.PropertyId }, res);
+            var response = PropertyResourceFromEntityAssembler.ToResourceFromEntity(property);
+            return Ok(response);
         }
         catch (ArgumentException ex)
         {

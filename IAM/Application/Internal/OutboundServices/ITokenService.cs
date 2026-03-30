@@ -17,9 +17,10 @@ public interface ITokenService
      *     Generate a JWT token
      * </summary>
      * <param name="user">The user to generate the token for</param>
+     * <param name="profileClaims">The optional profile claims for the user</param>
      * <returns>The generated token</returns>
      */
-    string GenerateToken(User user);
+    string GenerateToken(User user,(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)? profileClaims = null);
 
     /**
      * <summary>

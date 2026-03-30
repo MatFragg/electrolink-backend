@@ -7,12 +7,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
 public interface IProfilesContextFacade
 {
     /// <summary>
-    /// Create a complete profile (Homeowner or Technician)
-    /// </summary>
-    Task<string> CreateProfile(
-        string userId);
-    
-    /// <summary>
     /// Gets technician ID (Guid as string) by profile ID.
     /// </summary>
     /// <returns>Technician GUID as string, or null if not found</returns>
@@ -52,6 +46,32 @@ public interface IProfilesContextFacade
     /// </summary>
     Task<bool> ProfileExistsAsync(string profileId);
 
+    /// <summary>
+    /// Checks if a homeowner profile is active.
+    /// </summary>
+    Task<bool> IsHomeownerActiveAsync(string homeownerId);
+
+    /// <summary>
+    /// Checks if a homeowner has at least one registered property.
+    /// </summary>
+    Task<bool> HomeownerHasPropertiesAsync(string homeownerId);
+
+    /// <summary>
+    /// Gets all technicians whose service area contains the given coordinates.
+    /// Returns a list of tuples with (technicianId, profileId, fullName, rating).
+    /// Specialties are excluded to keep primitives — query separately if needed.
+    /// </summary>
+    Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> GetTechniciansInAreaAsync(double latitude, double longitude);
+    
+    /// <summary>
+    /// Gets specialties for a given technician.
+    /// </summary>
+    Task<IEnumerable<string>> GetTechnicianSpecialtiesAsync(string technicianId);
+    
+    /// <summary>
+    /// Gets profile claims (full name, role, and profile ID) by user ID.
+    /// </summary>
+    Task<(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)?> GetProfileClaimsAsync(string userId);
 }
 
 

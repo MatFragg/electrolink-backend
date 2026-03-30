@@ -2,19 +2,19 @@
 
 namespace Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record ServiceId
+public record AssignmentId
 {
     public string Value { get; init; }
 
-    private ServiceId(string value) => Value = value;
+    private AssignmentId(string value) => Value = value;
 
-    public static ServiceId NewServiceId() => new($"serv-{Guid.NewGuid()}");
+    public static AssignmentId NewAssignmentId() => new($"assign-{Guid.NewGuid()}");
 
-    public static ServiceId From(string value)
+    public static AssignmentId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("serv-"))
-            throw new InvalidIdException("ServiceId", value);
-        return new ServiceId(value);
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("assign-"))
+            throw new InvalidIdException("AssignmentId", value);
+        return new AssignmentId(value);
     }
 
     public override string ToString() => Value;

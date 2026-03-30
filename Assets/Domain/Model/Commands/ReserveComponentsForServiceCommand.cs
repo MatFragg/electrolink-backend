@@ -5,5 +5,5 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
 public record ReserveComponentsForServiceCommand(
     TechnicianId TechnicianId,
-    ServiceId ServiceId,
+    AssignmentId AssignmentId,
     IReadOnlyList<ComponentAdjustment> ComponentsToReserve);

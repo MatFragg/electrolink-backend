@@ -10,20 +10,22 @@ public class CompleteProfileAsTechnicianCommandFromResourceAssembler
         CompleteProfileAsTechnicianResource resource, 
         string userId) => 
         new(
-            UserId:         userId,
-            FirstName:      resource.FirstName,
-            LastName:       resource.LastName,
-            PhoneNumber:    resource.PhoneNumber,
-            Dni:            resource.Dni,
-            DateOfBirth:    resource.DateOfBirth,
-            Street:         resource.Street,
+            UserId: userId,
+            FirstName: resource.FirstName,
+            LastName: resource.LastName,
+            PhoneNumber: resource.PhoneNumber,
+            Dni: resource.Dni,
+            DateOfBirth: resource.DateOfBirth,
+            Street: resource.Street,
             Number: resource.Number,
-            District:       resource.District,
-            City:           resource.City,
-            Country:        resource.Country,
-            PostalCode:     resource.PostalCode,
-            Specialties:    resource.Specialties,
+            District: resource.District,
+            City: resource.City,
+            Country: resource.Country,
+            PostalCode: resource.PostalCode,
+            Specialties: resource.Specialties,
             ExperienceYears: resource.ExperienceYears,
-            AboutMe:        resource.AboutMe
-            );
+            AboutMe: resource.AboutMe,
+            CenterLatitude: resource.CenterLatitude, 
+            CenterLongitude: resource.CenterLongitude,
+            RadiusKm: resource.RadiusKm);
 }

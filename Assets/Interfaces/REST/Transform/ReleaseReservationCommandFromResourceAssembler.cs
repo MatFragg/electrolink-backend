@@ -8,7 +8,7 @@ public static class ReleaseReservationCommandFromResourceAssembler
     public static ReleaseReservationCommand ToCommandFromResource(string technicianId, string serviceId, string reason)
         => new ReleaseReservationCommand(
             TechnicianId.From(technicianId),
-            ServiceId.From(serviceId),
+            AssignmentId.From(serviceId),
             reason);
 }
 

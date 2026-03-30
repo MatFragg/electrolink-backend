@@ -4,7 +4,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 
-public record ComponentCreatedEvent(ComponentId ComponentId, ComponentTypeId ComponentTypeId, string Name, DateTime OccurredOn) : IEvent
+public record ComponentCreatedEvent(ComponentId ComponentId, string Name, DateTime OccurredOn) : IEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
 }

@@ -1,8 +1,8 @@
 using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices.ReadModels;
-using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
 
@@ -39,10 +39,52 @@ public class TechnicianInventoryQueryService(ITechnicianInventoryRepository tech
         return stockList.Select(item => new ComponentStockDetailReadModel(
             item.Id.Value,
             item.ComponentId.Value,
+            item.ComponentTypeId.Value,
             componentMap.GetValueOrDefault(item.ComponentId.Value, "Unknown Component"),
             item.QuantityAvailable,
             item.AlertThreshold,
             item.LastUpdated
         ));
+    }
+
+    public async Task<bool> Handle(CheckComponentTypeStockQuery query)
+    {
+        var inventory = await technicianInventoryRepository
+            .FindByTechnicianIdAsync(TechnicianId.From(query.TechnicianId));
+    
+        if (inventory is null) return false;
+
+        return query.Requirements.All(req =>
+        {
+            var totalAvailable = inventory.StockItems
+                .Where(s => s.ComponentTypeId.Value == req.ComponentTypeId)
+                .Sum(s => s.AvailableForReservation);
+            return totalAvailable >= req.Quantity;
+        });
+    }
+
+    public Task<IEnumerable<ComponentStockDetailReadModel>> Handle(GetComponentStockByComponentTypeIdAndTechnicianIdQuery query)
+    {
+        return technicianInventoryRepository
+            .FindStockItemsByComponentTypeIdAndTechnicianIdAsync(query.TechnicianId, query.ComponentTypeId)
+            .ContinueWith(task =>
+            {
+                var stockItems = task.Result.ToList();
+                if (stockItems.Count == 0) return Enumerable.Empty<ComponentStockDetailReadModel>();
+
+                var componentIds = stockItems.Select(s => s.ComponentId).Distinct();
+                var components = componentRepository.FindByIdsAsync(componentIds).Result;
+                var componentMap = components.ToDictionary(c => c.Id.Value, c => c.Name);
+
+                return stockItems.Select(item => new ComponentStockDetailReadModel(
+                    item.Id.Value,
+                    item.ComponentId.Value,
+                    item.ComponentTypeId.Value,
+                    componentMap.GetValueOrDefault(item.ComponentId.Value, "Unknown Component"),
+                    item.QuantityAvailable,
+                    item.AlertThreshold,
+                    item.LastUpdated
+                ));
+            });
     }
 }

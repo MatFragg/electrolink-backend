@@ -10,7 +10,6 @@ public static class ComponentResourceFromEntityAssembler
             entity.Id.Value,
             entity.Name,
             entity.Description,
-            entity.IsActive,
-            entity.TypeId.Value
+            entity.IsActive
         );
 }

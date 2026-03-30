@@ -8,6 +8,6 @@ public static class ConsumeComponentsForServiceCommandFromResourceAssembler
     public static ConsumeComponentsForServiceCommand ToCommandFromResource(string technicianId, string serviceId)
         => new ConsumeComponentsForServiceCommand(
             TechnicianId.From(technicianId),
-            ServiceId.From(serviceId));
+            AssignmentId.From(serviceId));
 }
 

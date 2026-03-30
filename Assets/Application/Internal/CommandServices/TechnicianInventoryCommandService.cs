@@ -11,6 +11,7 @@ namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices
 public class TechnicianInventoryCommandService(
     ITechnicianInventoryRepository inventoryRepository, 
     IComponentRepository componentRepository,
+    IComponentTypeRepository componentTypeRepository,
     IUnitOfWork unitOfWork, IMediator mediator)
     : ITechnicianInventoryCommandService
 {
@@ -35,19 +36,15 @@ public class TechnicianInventoryCommandService(
     {
         var component = await componentRepository.FindByIdAsync(command.ComponentId);
         if (component is null) throw new ArgumentException($"Component with id {command.ComponentId} not found in catalog.");
+        
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
+        if (componentType is null) throw new ArgumentException($"Component type with id {command.ComponentTypeId} not found in catalog.");
     
         var inventory = await GetInventoryOrThrowAsync(command.TechnicianId);
 
-
-        // El Aggregate Root es responsable de gestionar sus entidades internas.
-        // Esto añade el ComponentStock a la colección _stockItems del inventario trackeado.
-        inventory.AddStock(command.ComponentId, command.Quantity, command.AlertThreshold); 
-    
-        // CAMBIO CLAVE: EF Core detectará automáticamente la adición del ComponentStock
-        // porque 'inventory' ya está trackeado y su colección _stockItems ha sido modificada.
-        // NO se necesita inventoryRepository.Update(inventory); aquí.
+        inventory.AddStock(command.ComponentId, command.ComponentTypeId, command.Quantity, command.AlertThreshold); 
         
-        await unitOfWork.CompleteAsync(); // Esto guardará el nuevo ComponentStock y los cambios en el AR
+        await unitOfWork.CompleteAsync(); 
 
         foreach (var domainEvent in inventory.DomainEvents)
         {
@@ -105,7 +102,7 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(ReserveComponentsForServiceCommand command)
     {
         var inventory = await GetInventoryOrThrowAsync(command.TechnicianId);
-        inventory.ReserveComponentsForService(command.ServiceId, command.ComponentsToReserve);
+        inventory.ReserveComponentsForService(command.AssignmentId, command.ComponentsToReserve);
         await unitOfWork.CompleteAsync();
         return inventory;
     }
@@ -113,7 +110,7 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(ConsumeComponentsForServiceCommand command)
     {
         var inventory = await GetInventoryOrThrowAsync(command.TechnicianId);
-        inventory.ConsumeComponentsForService(command.ServiceId);
+        inventory.ConsumeComponentsForService(command.AssignmentId);
         await unitOfWork.CompleteAsync();
         return inventory;
     }
@@ -121,7 +118,7 @@ public class TechnicianInventoryCommandService(
     public async Task<bool> Handle(ReleaseReservationCommand command)
     {
         var inventory = await GetInventoryOrThrowAsync(command.TechnicianId);
-        inventory.ReleaseReservation(command.ServiceId, command.Reason);
+        inventory.ReleaseReservation(command.AssignmentId, command.Reason);
         await unitOfWork.CompleteAsync();
         return true;
     }
@@ -169,13 +166,11 @@ public class TechnicianInventoryCommandService(
             // Console.WriteLine($"Error: Inventario no encontrado para el técnico con ID {command.TechnicianId}");
             return null; // El inventario no existe
         }
-
        
         foreach (var adjustment in command.Adjustments)
         {
             inventory.AdjustComponentQuantity(adjustment.ComponentId, adjustment.Quantity);
         }
-        
 
         await unitOfWork.CompleteAsync();
 

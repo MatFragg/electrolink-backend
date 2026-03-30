@@ -8,7 +8,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, IComponentRepository componentRepository, IUnitOfWork unitOfWork, IMediator mediator,ILogger<ComponentTypeCommandService> logger) : IComponentTypeCommandService
+public class ComponentTypeCommandService(IComponentTypeRepository componentTypeRepository, ITechnicianInventoryRepository inventoryRepository, IUnitOfWork unitOfWork, IMediator mediator,ILogger<ComponentTypeCommandService> logger) : IComponentTypeCommandService
 {
     public async Task<ComponentType?> Handle(CreateComponentTypeCommand command)
     {
@@ -60,8 +60,8 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
             return false;
         }
 
-        var componentsUsingType = await componentRepository.FindByTypeIdAsync(componentType.Id);
-        if (componentsUsingType.Any())
+        var hasStockItems = await inventoryRepository.ExistsStockItemsByComponentTypeId(componentType.Id);
+        if (hasStockItems)
             throw new InvalidOperationException("Cannot delete a component type that is currently in use.");
 
         componentTypeRepository.Remove(componentType);
@@ -70,33 +70,33 @@ public class ComponentTypeCommandService(IComponentTypeRepository componentTypeR
         return true; 
     }
     
-    public async Task<ComponentType?> Handle(ActivateComponentTypeCommand command)
+    public async Task<ComponentType> Handle(ActivateComponentTypeCommand command)
     {
         var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
-        if (componentType is null) return null;
+        if (componentType is null) throw new ArgumentException("Component type not found.");
 
         componentType.Activate();
         await unitOfWork.CompleteAsync();
-        
+
         foreach (var domainEvent in componentType.DomainEvents)
             await mediator.Publish(domainEvent, CancellationToken.None);
         componentType.ClearDomainEvents();
-        
+
         return componentType;
     }
-    
-    public async Task<ComponentType?> Handle(DeactivateComponentTypeCommand command) 
-    { 
-        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId); 
-        if (componentType is null) return null; 
-        
-        componentType.Deactivate(); 
+
+    public async Task<ComponentType> Handle(DeactivateComponentTypeCommand command)
+    {
+        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
+        if (componentType is null) throw new ArgumentException("Component type not found.");
+
+        componentType.Deactivate();
         await unitOfWork.CompleteAsync();
-        
-        foreach (var domainEvent in componentType.DomainEvents) 
-            await mediator.Publish(domainEvent, CancellationToken.None); 
+
+        foreach (var domainEvent in componentType.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
         componentType.ClearDomainEvents();
-        
+
         return componentType; 
     }
 }

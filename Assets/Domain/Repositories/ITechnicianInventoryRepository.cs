@@ -10,4 +10,6 @@ public interface ITechnicianInventoryRepository : IBaseRepository<TechnicianInve
 {
     Task<TechnicianInventory?> FindByTechnicianIdAsync(TechnicianId technicianId);
     Task<IEnumerable<ComponentStock>> FindStockItemsByTechnicianIdAsync(TechnicianId technicianId);
+    Task<bool> ExistsStockItemsByComponentTypeId(ComponentTypeId componentTypeId);
+    Task<IEnumerable<ComponentStock>> FindStockItemsByComponentTypeIdAndTechnicianIdAsync(TechnicianId technicianId, ComponentTypeId componentTypeId);
 }

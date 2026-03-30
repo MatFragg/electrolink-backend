@@ -16,4 +16,7 @@ public record CompleteProfileAsTechnicianResource(
     string PostalCode,
     List<ESpecialty> Specialties,
     int ExperienceYears,
-    string AboutMe);
+    string AboutMe,
+    double CenterLatitude, 
+    double CenterLongitude,
+    double RadiusKm);

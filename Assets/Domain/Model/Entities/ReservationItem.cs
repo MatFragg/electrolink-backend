@@ -8,13 +8,15 @@ public class ReservationItem
     public ReservationItemId Id { get; private set; } = null!;
     public ComponentReservationId ReservationId { get; private set; } = null!;
     public ComponentId ComponentId { get; private set; } = null!;
+    public ComponentTypeId ComponentTypeId { get; private set; } = null!;
     public int Quantity { get; private set; }
 
     private ReservationItem() { }
 
     public static ReservationItem Create(
         ComponentReservationId reservationId,
-        ComponentId componentId,
+        ComponentId componentId, 
+        ComponentTypeId componentTypeId,
         int quantity)
     {
         if (quantity <= 0)
@@ -25,6 +27,7 @@ public class ReservationItem
             Id = ReservationItemId.NewReservationItemId(),
             ReservationId = reservationId,
             ComponentId = componentId,
+            ComponentTypeId = componentTypeId,
             Quantity = quantity
         };
     }

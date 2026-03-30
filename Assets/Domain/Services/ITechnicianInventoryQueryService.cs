@@ -7,4 +7,6 @@ public interface ITechnicianInventoryQueryService
 {
     Task<TechnicianInventoryReadModel?> Handle(GetInventoryByTechnicianIdQuery query);
     Task<IEnumerable<ComponentStockDetailReadModel>> Handle(GetStockItemsByTechnicianIdQuery query);
+    Task<bool> Handle(CheckComponentTypeStockQuery query);
+    Task<IEnumerable<ComponentStockDetailReadModel>> Handle(GetComponentStockByComponentTypeIdAndTechnicianIdQuery query);
 }

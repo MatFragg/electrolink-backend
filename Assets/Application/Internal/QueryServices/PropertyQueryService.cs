@@ -3,17 +3,21 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
 
 public class PropertyQueryService(IPropertyRepository propertyRepository) : IPropertyQueryService
 {
+    public async Task<Property?> Handle(GetPropertyByIdQuery query)
+        => await propertyRepository.FindByIdAsync(query.PropertyId);
+
     /// <summary>
     /// Maneja la consulta para obtener una propiedad específica por su ID,
     /// asegurando que pertenezca al propietario correcto.
     /// </summary>
-    public async Task<Property?> Handle(GetPropertyByIdQuery query)
+    public async Task<Property?> Handle(GetPropertyByHomeownerIdAndIdQuery query)
     {
         // Esta línea ahora funcionará porque el 'using' le dice al compilador
         // dónde encontrar 'PropertyId' y 'OwnerId'.

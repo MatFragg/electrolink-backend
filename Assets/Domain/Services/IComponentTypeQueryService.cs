@@ -7,4 +7,5 @@ public interface IComponentTypeQueryService
 {
     Task<ComponentType?> Handle(GetComponentTypeByIdQuery query);
     Task<IEnumerable<ComponentType>> Handle(GetAllComponentTypesQuery query);
+    Task<string> Handle(GetComponentTypeNameByIdQuery query);
 }

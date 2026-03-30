@@ -65,25 +65,32 @@ using Stripe.Checkout;
 using ExternalIamServiceForSubscriptionsBC = Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices.ExternalIamService;
 using ExternalIamServiceForProfilesBC = Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices.ExternalIamService;
 using TokenService = Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services.TokenService;
-
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllers(options => options.Conventions.Add(new KebabCaseRouteNamingConvention()));
 
+NpgsqlConnection.GlobalTypeMapper.EnableDynamicJson();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (connectionString == null) throw new InvalidOperationException("Connection string not found");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
+    options.UseNpgsql(connectionString, o =>
+    {
+        o.UseNetTopologySuite();
+    });
+    
     if (builder.Environment.IsDevelopment())
-        options.UseNpgsql(connectionString)
+        options.UseNpgsql(connectionString, o => o.UseNetTopologySuite())
             .LogTo(Console.WriteLine, LogLevel.Information)
             .EnableSensitiveDataLogging()
             .EnableDetailedErrors();
     else
-        options.UseNpgsql(connectionString)
+        options.UseNpgsql(connectionString, o => o.UseNetTopologySuite())
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
 
@@ -228,13 +235,22 @@ builder.Services.AddScoped<IServiceAssignmentCommandService, ServiceAssignmentCo
 builder.Services.AddScoped<IServiceRequestCommandService, ServiceRequestCommandService>();
 builder.Services.AddScoped<IServiceCatalogCommandService, ServiceCatalogCommandService>();
 
-builder.Services.AddScoped<IServiceAssignmentQueryService, ServiceAssignmentQueryService>();
-builder.Services.AddScoped<IServiceRequestQueryService, ServiceRequestQueryService>();
-builder.Services.AddScoped<IServiceCatalogQueryService, ServiceCatalogQueryService>();
+builder.Services.AddScoped<IServiceDesignQueryService, ServiceDesignQueryService>();
 
 builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalAssetsService>();
 builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalProfilesService>();
 builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalSubscriptionsService>();
+
+builder.Services.AddScoped<
+    Hampcoders.Electrolink.API.Subscriptions.Interfaces.ACL.ISubscriptionContextFacade, 
+    Hampcoders.Electrolink.API.Subscriptions.Application.ACL.SubscriptionContextFacade>();
+
+builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalMonitoringService>();
+builder.Services.AddScoped<Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ExternalSubscriptionsService>();
+
+builder.Services.AddScoped<
+    Hampcoders.Electrolink.API.Planning.Domain.Services.IComponentTypeValidator,
+    Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices.ComponentTypeValidator>(); 
 
 // Profiles
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
@@ -253,7 +269,7 @@ builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IHashingService, HashingService>();
 builder.Services.AddScoped<IIamContextFacade, IamContextFacade>();
-
+builder.Services.AddScoped<ExternalProfilesService>();
 builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
 builder.Services.AddScoped<ITechnicianInventoryRepository, TechnicianInventoryRepository>();
 builder.Services.AddScoped<IComponentRepository, ComponentRepository>();
@@ -308,7 +324,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddMediatR(typeof(StripeEventHandler).Assembly);
 
-    
 var app = builder.Build();
 
 // DB Init

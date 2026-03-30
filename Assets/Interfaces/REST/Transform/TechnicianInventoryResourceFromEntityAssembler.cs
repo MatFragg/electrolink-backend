@@ -11,6 +11,7 @@ public static class TechnicianInventoryResourceFromEntityAssembler
         var stockItems = readModel.Inventory.StockItems.Select(item => new ComponentStockResource(
             item.Id.Value,
             item.ComponentId.Value,
+            item.ComponentTypeId.Value,
             readModel.ComponentNames.GetValueOrDefault(item.ComponentId.Value, "Unknown Component"),
             item.QuantityAvailable,
             item.AlertThreshold,
@@ -31,6 +32,7 @@ public static class TechnicianInventoryResourceFromEntityAssembler
             return new ComponentStockResource(
                 item.Id.Value,
                 item.ComponentId.Value,
+                item.ComponentTypeId.Value,
                 name,
                 item.QuantityAvailable,
                 item.AlertThreshold,

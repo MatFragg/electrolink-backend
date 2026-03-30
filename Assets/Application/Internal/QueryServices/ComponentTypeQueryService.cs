@@ -8,12 +8,12 @@ namespace Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
 public class ComponentTypeQueryService(IComponentTypeRepository componentTypeRepository) : IComponentTypeQueryService
 {
     public async Task<ComponentType?> Handle(GetComponentTypeByIdQuery query)
-    {
-        return await componentTypeRepository.FindByIdAsync(query.ComponentTypeId);
-    }
+        => await componentTypeRepository.FindByIdAsync(query.ComponentTypeId);
 
     public async Task<IEnumerable<ComponentType>> Handle(GetAllComponentTypesQuery query)
-    {
-        return await componentTypeRepository.ListAsync();
-    }
+        => await componentTypeRepository.ListAsync();
+
+    public Task<string> Handle(GetComponentTypeNameByIdQuery query)
+        => componentTypeRepository.FindComponentTypeNameByIdAsync(query.ComponentTypeId);
+    
 }

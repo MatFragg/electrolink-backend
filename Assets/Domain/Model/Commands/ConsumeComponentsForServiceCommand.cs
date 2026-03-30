@@ -2,4 +2,4 @@
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record ConsumeComponentsForServiceCommand(TechnicianId TechnicianId, ServiceId ServiceId);
+public record ConsumeComponentsForServiceCommand(TechnicianId TechnicianId, AssignmentId AssignmentId);

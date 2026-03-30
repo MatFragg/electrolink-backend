@@ -9,7 +9,7 @@ public static class RecordMaintenanceForPropertyCommandFromResourceAssembler
     public static RecordMaintenanceForPropertyCommand ToCommandFromResource(RecordMaintenanceResource resource, string propertyId)
         => new RecordMaintenanceForPropertyCommand(
             PropertyId.From(propertyId),
-            ServiceId.From(resource.ServiceId),
+            AssignmentId.From(resource.ServiceId),
             TechnicianId.From(resource.TechnicianId),
             resource.WorkSummary,
             resource.CompletedAt);

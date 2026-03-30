@@ -4,7 +4,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 
-public record ComponentsReservedForServiceEvent(TechnicianInventoryId TechnicianInventoryId, ServiceId ServiceId, IReadOnlyList<ComponentAdjustment> Items, DateTime ExpiresAt, DateTime OccurredOn) : IEvent
+public record ComponentsReservedForServiceEvent(TechnicianInventoryId TechnicianInventoryId, AssignmentId AssignmentId, IReadOnlyList<ComponentAdjustment> Items, DateTime ExpiresAt, DateTime OccurredOn) : IEvent
 {
     public Guid EventId { get; init; } = Guid.NewGuid();
 }

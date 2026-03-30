@@ -7,17 +7,17 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Exceptions;
 [Serializable]
 public sealed class ReservationNotFoundException : Exception
 {
-    public ServiceId? ServiceId { get; }
+    public AssignmentId? AssignmentId { get; }
 
     public ReservationNotFoundException()
         : base("Reservation not found.")
     {
     }
 
-    public ReservationNotFoundException(ServiceId serviceId)
-        : base($"Reservation for Service with id '{serviceId}' was not found.")
+    public ReservationNotFoundException(AssignmentId assignmentId)
+        : base($"Reservation for Service with id '{assignmentId}' was not found.")
     {
-        ServiceId = serviceId;
+        AssignmentId = assignmentId;
     }
 
     public ReservationNotFoundException(string? message, Exception? innerException = null)
@@ -28,13 +28,13 @@ public sealed class ReservationNotFoundException : Exception
     private ReservationNotFoundException(SerializationInfo info, StreamingContext context)
         : base(info, context)
     {
-        ServiceId = (ServiceId?)info.GetValue(nameof(ServiceId), typeof(ServiceId));
+        AssignmentId = (AssignmentId?)info.GetValue(nameof(AssignmentId), typeof(AssignmentId));
     }
 
     public override void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         if (info == null) throw new ArgumentNullException(nameof(info));
-        info.AddValue(nameof(ServiceId), ServiceId, typeof(ServiceId));
+        info.AddValue(nameof(AssignmentId), AssignmentId, typeof(AssignmentId));
         base.GetObjectData(info, context);
     }
 }

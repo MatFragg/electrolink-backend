@@ -18,7 +18,7 @@ public static class ReserveComponentsCommandFromResourceAssembler
 
         return new ReserveComponentsForServiceCommand(
             TechnicianId.From(technicianId),
-            ServiceId.From(resource.ServiceId),
+            AssignmentId.From(resource.ServiceId),
             adjustments);
     }
 }

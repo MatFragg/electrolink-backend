@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
@@ -27,15 +28,23 @@ public class ProfileQueryService(IProfileRepository profileRepository) : IProfil
         return profile;
     }
 
+    public async Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> Handle(GetTechniciansInAreaQuery query)
+        => await profileRepository.FindTechniciansInAreaAsync(query.Latitude, query.Longitude);
+
+    public Task<(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)?> Handle(GetProfileClaimsQuery query)
+    {
+        return profileRepository.FindProfileClaimsByUserIdAsync(UserId.From(query.UserId));
+    }
+
     public async Task<ProfileStatusReadModel?> Handle(GetProfileStatusQuery query)
     {
         var profile = await profileRepository.FindByUserIdAsync(UserId.From(query.UserId));
         if (profile is null) return null;
 
         return new ProfileStatusReadModel(
-            ProfileId:            profile.ProfileId.Value,
-            UserId:               profile.UserId.Value,
-            Status:               profile.Status.ToString(),
+            ProfileId: profile.ProfileId.Value,
+            UserId: profile.UserId.Value,
+            Status: profile.Status.ToString(),
             CompletionPercentage: CalculateCompletion(profile));
     }
 

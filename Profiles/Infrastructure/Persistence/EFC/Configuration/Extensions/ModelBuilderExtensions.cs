@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -138,7 +139,33 @@ public static class ModelBuilderExtensions
 
             b.Property(t => t.ExperienceYears).IsRequired();
             b.Property(t => t.AboutMe).HasMaxLength(2000);
+            
+            b.OwnsOne(t => t.ServiceArea, sa =>
+            {
+                sa.Property(v => v.CenterLatitude)
+                    .HasColumnName("service_area_lat")
+                    .HasColumnType("decimal(9,6)")
+                    .IsRequired();
 
+                sa.Property(v => v.CenterLongitude)
+                    .HasColumnName("service_area_lon")
+                    .HasColumnType("decimal(9,6)")
+                    .IsRequired();
+
+                sa.Property(v => v.RadiusKm)
+                    .HasColumnName("service_area_radius_km")
+                    .HasColumnType("decimal(6,2)")
+                    .IsRequired();
+
+                sa.Property(v => v.Area)
+                    .HasColumnName("service_area_geom")
+                    .HasColumnType("geometry(Polygon, 4326)")
+                    .IsRequired();
+                
+                sa.HasIndex(v => v.Area)
+                    .HasMethod("GIST");
+            });
+            
             b.HasMany(typeof(TechnicianSpecialty), "_specialtyEntities")
              .WithOne(nameof(TechnicianSpecialty.Technician))
              .HasForeignKey("TechnicianId")

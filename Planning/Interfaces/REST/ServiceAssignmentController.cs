@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
@@ -9,103 +10,126 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST;
 
 [ApiController]
-[Route("api/v1/planning/assignments")]
-[Produces(MediaTypeNames.Application.Json)]
-[SwaggerTag("Service Assignment Query Endpoints")]
-public class ServiceAssignmentController(
-    IServiceAssignmentQueryService assignmentQueryService,
-    ILogger<ServiceAssignmentController> logger)
-    : ControllerBase
+[Route("api/v1/service-assignments")]
+[Produces("application/json")]
+public class ServiceAssignmentController : ControllerBase
 {
-    /// <summary>
-    /// Get a specific service assignment by ID
-    /// </summary>
-    [HttpGet("{serviceId:guid}")]
-    [SwaggerOperation(
-        Summary = "Get Assignment by ID",
-        Description = "Retrieves a specific service assignment by its service ID.",
-        OperationId = "GetAssignmentById")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Assignment found", typeof(ServiceAssignmentResource))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Assignment not found")]
-    public async Task<IActionResult> GetAssignmentById(Guid serviceId)
+    private readonly IServiceAssignmentCommandService _commandService;
+    private readonly IServiceDesignQueryService _queryService;
+    private readonly ILogger<ServiceAssignmentController> _logger;
+ 
+    public ServiceAssignmentController(
+        IServiceAssignmentCommandService      commandService,
+        IServiceDesignQueryService            queryService,
+        ILogger<ServiceAssignmentController>  logger)
     {
-        var query = new GetServiceAssignmentByIdQuery(serviceId);
-        var assignment = await assignmentQueryService.Handle(query);
-
-        if (assignment is null)
-            return NotFound(new { message = $"Assignment {serviceId} not found" });
-
-        var resource = ServiceAssignmentResourceFromEntityAssembler.ToResourceFromEntity(assignment);
+        _commandService = commandService;
+        _queryService   = queryService;
+        _logger         = logger;
+    }
+ 
+    // ──────────────────────────────────────────────────────────────────────
+    // QUERIES
+    // ──────────────────────────────────────────────────────────────────────
+ 
+    /// <summary>
+    /// Devuelve el estado actual de la cola de matching, separada en dos niveles:
+    /// solicitudes prioritarias (plan Premium) y solicitudes normales.
+    ///
+    /// Dentro de cada nivel el orden es FIFO (createdAt ASC), lo cual es consistente
+    /// con el índice parcial (is_priority DESC, created_at ASC) definido en la BD.
+    ///
+    /// Uso: panel de administración y monitoreo del proceso de asignación.
+    /// </summary>
+    [HttpGet("queue")]
+    [ProducesResponseType(typeof(MatchingQueueResource), StatusCodes.Status200OK)]
+    public async Task<ActionResult<MatchingQueueResource>> GetMatchingQueue(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _queryService.Handle(new GetMatchingQueueQuery(page, pageSize));
+ 
+        var resource = MatchingQueueResourceFromQueryResultAssembler.ToResource(
+            result.PriorityQueue.Select(q => (q.RequestId, q.HomeownerId, q.IsPriority, q.CreatedAt.DateTime)),
+            result.NormalQueue.Select(q   => (q.RequestId, q.HomeownerId, q.IsPriority, q.CreatedAt.DateTime)),
+            result.TotalPending);
+ 
         return Ok(resource);
     }
-
+ 
+    // ──────────────────────────────────────────────────────────────────────
+    // COMMANDS
+    // ──────────────────────────────────────────────────────────────────────
+ 
     /// <summary>
-    /// Get all assignments for a technician
+    /// Dispara manualmente el algoritmo de matching para una solicitud específica
+    /// en estado PENDING_ASSIGNMENT.
+    ///
+    /// Este endpoint normalmente no es necesario: el algoritmo se ejecuta de forma
+    /// automática vía la policy ServiceRequestCreatedEventHandler inmediatamente
+    /// después de que la solicitud se confirma.
+    ///
+    /// Casos de uso válidos:
+    ///   - Reintento manual tras un fallo de matching con todos los candidatos agotados
+    ///   - Reintento de administrador tras incorporación de nuevos técnicos al área
+    ///   - Testing y debugging del algoritmo de asignación en entornos de desarrollo
+    ///
+    /// El algoritmo aplicará la misma lógica interna: búsqueda por geolocalización,
+    /// verificación de stock, selección por rating DESC, y snapshot inmutable del recipe.
+    ///
+    /// Responde 200 si el matching fue exitoso (se encontró y asignó un candidato).
+    /// Responde 422 si no hay candidatos disponibles (se crea un ServiceAssignment con
+    /// status FAILED y retryCount incrementado).
     /// </summary>
-    [HttpGet("technician/{technicianId:guid}")]
-    [SwaggerOperation(
-        Summary = "Get Assignments by Technician",
-        Description = "Retrieves all service assignments for a specific technician.",
-        OperationId = "GetAssignmentsByTechnician")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Assignments retrieved", typeof(List<ServiceAssignmentListResource>))]
-    public async Task<IActionResult> GetAssignmentsByTechnician(Guid technicianId)
+    [HttpPost("execute")]
+    [ProducesResponseType(typeof(MatchingResultResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MatchingResultResource), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExecuteMatchingAlgorithm(
+        [FromBody] ExecuteMatchingAlgorithmResource resource)
     {
-        var query = new GetAssignmentsByTechnicianQuery(technicianId);
-        var assignments = await assignmentQueryService.Handle(query);
-
-        var resources = assignments.Select(
-            ServiceAssignmentResourceFromEntityAssembler.ToListResourceFromEntity);
-        
-        logger.LogInformation("Retrieved {Count} assignments for technician {TechnicianId}",
-            assignments.Count(), technicianId);
-
-        return Ok(resources);
-    }
-
-    /// <summary>
-    /// Get all assignments for a homeowner
-    /// </summary>
-    [HttpGet("homeowner/{homeownerId:guid}")]
-    [SwaggerOperation(
-        Summary = "Get Assignments by Homeowner",
-        Description = "Retrieves all service assignments for a specific homeowner.",
-        OperationId = "GetAssignmentsByHomeowner")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Assignments retrieved", typeof(List<ServiceAssignmentListResource>))]
-    public async Task<IActionResult> GetAssignmentsByHomeowner(Guid homeownerId)
-    {
-        var query = new GetAssignmentsByHomeownerQuery(homeownerId);
-        var assignments = (await assignmentQueryService.Handle(query)).ToList();
-
-        var resources = assignments.Select(
-            ServiceAssignmentResourceFromEntityAssembler.ToListResourceFromEntity);
-
-        logger.LogInformation("Retrieved {Count} assignments for homeowner {HomeownerId}",
-            assignments.Count, homeownerId);
-
-        return Ok(resources);
-    }
-
-    /// <summary>
-    /// Get assignment by request ID
-    /// </summary>
-    [HttpGet("request/{requestId:guid}")]
-    [SwaggerOperation(
-        Summary = "Get Assignment by Request ID",
-        Description = "Retrieves the service assignment associated with a specific request.",
-        OperationId = "GetAssignmentByRequest")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Assignment found", typeof(ServiceAssignmentResource))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "No assignment found for this request")]
-    public async Task<IActionResult> GetAssignmentByRequest(Guid requestId)
-    {
-        var query = new GetAssignmentByRequestIdQuery(requestId);
-        var assignment = await assignmentQueryService.Handle(query);
-
-        if (assignment is null)
-            return NotFound(new { message = $"No assignment found for request {requestId}" });
-
-        var resource = ServiceAssignmentResourceFromEntityAssembler.ToResourceFromEntity(assignment);
-        return Ok(resource);
+        try
+        {
+            var command = ExecuteMatchingAlgorithmCommandFromResourceAssembler.ToCommand(resource);
+ 
+            await _commandService.Handle(command);
+ 
+            _logger.LogInformation(
+                "Matching algorithm executed successfully for RequestId {RequestId}",
+                resource.RequestId);
+ 
+            var successResult = MatchingResultResourceAssembler.ToResource(
+                resource.RequestId,
+                assigned: true);
+ 
+            return Ok(successResult);
+        }
+        catch (ServiceRequestNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidRequestStatusException ex)
+        {
+            // La solicitud no está en PENDING_ASSIGNMENT; no se puede ejecutar matching
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (NoCandidatesAvailableException ex)
+        {
+            // El algoritmo se ejecutó pero no encontró técnicos válidos.
+            // Se creó un ServiceAssignment con status FAILED; el retry con backoff
+            // está gestionado por el Outbox Pattern (ver sección 7 del documento).
+            _logger.LogWarning(
+                "Matching algorithm found no candidates for RequestId {RequestId}. Reason: {Reason}",
+                resource.RequestId, ex.Message);
+ 
+            var failedResult = MatchingResultResourceAssembler.ToResource(
+                resource.RequestId,
+                assigned:      false,
+                failureReason: ex.Message);
+ 
+            return UnprocessableEntity(failedResult);
+        }
     }
 }
-
-
+ 

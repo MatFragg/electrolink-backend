@@ -1,6 +1,5 @@
-﻿namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public class RefreshClaimsCommand
-{
-    
-}
+namespace Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
+
+public record RefreshClaimsCommand(UserId UserId);

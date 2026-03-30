@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Events;
 
 public record ComponentsConsumedEvent(
     TechnicianInventoryId TechnicianInventoryId,
-    ServiceId ServiceId,
+    AssignmentId AssignmentId,
     IEnumerable<ComponentAdjustment> Items,
     DateTime OccurredOn) : IEvent
 {

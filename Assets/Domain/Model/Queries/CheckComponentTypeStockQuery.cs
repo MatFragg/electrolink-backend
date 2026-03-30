@@ -1,4 +1,4 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 
 public record CheckComponentTypeStockQuery(
     string TechnicianId,

@@ -10,8 +10,7 @@ public static class CreateComponentCommandFromResourceAssembler
         => new CreateComponentCommand(
             resource.Name, 
             resource.Description,
-            resource.IsActive,
-            ComponentTypeId.From(resource.ComponentTypeId)
+            resource.IsActive
         );
 }
 

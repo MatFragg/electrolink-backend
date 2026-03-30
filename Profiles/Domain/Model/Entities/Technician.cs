@@ -7,13 +7,15 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 
 public class Technician
 {
-  [Key]
-  public TechnicianId TechnicianId { get; private set; }
-  public ProfileId ProfileId { get; private set; }
+  [Key] public TechnicianId TechnicianId { get; private set; } = null!;
+  public ProfileId ProfileId { get; private set; } = null!;
 
   public IReadOnlyList<ESpecialty> Specialties => _specialtyEntities.Select(e => e.Specialty).ToList().AsReadOnly();
-  public int ExperienceYears { get; private set; }   
-  public string AboutMe { get; private set; }
+  public int ExperienceYears { get; private set; }
+  public ServiceArea ServiceArea { get; private set; } = null!;
+
+  [MaxLength(255)]
+  public string AboutMe { get; private set; } = string.Empty;
 
   private List<TechnicianSpecialty> _specialtyEntities = new();
 
@@ -22,7 +24,8 @@ public class Technician
     ProfileId profileId,
     IEnumerable<ESpecialty> specialties,
     int experienceYears,
-    string aboutMe)
+    string aboutMe,
+    ServiceArea serviceArea)
   {
     var specialtiesList = specialties?.ToList() ?? new List<ESpecialty>();
     if (specialtiesList.Count == 0)
@@ -34,7 +37,8 @@ public class Technician
       ProfileId       = profileId,
       _specialtyEntities = specialtiesList.Select(s => new TechnicianSpecialty(id, s)).ToList(),
       ExperienceYears = experienceYears,
-      AboutMe         = aboutMe ?? string.Empty,
+      ServiceArea     = serviceArea,
+      AboutMe         = aboutMe,
     };
     return technician;
   }
@@ -56,5 +60,10 @@ public class Technician
   public void UpdateAboutMe(string? aboutMe)
   {
     AboutMe = aboutMe ?? string.Empty;
+  }
+  
+  public void UpdateServiceArea(double lat, double lon, double radiusKm)
+  {
+    ServiceArea = ServiceArea.FromPointAndRadius(lat, lon, radiusKm);
   }
 }

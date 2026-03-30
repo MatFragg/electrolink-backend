@@ -170,6 +170,7 @@ public class TechnicianInventoriesController(ITechnicianInventoryCommandService 
         var resources = stockItems.Select(item => new ComponentStockResource(
             item.StockId,
             item.ComponentId,
+            item.ComponentTypeId,
             item.ComponentName,
             item.QuantityAvailable,
             item.AlertThreshold,

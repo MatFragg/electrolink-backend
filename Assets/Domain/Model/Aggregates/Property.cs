@@ -74,10 +74,10 @@ public class Property : BaseAggregateRoot
         RaiseDomainEvent(new PropertyArchivedEvent(Id, OwnerId, reason, DateTime.UtcNow));
     }
     
-    internal void RecordMaintenance(ServiceId serviceId, string technicianId, string workSummary, DateTime completedAt)
+    internal void RecordMaintenance(AssignmentId assignmentId, string technicianId, string workSummary, DateTime completedAt)
     {
         RaiseDomainEvent(new PropertyMaintenanceRecordedEvent(
-            Id, serviceId, technicianId, workSummary, completedAt, DateTime.UtcNow));
+            Id, assignmentId, technicianId, workSummary, completedAt, DateTime.UtcNow));
     }
 
     internal void MarkAsInPortfolio()

@@ -67,6 +67,12 @@ public static class ModelBuilderExtensions
             .HasConversion(id => id.Value, value => ComponentId.From(value))
             .HasColumnName("ComponentId")
             .IsRequired();
+        
+        builder.Entity<ComponentStock>()
+            .Property(cs => cs.ComponentTypeId)
+            .HasConversion(id => id.Value, value => ComponentTypeId.From(value))
+            .HasColumnName("ComponentTypeId")
+            .IsRequired();
 
         /*
          * Component Reservation
@@ -86,8 +92,8 @@ public static class ModelBuilderExtensions
             .IsRequired();
 
         builder.Entity<ComponentReservation>()
-            .Property(cr => cr.ServiceId)
-            .HasConversion(id => id.Value, value => ServiceId.From(value))
+            .Property(cr => cr.AssignmentId)
+            .HasConversion(id => id.Value, value => AssignmentId.From(value))
             .HasColumnName("ServiceId")
             .IsRequired();
 
@@ -119,7 +125,13 @@ public static class ModelBuilderExtensions
             .HasConversion(id => id.Value, value => ComponentId.From(value))
             .HasColumnName("ComponentId")
             .IsRequired();
-
+        
+        builder.Entity<ReservationItem>()
+            .Property(cs => cs.ComponentTypeId)
+            .HasConversion(id => id.Value, value => ComponentTypeId.From(value))
+            .HasColumnName("ComponentTypeId")
+            .IsRequired();
+        
         /*
          * Component Type
          */
@@ -144,15 +156,8 @@ public static class ModelBuilderExtensions
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Entity<Component>()
-            .Property(c => c.TypeId)
-            .HasConversion(id => id.Value, value => ComponentTypeId.From(value))
-            .HasColumnName("TypeId")
-            .IsRequired();
-
         builder.Entity<Component>().HasIndex(c => c.Name);
         builder.Entity<Component>().HasIndex(c => c.IsActive);
-        builder.Entity<Component>().HasIndex(c => c.TypeId);
 
         /*
          * Property Portfolio

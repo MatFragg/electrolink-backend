@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -40,4 +41,7 @@ public interface IProfileRepository : IBaseRepository<Profile, ProfileId>
   Task<bool>IsHomeownerActiveAsync(HomeownerId homeownerId);
   
   Task<IEnumerable<Profile>> FindByRoleAsync(EBusinessRole role);
+  
+  Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> FindTechniciansInAreaAsync(double lat, double lon);
+  Task<(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)?> FindProfileClaimsByUserIdAsync(UserId userId);
 }

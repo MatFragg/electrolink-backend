@@ -4,4 +4,7 @@ public record TechnicianProfileResource(
     string TechnicianId,
     List<string> Specialties,
     int ExperienceYears,
-    string AboutMe);
+    string AboutMe,
+    double CenterLatitude, 
+    double CenterLongitude,
+    double RadiusKm);

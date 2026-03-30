@@ -2,14 +2,14 @@
 
 public record Geolocation
 {
-    public decimal Latitude  { get; init; }
-    public decimal Longitude { get; init; }
+    public double Latitude  { get; init; }
+    public double Longitude { get; init; }
     public int? Accuracy  { get; init; }  
     public string Source { get; init; }  
 
     private Geolocation() { Source = "MANUAL"; }
 
-    public static Geolocation Create(decimal lat, decimal lon, int? accuracy, string source)
+    public static Geolocation Create(double lat, double lon, int? accuracy, string source)
     {
         if (lat < -90 || lat > 90)
             throw new ArgumentOutOfRangeException(nameof(lat), "Latitude must be between -90 and 90.");

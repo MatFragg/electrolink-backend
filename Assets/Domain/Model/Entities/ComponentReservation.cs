@@ -7,7 +7,7 @@ public class ComponentReservation
 {
     public ComponentReservationId Id { get; private set; } = null!;
     public TechnicianInventoryId TechnicianInventoryId { get; private set; } = null!;
-    public ServiceId ServiceId { get; private set; } = null!;
+    public AssignmentId AssignmentId { get; private set; } = null!;
     public DateTime ExpiresAt { get; private set; }
     public bool IsConsumed { get; private set; }
     public bool IsReleased { get; private set; }
@@ -19,13 +19,13 @@ public class ComponentReservation
 
     private ComponentReservation() { }
     
-    public static ComponentReservation Create(TechnicianInventoryId inventoryId, ServiceId serviceId, DateTime expiresAt)
+    public static ComponentReservation Create(TechnicianInventoryId inventoryId, AssignmentId assignmentId, DateTime expiresAt)
     {
         return new ComponentReservation
         {
             Id = ComponentReservationId.NewComponentReservationId(),
             TechnicianInventoryId = inventoryId,
-            ServiceId   = serviceId,
+            AssignmentId   = assignmentId,
             ExpiresAt   = expiresAt,
             IsConsumed  = false,
             IsReleased  = false,
@@ -34,10 +34,10 @@ public class ComponentReservation
 
     public bool IsExpired => !IsConsumed && !IsReleased && DateTime.UtcNow > ExpiresAt;
 
-    internal void AddItem(ComponentId componentId, int quantity)
+    internal void AddItem(ComponentId componentId, ComponentTypeId componentTypeId, int quantity)
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive.");
-        _items.Add(ReservationItem.Create(Id, componentId, quantity));
+        _items.Add(ReservationItem.Create(Id, componentId, componentTypeId, quantity));
     }
 
     internal void MarkAsConsumed()

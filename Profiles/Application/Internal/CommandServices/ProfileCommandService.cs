@@ -47,24 +47,29 @@ public class ProfileCommandService(
   {
       var profile = await profileRepository.FindByUserIdAsync(
           UserId.From(command.UserId));
-      
+
       if (profile is null)
           throw new ArgumentException("Profile not found.");
-      
+
       var personalData = PersonalData.Create(
-          command.FirstName, 
-          command.LastName, 
-          PhoneNumber.From(command.PhoneNumber), 
+          command.FirstName,
+          command.LastName,
+          PhoneNumber.From(command.PhoneNumber),
           Dni.From(command.Dni),
-          DateOfBirth.From(command.DateOfBirth), 
-          Address.Create(command.Street, command.Number, command.District, command.City, command.Country, command.PostalCode));
-      
+          DateOfBirth.From(command.DateOfBirth),
+          Address.Create(command.Street, command.Number, command.District, command.City, command.Country,
+              command.PostalCode));
+
       var technicianData = TechnicianData.Create(
-          command.Specialties, 
+          command.Specialties,
           command.ExperienceYears,
-          command.AboutMe);
-      
-      profile.CompleteAsTechnician(personalData, technicianData, uniquenessChecker);
+          command.AboutMe,
+          ServiceArea.FromPointAndRadius(
+              command.CenterLatitude,
+              command.CenterLongitude,
+              command.RadiusKm)); 
+
+  profile.CompleteAsTechnician(personalData, technicianData, uniquenessChecker);
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();

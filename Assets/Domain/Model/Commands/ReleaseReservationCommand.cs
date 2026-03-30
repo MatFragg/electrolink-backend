@@ -2,4 +2,4 @@
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record ReleaseReservationCommand(TechnicianId TechnicianId, ServiceId ServiceId, string Reason);
+public record ReleaseReservationCommand(TechnicianId TechnicianId, AssignmentId AssignmentId, string Reason);

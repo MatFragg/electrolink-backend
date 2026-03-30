@@ -11,10 +11,6 @@ public class ComponentQueryService(IComponentRepository componentRepository) : I
     public async Task<Component?> Handle(GetComponentByIdQuery query)
         => await componentRepository.FindByIdAsync(query.ComponentId);
 
-    public async Task<IEnumerable<Component>> Handle(GetComponentsByTypeIdQuery query) 
-        => await componentRepository.FindByTypeIdAsync(query.ComponentTypeId);
-    
-
     public async Task<IEnumerable<Component>> Handle(GetAllComponentsQuery query) 
         => await componentRepository.ListAsync();
 

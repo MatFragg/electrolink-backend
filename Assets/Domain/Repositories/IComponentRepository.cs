@@ -7,8 +7,7 @@ namespace Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 
 public interface IComponentRepository :  IBaseRepository<Component, ComponentId>
 {
-    Task<IEnumerable<Component>> FindByTypeIdAsync(ComponentTypeId typeId);
-    Task<bool> ExistsByNameAsync(string name); // Útil para validaciones
+    Task<bool> ExistsByNameAsync(string name); 
     Task<IEnumerable<Component>> FindByIdsAsync(IEnumerable<ComponentId> ids);
 
 }

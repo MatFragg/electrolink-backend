@@ -43,7 +43,10 @@ public class MyProfileResourceFromEntityAssembler
         new(t.TechnicianId.Value,
             t.Specialties.Select(s => s.ToString()).ToList(),
             t.ExperienceYears,
-            t.AboutMe);
+            t.AboutMe,
+            t.ServiceArea.CenterLatitude,
+            t.ServiceArea.CenterLongitude,
+            t.ServiceArea.RadiusKm);
 
     private static HomeownerProfileResource MapHomeowner(HomeOwner h) =>
         new(h.HomeownerId.Value,

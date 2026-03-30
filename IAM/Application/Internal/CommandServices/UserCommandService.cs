@@ -24,7 +24,8 @@ public class UserCommandService(
     IHashingService hashingService,
     IUnitOfWork unitOfWork,
     IMediator mediator, 
-    ILogger<UserCommandService> logger)
+    ILogger<UserCommandService> logger,
+    ExternalProfilesService externalProfilesService)
     : IUserCommandService
 {
     /**
@@ -36,15 +37,16 @@ public class UserCommandService(
      */
     public async Task<(User user, string token)> Handle(SignInCommand command)
     {
-        var user = await userRepository.FindByEmailAsync(command.Email);
+        var user = await userRepository.FindByEmailAsync(command.Email) ?? throw new Exception("Invalid username or password");
 
         if (!hashingService.VerifyPassword(command.Password, user.PasswordHash))
         {
             logger.LogWarning($"[IAM BC] Intento de inicio de sesión fallido para {command.Email}: contraseña inválida.");
             throw new Exception("Invalid username or password");
         }
+        var profileClaims = await externalProfilesService.GetProfileClaimsAsync(user.Id.Value);
 
-        var token = tokenService.GenerateToken(user);
+        var token = tokenService.GenerateToken(user, profileClaims);
 
         user.RecordSignIn();
 
@@ -57,7 +59,7 @@ public class UserCommandService(
 
         user.ClearDomainEvents();
 
-    logger.LogInformation($"[IAM BC] Usuario {command.Email} inició sesión exitosamente.");
+        logger.LogInformation($"[IAM BC] Usuario {command.Email} inició sesión exitosamente.");
         return (user, token);
     }
 
@@ -89,7 +91,8 @@ public class UserCommandService(
             await mediator.Publish(domainEvent, CancellationToken.None);
         user.ClearDomainEvents();
         
-        var token = tokenService.GenerateToken(user);
+        var profileClaims = await externalProfilesService.GetProfileClaimsAsync(user.Id.Value);
+        var token = tokenService.GenerateToken(user, profileClaims);
 
         return (user, token);
     }
@@ -112,5 +115,13 @@ public class UserCommandService(
 
         logger.LogInformation($"[IAM BC] Contraseña del usuario {command.UserId} actualizada.");
         return true;
+    }
+
+    public async Task<string> Handle(RefreshClaimsCommand command)
+    {
+        var user = await userRepository.FindByIdAsync(command.UserId) ?? throw new Exception("User not found");
+
+        var profileClaims = await externalProfilesService.GetProfileClaimsAsync(user.Id.Value);
+        return tokenService.GenerateToken(user, profileClaims);
     }
 }

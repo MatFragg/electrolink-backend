@@ -11,14 +11,10 @@ public class ComponentCommandService(IComponentRepository componentRepository, I
 {
     public async Task<Component?> Handle(CreateComponentCommand command)
     {
-        var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
-        if (componentType is null)
-            throw new ArgumentException($"Component type with id {command.ComponentTypeId} not found.");
-
         if (await componentRepository.ExistsByNameAsync(command.Name))
             throw new ArgumentException($"A component with the name '{command.Name}' already exists.");
 
-        var component = Component.Create(command.Name, command.Description,command.IsActive, componentType.Id); 
+        var component = Component.Create(command.Name, command.Description,command.IsActive); 
         await componentRepository.AddAsync(component);
         await unitOfWork.CompleteAsync();
 

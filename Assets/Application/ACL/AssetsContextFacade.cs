@@ -3,54 +3,188 @@ using Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using TechnicianId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.TechnicianId;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.ACL;
 
-public class AssetsContextFacade(ITechnicianInventoryCommandService technicianInventoryCommandService,
-    ITechnicianInventoryQueryService technicianInventoryQueryService, IPropertyQueryService propertyQueryService) : IAssetsContextFacade
+public class AssetsContextFacade(
+    ITechnicianInventoryCommandService inventoryCommandService,
+    ITechnicianInventoryQueryService   inventoryQueryService,
+    IPropertyCommandService            propertyCommandService,
+    IPropertyQueryService              propertyQueryService,
+    IComponentTypeQueryService       componentTypeQueryService,
+    IComponentTypeRepository           componentTypeRepository,
+    IPropertyPortfolioQueryService     portfolioQueryService,
+    IPropertyPortfolioCommandService   portfolioCommandService) : IAssetsContextFacade
 {
-    public async Task<string> CreateTechnicianInventory(string technicianId)
+    // ── Inventory ─────────────────────────────────────────
+
+    public async Task<bool> ExistsInventoryForTechnicianAsync(string technicianId)
     {
-        var command = new CreateTechnicianInventoryCommand(TechnicianId.From(technicianId));
-        var inventory = await technicianInventoryCommandService.Handle(command);
-        return inventory!.TechnicianId.Value;
+        var inventory = await inventoryQueryService.Handle(new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId)));
+        return inventory is not null;
     }
 
-    public async Task<bool> ExistsInventoryForTechnician(string technicianId)
+    public async Task<string> CreateTechnicianInventoryAsync(string technicianId)
     {
-        var query = new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId));
-        var inventory = await technicianInventoryQueryService.Handle(query);
-        return inventory != null;
-    }
-    
-    public async Task<string?> FetchPropertyAddressAsync(string propertyId)
-    {
-        var query = new GetPropertyAddressQuery(PropertyId.From(propertyId));
-        var address = await propertyQueryService.Handle(query); 
-        return address.Street;
-    }
-    public async Task<bool> HasTechnicianEnoughStockAsync(string technicianId, string componentId, int requiredQuantity)
-    {
-        var inventoryQuery = new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId));
-        var inventory = await technicianInventoryQueryService.Handle(inventoryQuery);
-
-        if (inventory == null) return false;
-
-        var componentInStock = inventory.Inventory.StockItems.FirstOrDefault(c => c.ComponentId.Value == componentId);
-
-        return componentInStock != null && componentInStock.QuantityAvailable >= requiredQuantity;
+        var result = await inventoryCommandService.Handle(
+            new CreateTechnicianInventoryCommand(TechnicianId.From(technicianId)));
+        return result?.Id.Value ?? string.Empty;
     }
 
-    /// <summary>
-    /// Ajusta el stock de componentes de un técnico.
-    /// </summary>
-    public async Task<bool> AdjustTechnicianStockAsync(string technicianId, List<(string ComponentId, int Quantity)> adjustments)
+    public async Task<bool> HasTechnicianEnoughStockAsync(
+        string technicianId, string componentTypeId, int requiredQuantity)
     {
-        var command = new AdjustTechnicianInventoryCommand(TechnicianId.From(technicianId), adjustments.Select(a => new ComponentAdjustment(
-            ComponentId.From(a.ComponentId), a.Quantity)).ToList());
-        var result = await technicianInventoryCommandService.Handle(command);
-        return result != null;
+        var technicianInventory = await inventoryQueryService.Handle(
+            new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId)));
+        if (technicianInventory is null) return false;
+
+        var stock = technicianInventory.Inventory.StockItems.FirstOrDefault(s =>
+            s.ComponentId.Value == componentTypeId);
+        return stock is not null && stock.AvailableForReservation >= requiredQuantity;
     }
+
+    public async Task<bool> CheckAllComponentsInStockAsync(string technicianId, IReadOnlyList<(string ComponentTypeId, int quantity)> requirements)
+    {
+        var technicianInventory = await inventoryQueryService.Handle(
+            new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId)));
+        if (technicianInventory is null) return false;
+
+        return requirements.All(req =>
+        {
+            var stock = technicianInventory.Inventory.StockItems.FirstOrDefault(
+                s => s.ComponentTypeId.Value == req.ComponentTypeId);
+            return stock is not null && stock.AvailableForReservation >= req.quantity;
+        });
+    }
+
+    public async Task<bool> ComponentTypeExistsAndIsActiveAsync(string componentTypeId)
+        => await componentTypeRepository.ExistsActiveByIdAsync(componentTypeId);
+
+    public async Task<string?> GetComponentTypeNameAsync(string componentTypeId)
+        => await componentTypeQueryService.Handle(new GetComponentTypeNameByIdQuery(ComponentTypeId.From(componentTypeId)));
+
+    public async Task<bool> AdjustTechnicianStockAsync(string technicianId, IReadOnlyList<(string ComponentId, int quantityAdjustment)> adjustments)
+    {
+        var adjustmentsList = adjustments
+            .Select(a => new ComponentAdjustment(ComponentId.From(a.ComponentId), a.quantityAdjustment))
+            .ToList();
+
+        var result = await inventoryCommandService.Handle(
+            new AdjustTechnicianInventoryCommand(TechnicianId.From(technicianId), adjustmentsList));
+        return result is not null;
+    }
+
+    public async Task<bool> ReserveComponentsForServiceAsync(string technicianId, string serviceId, IReadOnlyList<(string ComponentId, int quantity)> components)
+    {
+        var componentsList = components
+            .Select(c => new ComponentAdjustment(ComponentId.From(c.ComponentId), c.quantity))
+            .ToList();
+
+        var result = await inventoryCommandService.Handle(
+            new ReserveComponentsForServiceCommand(TechnicianId.From(technicianId), AssignmentId.From(serviceId), componentsList));
+        return result is not null;
+    }
+
+    public async Task<bool> HasSufficientStockAsync(
+        string technicianId,
+        IReadOnlyList<(string ComponentId, int Quantity)> requirements)
+    {
+        var inv = await inventoryQueryService.Handle(new GetInventoryByTechnicianIdQuery(TechnicianId.From(technicianId)));
+        if (inv is null) return false;
+
+        return requirements.All(req =>
+        {
+            var stock = inv.Inventory.StockItems.FirstOrDefault(s => s.ComponentId.Value == req.ComponentId);
+            return stock is not null && stock.AvailableForReservation >= req.Quantity;
+        });
+    }
+
+    public async Task<bool> ReserveComponentsAsync(
+        string technicianId,
+        string serviceId,
+        IReadOnlyList<(string ComponentId, int Quantity)> components)
+    {
+        var adjustments = components
+            .Select(c => new ComponentAdjustment(ComponentId.From(c.ComponentId), c.Quantity))
+            .ToList();
+
+        var result = await inventoryCommandService.Handle(
+            new ReserveComponentsForServiceCommand(TechnicianId.From(technicianId), AssignmentId.From(serviceId), adjustments));
+
+        return result is not null;
+    }
+
+    public async Task<bool> ConsumeReservedComponentsAsync(string technicianId, string serviceId)
+    {
+        var result = await inventoryCommandService.Handle(
+            new ConsumeComponentsForServiceCommand(TechnicianId.From(technicianId), AssignmentId.From(serviceId)));
+        return result is not null;
+    }
+
+    public Task<bool> ReleaseComponentReservationAsync(string technicianId, string serviceId, string reason)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task ReleaseReservationAsync(string technicianId, string serviceId, string reason)
+        => await inventoryCommandService.Handle(new ReleaseReservationCommand(TechnicianId.From(technicianId), AssignmentId.From(serviceId), reason));
+
+    // ── Properties ────────────────────────────────────────
+
+    public async Task<(double Latitude, double Longitude)?> GetPropertyGeolocationAsync(string propertyId, string homeownerId)
+    {
+        var prop = await propertyQueryService.Handle(new GetPropertyByIdQuery(PropertyId.From(propertyId), HomeownerId.From(homeownerId)));
+        if (prop is null) return null;
+        return (prop.Geolocation.Latitude, prop.Geolocation.Longitude);
+    }
+
+    public async Task<string> GetPropertyAddressAsync(string propertyId)
+    {
+        var addr = await propertyQueryService.Handle(new GetPropertyAddressQuery(PropertyId.From(propertyId)));
+        if (addr is null) return string.Empty;
+        return $"{addr.Street} {addr.Number}, {addr.City}".Trim();
+    }
+
+    public async Task<bool> PropertyBelongsToOwnerAsync(string propertyId, string ownerId)
+    {
+        var prop = await propertyQueryService.Handle(new GetPropertyByIdQuery(PropertyId.From(propertyId), HomeownerId.From(ownerId)));
+        return prop is not null;
+    }
+
+    // ── Portfolio ─────────────────────────────────────────
+
+    public async Task<bool> PortfolioExistsAsync(string homeownerId)
+    {
+        var portfolio = await portfolioQueryService.Handle(new GetPortfolioByOwnerIdQuery(HomeownerId.From(homeownerId)));
+        return portfolio is not null;
+    }
+
+    public async Task<string> CreatePortfolioAsync(string homeownerId)
+    {
+        var portfolio = await portfolioCommandService.Handle(new CreatePropertyPortfolioCommand(HomeownerId.From(homeownerId)));
+        return portfolio?.Id.Value ?? string.Empty;
+    }
+
+    public async Task<bool> HomeownerHasPropertiesAsync(string homeownerId)
+    {
+        var portfolio = await portfolioQueryService.Handle(new GetPortfolioByOwnerIdQuery(HomeownerId.From(homeownerId)));
+        return portfolio is not null && portfolio.Entries.Any();
+    }
+
+    public Task<bool> RecordMaintenanceForPropertyAsync(string propertyId, string serviceId, string technicianId, string workSummary,
+        DateTime completedAt)
+    {
+        throw new NotImplementedException();
+    }
+
+    // ── Maintenance ───────────────────────────────────────
+
+    public async Task RecordMaintenanceAsync(
+        string propertyId, string serviceId, string technicianId,
+        string workSummary, DateTime completedAt)
+        => await propertyCommandService.Handle(new RecordMaintenanceForPropertyCommand(
+            PropertyId.From(propertyId), AssignmentId.From(serviceId), TechnicianId.From(technicianId), workSummary, completedAt));
 }

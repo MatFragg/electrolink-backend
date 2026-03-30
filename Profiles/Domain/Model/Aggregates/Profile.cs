@@ -62,7 +62,7 @@ public partial class Profile : BaseAggregateRoot
 
         PersonalData = personalData;
         BusinessRole = EBusinessRole.Technician;
-        Technician = Technician.Create(TechnicianId.NewTechnicianId(), ProfileId, technicianData.Specialties, technicianData.ExperienceYears, technicianData.AboutMe);
+        Technician = Technician.Create(TechnicianId.NewTechnicianId(), ProfileId, technicianData.Specialties, technicianData.ExperienceYears, technicianData.AboutMe, technicianData.ServiceArea);
         Status = EProfileStatus.Active;
 
         RaiseDomainEvent(new ProfileCompletedEvent(

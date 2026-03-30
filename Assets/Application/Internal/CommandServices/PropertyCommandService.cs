@@ -150,7 +150,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
 
-        property.RecordMaintenance(command.ServiceId, command.TechnicianId.Value, command.WorkSummary, command.CompletedAt);
+        property.RecordMaintenance(command.AssignmentId, command.TechnicianId.Value, command.WorkSummary, command.CompletedAt);
         await unitOfWork.CompleteAsync();
 
         foreach (var domainEvent in property.DomainEvents)

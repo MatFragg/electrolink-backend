@@ -20,7 +20,6 @@ public record ComponentAdjustment
         Quantity = quantity;
     }
 
-
     public ComponentAdjustment Invert() => new(ComponentId, -Quantity);
     public static ComponentAdjustment operator +(ComponentAdjustment a1, ComponentAdjustment a2)
     {

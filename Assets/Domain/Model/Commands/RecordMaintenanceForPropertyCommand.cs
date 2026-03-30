@@ -2,4 +2,4 @@
 
 namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 
-public record RecordMaintenanceForPropertyCommand(PropertyId PropertyId, ServiceId ServiceId, TechnicianId TechnicianId, string WorkSummary, DateTime CompletedAt);
+public record RecordMaintenanceForPropertyCommand(PropertyId PropertyId, AssignmentId AssignmentId, TechnicianId TechnicianId, string WorkSummary, DateTime CompletedAt);

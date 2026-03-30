@@ -1,3 +1,5 @@
-﻿namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 
-public record GetComponentStockByComponentTypeId();
+namespace Hampcoders.Electrolink.API.Assets.Domain.Model.Queries;
+
+public record GetComponentStockByComponentTypeId(ComponentTypeId ComponentTypeId);

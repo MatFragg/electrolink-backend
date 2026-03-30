@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
@@ -10,6 +11,7 @@ public static class AddStockToInventoryCommandFromResourceAssembler
         => new AddStockToInventoryCommand(
             TechnicianId.From(technicianId), 
             ComponentId.From(resource.ComponentId), 
+            ComponentTypeId.From(resource.ComponentTypeId),
             resource.Quantity, 
             resource.AlertThreshold
         );

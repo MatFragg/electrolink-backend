@@ -10,13 +10,6 @@ namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repos
 
 public class ComponentRepository(AppDbContext context) : BaseRepository<Component, ComponentId>(context), IComponentRepository
 {
-    public async Task<IEnumerable<Component>> FindByTypeIdAsync(ComponentTypeId typeId)
-    {
-        return await Context.Set<Component>()
-            .Where(c => c.TypeId == typeId)
-            .ToListAsync();
-    }
-
     public async Task<bool> ExistsByNameAsync(string name)
     {
         return await Context.Set<Component>().AnyAsync(c => c.Name == name);

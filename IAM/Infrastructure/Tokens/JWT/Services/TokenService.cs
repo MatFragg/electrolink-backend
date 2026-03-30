@@ -23,31 +23,44 @@ public class TokenService(IOptions<TokenSettings> tokenSettings) : ITokenService
 
     /**
      * <summary>
-     *     Generate token
+     *     Generate a JWT token
      * </summary>
-     * <param name="user">The user for token generation</param>
-     * <returns>The generated Token</returns>
+     * <param name="user">The user to generate the token for</param>
+     * <param name="profileClaims">The optional profile claims for the user</param>
+     * <returns>The generated token</returns>
      */
-    public string GenerateToken(User user)
+    public string GenerateToken(
+        User user,
+        (string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)? profileClaims = null)
     {
         var secret = _tokenSettings.Secret;
         var key = Encoding.ASCII.GetBytes(secret);
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.Value),
+            new(ClaimTypes.Email, user.Email.Value)
+        };
+
+        if (profileClaims.HasValue)
+        {
+            claims.Add(new("profileId", profileClaims.Value.ProfileId));
+            claims.Add(new("profileStatus", profileClaims.Value.ProfileStatus));
+            claims.Add(new("businessRole", profileClaims.Value.BusinessRole   ?? string.Empty));
+            claims.Add(new("roleSubjectId", profileClaims.Value.RoleSubjectId  ?? string.Empty));
+        }
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.Value),
-                new Claim(ClaimTypes.Email, user.Email.Value)
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddDays(7),
-            SigningCredentials =
-                new SigningCredentials(new SymmetricSecurityKey(key), 
-                    SecurityAlgorithms.HmacSha256Signature)
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
         };
-        var tokenHandler = new JsonWebTokenHandler();
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return token;
+        var tokenHandler = new JsonWebTokenHandler();
+        return tokenHandler.CreateToken(tokenDescriptor);
     }
 
     /**

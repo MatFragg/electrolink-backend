@@ -34,12 +34,12 @@ public class TechnicianInventory : BaseAggregateRoot
         return inventory;
     }
 
-    internal void AddStock(ComponentId componentId, int quantity, int alertThreshold)
+    internal void AddStock(ComponentId componentId, ComponentTypeId componentTypeId, int quantity, int alertThreshold)
     {
         if (FindStockByComponentId(componentId) is not null)
             throw new InvalidOperationException($"Stock for component {componentId.Value} already exists.");
 
-        var stock = ComponentStock.Create(Id, componentId, quantity, alertThreshold);
+        var stock = ComponentStock.Create(Id, componentId, componentTypeId, quantity, alertThreshold);
         _stockItems.Add(stock);
 
         if (Status == EInventoryStatus.Empty)
@@ -110,7 +110,7 @@ public class TechnicianInventory : BaseAggregateRoot
     }
     
     internal void ReserveComponentsForService(
-        ServiceId serviceId,
+        AssignmentId assignmentId,
         IReadOnlyList<ComponentAdjustment> items)
     {
         foreach (var item in items)
@@ -120,23 +120,26 @@ public class TechnicianInventory : BaseAggregateRoot
                 throw new InsufficientStockException(item.ComponentId, stock.AvailableForReservation, item.Quantity);
         }
 
-        var reservation = ComponentReservation.Create(Id, serviceId, DateTime.UtcNow.AddHours(72));
+        var reservation = ComponentReservation.Create(Id, assignmentId, DateTime.UtcNow.AddHours(72));
 
         foreach (var item in items)
-            reservation.AddItem(item.ComponentId, item.Quantity);
-
+        {
+            var stock = FindStockOrThrow(item.ComponentId); 
+            reservation.AddItem(item.ComponentId, stock.ComponentTypeId, item.Quantity);
+        }
+            
         _reservations.Add(reservation);
 
         foreach (var item in items)
             FindStockByComponentId(item.ComponentId)!.Reserve(item.Quantity);
 
         RaiseDomainEvent(new ComponentsReservedForServiceEvent(
-            Id, serviceId, items, reservation.ExpiresAt, DateTime.UtcNow));
+            Id, assignmentId, items, reservation.ExpiresAt, DateTime.UtcNow));
     }
     
-    internal void ConsumeComponentsForService(ServiceId serviceId)
+    internal void ConsumeComponentsForService(AssignmentId assignmentId)
     {
-        var reservation = _reservations.FirstOrDefault(r => r.ServiceId == serviceId) ?? throw new ReservationNotFoundException(serviceId);
+        var reservation = _reservations.FirstOrDefault(r => r.AssignmentId == assignmentId) ?? throw new ReservationNotFoundException(assignmentId);
 
         foreach (var item in reservation.Items)
             FindStockOrThrow(item.ComponentId).Consume(item.Quantity);
@@ -146,16 +149,16 @@ public class TechnicianInventory : BaseAggregateRoot
         RaiseDomainEvent(
             new ComponentsConsumedEvent(
                 Id, 
-                serviceId, 
+                assignmentId, 
                 reservation.Items.Select(i => new ComponentAdjustment(
                     i.ComponentId, 
                     i.Quantity)), 
                 DateTime.UtcNow));
     }
     
-    internal void ReleaseReservation(ServiceId serviceId, string reason)
+    internal void ReleaseReservation(AssignmentId assignmentId, string reason)
     {
-        var reservation = _reservations.FirstOrDefault(r => r.ServiceId == serviceId) ?? throw new ReservationNotFoundException(serviceId);
+        var reservation = _reservations.FirstOrDefault(r => r.AssignmentId == assignmentId) ?? throw new ReservationNotFoundException(assignmentId);
 
         foreach (var item in reservation.Items)
             FindStockByComponentId(item.ComponentId)?.Release(item.Quantity);
@@ -163,7 +166,7 @@ public class TechnicianInventory : BaseAggregateRoot
         reservation.Release();
 
         RaiseDomainEvent(new ComponentReservationReleasedEvent(
-            Id, serviceId, reason, DateTime.UtcNow));
+            Id, assignmentId, reason, DateTime.UtcNow));
     }
     
     internal void AdjustComponentQuantity(ComponentId componentId, int quantityAdjustment)
@@ -176,10 +179,12 @@ public class TechnicianInventory : BaseAggregateRoot
             if (item.QuantityAvailable <= 0)
                 _stockItems.Remove(item);
         }
+        
+        /*
         else if (quantityAdjustment > 0)
         {
-            _stockItems.Add(ComponentStock.Create(Id, componentId, quantityAdjustment, 0));
-        }
+            _stockItems.Add(ComponentStock.Create(Id, componentId, componentTypeId, quantityAdjustment, 0));
+        }*/
     }
     
     private ComponentStock? FindStockByComponentId(ComponentId id)

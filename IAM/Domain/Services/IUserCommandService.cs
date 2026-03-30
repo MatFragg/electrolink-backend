@@ -39,5 +39,14 @@ public interface IUserCommandService
      * <returns>True if the password was updated successfully, otherwise false.</returns>
      */
     Task<bool> Handle(UpdatePasswordCommand command);
-    
+
+    /**
+     * <summary>
+     *     Handle refresh claims command
+     * </summary>
+     * <param name="command">The refresh claims command</param>
+     * <returns>The new JWT token with refreshed claims.</returns>
+     */
+    Task<string> Handle(RefreshClaimsCommand command);
+
 }

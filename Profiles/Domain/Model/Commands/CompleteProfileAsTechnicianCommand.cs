@@ -17,4 +17,7 @@ public record CompleteProfileAsTechnicianCommand(
     string PostalCode, 
     IEnumerable<ESpecialty> Specialties, 
     int ExperienceYears, 
-    string AboutMe);
+    string AboutMe,
+    double CenterLatitude, 
+    double CenterLongitude,
+    double RadiusKm);
