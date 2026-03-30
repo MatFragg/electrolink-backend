@@ -1,172 +1,126 @@
 ﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-namespace Hampcoders.Electrolink.API.Planning.Application.Internal.ACL;
+namespace Hampcoders.Electrolink.API.Planning.Application.ACL;
 
 /// <summary>
 /// Implementación del Anti-Corruption Layer (ACL).
 /// Traduce agregados del dominio a DTOs para consumo de otros BCs.
 /// Protege la integridad interna del BC de cambios externos.
 /// </summary>
-public class ServiceDesignContextFacade : IServiceDesignContextFacade
+public class ServiceDesignContextFacade(
+    IServiceAssignmentCommandService assignmentCommandService,
+    IServiceCatalogRepository  catalogRepository,
+    IServiceRequestRepository  requestRepository,
+    IServiceDesignQueryService queryService,
+    IServiceRequestCommandService requestCommandService)
+    : IServiceDesignContextFacade
 {
-    private readonly IServiceCatalogRepository _catalogRepository;
-    private readonly IServiceRequestRepository _requestRepository;
-    private readonly ILogger<ServiceDesignContextFacade> _logger;
+    public async Task<bool> CatalogExistsForTechnicianAsync(string technicianId)
+        => await catalogRepository.ExistsByTechnicianIdAsync(TechnicianId.From(technicianId));
 
-    public ServiceDesignContextFacade(
-        IServiceCatalogRepository catalogRepository,
-        IServiceRequestRepository requestRepository,
-        ILogger<ServiceDesignContextFacade> logger)
+    public async Task<bool> RecipeIsActiveAsync(string recipeId, string technicianId)
     {
-        _catalogRepository = catalogRepository ?? throw new ArgumentNullException(nameof(catalogRepository));
-        _requestRepository = requestRepository ?? throw new ArgumentNullException(nameof(requestRepository));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.IsActive ?? false;
     }
 
-    public async Task<ServiceCatalogDto?> GetServiceCatalogAsync(string catalogId)
+    public async Task<string?> GetRecipeNameAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.ServiceName;
+    }
+
+    public async Task<decimal?> GetRecipeTotalPriceAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.Pricing.TotalPrice.Amount;
+    }
+
+    public async Task<int?> GetRecipeEstimatedDurationMinutesAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.TimesRequested;
+    }
+
+    public async Task<int?> GetRecipeWarrantyMonthsAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.WarrantyPeriod.Months;
+    }
+
+    public async Task<string?> GetRecipeServiceCategoryAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        return detail?.ServiceCategory.ToString();
+    }
+
+    public async Task<IReadOnlyList<(string componentTypeId, int quantity)>>
+        GetRecipeComponentRequirementsAsync(string recipeId, string technicianId)
+    {
+        var detail = await queryService.Handle(
+            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        if (detail is null) return [];
+
+        return detail.ComponentRequirements
+            .Select(c => (c.ComponentTypeId, c.Quantity))
+            .ToList();
+    }
+
+    public async Task<bool> ReactivateServiceRequestForReassignmentAsync(string requestId)
     {
         try
         {
-            var catalog = await _catalogRepository.FindByIdAsync(CatalogId.From(catalogId));
-            
-            if (catalog == null)
-                return null;
+            var request = await requestRepository.FindByIdAsync(RequestId.From(requestId));
+            if (request is null) return false;
 
-            return new ServiceCatalogDto(
-                catalog.Id.Value,
-                catalog.TechnicianId.Value,
-                catalog.Status.ToString(),
-                catalog.Recipes.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Planning ACL] Error getting service catalog");
-            throw;
-        }
-    }
-
-    public async Task<ServiceRecipeDetailDto?> GetServiceRecipeAsync(string recipeId)
-    {
-        try
-        {
-            // Buscar en todos los catálogos (en una implementación real, habría índices)
-            var allCatalogs = await _catalogRepository.FindAllAsync();
-            var recipe = allCatalogs
-                .SelectMany(c => c.Recipes)
-                .FirstOrDefault(r => r.Id.Value == recipeId);
-
-            if (recipe == null)
-                return null;
-
-            var (hours, minutes) = recipe.EstimatedDuration.ToHoursAndMinutes();
-            return new ServiceRecipeDetailDto(
-                recipe.Id.Value,
-                recipe.ServiceName.Value,
-                recipe.ServiceCategory.ToString(),
-                recipe.Pricing.TotalPrice.Amount,
-                recipe.Pricing.TotalPrice.Currency,
-                hours,
-                minutes,
-                recipe.IsActive,
-                recipe.TimesRequested);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Planning ACL] Error getting service recipe");
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<AvailableServiceDto>> GetAvailableServicesAsync(
-        double latitude,
-        double longitude,
-        IReadOnlyList<string> componentTypeIds)
-    {
-        try
-        {
-            var allCatalogs = await _catalogRepository.FindAllAsync();
-            
-            var availableServices = allCatalogs
-                .SelectMany(c => c.Recipes.Where(r => r.IsActive))
-                .Where(r => HasRequiredComponents(r, componentTypeIds))
-                .Select(r => 
-                {
-                    var (hours, minutes) = r.EstimatedDuration.ToHoursAndMinutes();
-                    return new AvailableServiceDto(
-                        r.Id.Value,
-                        r.ServiceName.Value,
-                        r.Pricing.TotalPrice.Amount,
-                        r.Pricing.TotalPrice.Currency,
-                        hours);
-                })
-                .ToList();
-
-            return availableServices;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Planning ACL] Error getting available services");
-            throw;
-        }
-    }
-
-    public async Task<bool> IsRequestEligibleForMatchingAsync(string requestId, string homeownerId)
-    {
-        try
-        {
-            var request = await _requestRepository.FindByIdAsync(RequestId.From(requestId));
-            
-            if (request == null)
-                return false;
-
-            return request.Status == RequestStatus.PendingAssignment &&
-                   request.SelectedRecipeId != null &&
-                   request.PropertySnapshot != null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Planning ACL] Error checking request eligibility");
-            throw;
-        }
-    }
-
-    public async Task<ServiceRequestDto?> GetServiceRequestAsync(string requestId)
-    {
-        try
-        {
-            var request = await _requestRepository.FindByIdAsync(RequestId.From(requestId));
-            
-            if (request == null)
-                return null;
-
-            return new ServiceRequestDto(
-                request.Id.Value,
-                request.HomeownerId.Value,
-                request.Status.ToString(),
-                request.IsPriority);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Planning ACL] Error getting service request");
-            throw;
-        }
-    }
-
-    private bool HasRequiredComponents(ServiceRecipe recipe, IReadOnlyList<string> requiredComponentTypes)
-    {
-        if (!requiredComponentTypes.Any())
+            // Re-encola la solicitud para un nuevo matching
+            await assignmentCommandService.Handle(
+                new ExecuteMatchingAlgorithmCommand(RequestId.From(requestId)));
             return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
-        var recipeComponentIds = recipe.ComponentRequirements
-            .Select(c => c.ComponentTypeId)
-            .ToHashSet();
+    public Task<ServiceCatalogDto?> GetServiceCatalogAsync(string catalogId)
+    {
+        throw new NotImplementedException();
+    }
 
-        return requiredComponentTypes.All(required => recipeComponentIds.Contains(required));
+    public Task<ServiceRecipeDetailDto?> GetServiceRecipeAsync(string recipeId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<AvailableServiceDto>> GetAvailableServicesAsync(double latitude, double longitude, IReadOnlyList<string> componentTypeIds)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> IsRequestEligibleForMatchingAsync(string requestId, string homeownerId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ServiceRequestDto?> GetServiceRequestAsync(string requestId)
+    {
+        throw new NotImplementedException();
     }
 }
-
 
 
