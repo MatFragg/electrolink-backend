@@ -1,454 +1,323 @@
+using System.Text.Json;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
-using Microsoft.EntityFrameworkCore;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 public static class ModelBuilderExtensions
 {
+    // ── Conversores reutilizables ──────────────────────────────────────────
+    private static readonly ValueConverter<CatalogId, string> CatalogIdConverter =
+        new(id => id.Value, raw => CatalogId.From(raw));
+
+    private static readonly ValueConverter<RecipeId, string> RecipeIdConverter =
+        new(id => id.Value, raw => RecipeId.From(raw));
+
+    private static readonly ValueConverter<RequestId, string> RequestIdConverter =
+        new(id => id.Value, raw => RequestId.From(raw));
+
+    private static readonly ValueConverter<AssignmentId, string> AssignmentIdConverter =
+        new(id => id.Value, raw => AssignmentId.From(raw));
+
+    private static readonly ValueConverter<TechnicianId, string> TechnicianIdConverter =
+        new(id => id.Value, raw => TechnicianId.From(raw));
+
+    private static readonly ValueConverter<HomeownerId, string> HomeownerIdConverter =
+        new(id => id.Value, raw => HomeownerId.From(raw));
+
+    private static readonly ValueConverter<PropertyId, string> PropertyIdConverter =
+        new(id => id.Value, raw => PropertyId.From(raw));
+    
     public static void ApplyServiceDesignAndPlanningConfiguration(this ModelBuilder builder)
     {
-        // --- ServiceCatalog Aggregate ---
-        builder.Entity<ServiceCatalog>(b =>
-        {
-            b.ToTable("service_catalogs");
+        // ── ServiceCatalog ────────────────────────────────────────────────
+        builder.Entity<ServiceCatalog>().HasKey(c => c.CatalogId);
 
-            b.HasKey(c => c.Id);
-            b.Property(c => c.Id)
-                .HasConversion(
-                    v => v.Id,
-                    v => new CatalogId(v))
-                .HasColumnName("catalog_id")
-                .IsRequired()
-                .ValueGeneratedNever();
+        builder.Entity<ServiceCatalog>()
+            .Property(c => c.CatalogId)
+            .HasConversion(CatalogIdConverter)
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
 
-            b.Property(c => c.TechnicianId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new TechnicianId(v))
-                .HasColumnName("technician_id")
-                .IsRequired();
+        builder.Entity<ServiceCatalog>()
+            .Property(c => c.TechnicianId)
+            .HasConversion(TechnicianIdConverter)
+            .HasColumnName("technician_id")
+            .HasMaxLength(100)
+            .IsRequired();
 
-            b.Property(c => c.Status)
-                .HasConversion<string>()
-                .HasColumnName("status")
-                .HasMaxLength(20)
-                .IsRequired();
+        builder.Entity<ServiceCatalog>().HasIndex(c => c.TechnicianId).IsUnique();
 
-            // ServiceRecipes collection (owned entities)
-            b.OwnsMany(c => c.Recipes, recipe => {
-                recipe.ToTable("service_recipes");
+        builder.Entity<ServiceCatalog>()
+            .Property(c => c.Status)
+            .HasConversion<string>()
+            .HasColumnName("status")
+            .HasMaxLength(20)
+            .IsRequired();
 
-                // Ignorar colecciones CLR que se almacenan como JSON en campos de respaldo
-                recipe.Ignore(r => r.ComponentRequirements);
-                recipe.Ignore(r => r.Prerequisites);
-                recipe.Ignore(r => r.Deliverables);
+        builder.Entity<ServiceCatalog>()
+            .HasMany(c => c.Recipes)
+            .WithOne()
+            .HasForeignKey(r => r.CatalogId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-                // Usar la propiedad CLR existente como FK (nombre: "CatalogId")
-                recipe.WithOwner().HasForeignKey("CatalogId");
+        builder.Entity<ServiceCatalog>().Property(c => c.CreatedDate).HasColumnName("created_at").IsRequired();
+        builder.Entity<ServiceCatalog>().Property(c => c.UpdatedDate).HasColumnName("updated_at");
+        builder.Entity<ServiceCatalog>().Ignore(c => c.DomainEvents);
 
-                recipe.HasKey(nameof(ServiceRecipe.Id));
+        // ── ServiceRecipe ─────────────────────────────────────────────────
+        builder.Entity<ServiceRecipe>().HasKey(r => r.Id);
 
-                recipe.Property(r => r.Id)
-                    .HasConversion(
-                        v => v.Id,
-                        v => new RecipeId(v))
-                    .HasColumnName("recipe_id")
-                    .IsRequired()
-                    .ValueGeneratedNever();
+        builder.Entity<ServiceRecipe>()
+            .Property(r => r.Id)
+            .HasConversion(RecipeIdConverter)
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
 
-                // Mapear la propiedad CLR CatalogId (value object) a la columna Guid catalog_id
-                recipe.Property(r => r.CatalogId)
-                    .HasConversion(
-                        v => v.Id,
-                        v => new CatalogId(v))
-                    .HasColumnName("catalog_id")
-                    .IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.CatalogId).HasConversion(CatalogIdConverter).HasColumnName("catalog_id").HasMaxLength(60).IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.TechnicianId).HasConversion(TechnicianIdConverter).HasColumnName("technician_id").HasMaxLength(100).IsRequired();
+        builder.Entity<ServiceRecipe>().Property(c => c.ServiceCategory).HasConversion<string>().HasColumnName("service_category").HasMaxLength(20).IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.ServiceName).HasColumnName("service_name").HasMaxLength(200).IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.ServiceDescription).HasColumnName("service_description").HasColumnType("text").IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.ServiceCategory).HasConversion<string>().HasColumnName("service_category").HasMaxLength(50).IsRequired();
 
-                // Backing JSON fields
-                recipe.Property<string>("_componentRequirementsJson")
-                    .HasColumnName("component_requirements_json")
-                    .HasColumnType("jsonb");
+        builder.Entity<ServiceRecipe>()
+            .HasMany(r => r.ComponentRequirements)
+            .WithOne()
+            .HasForeignKey("ShadowRecipeId") 
+            .HasConstraintName("fk_requirements_recipes")
+            .OnDelete(DeleteBehavior.Cascade);
 
-                recipe.Property<string>("_prerequisitesJson")
-                    .HasColumnName("prerequisites_json")
-                    .HasColumnType("jsonb");
-
-                recipe.Property<string>("_deliverablesJson")
-                    .HasColumnName("deliverables_json")
-                    .HasColumnType("jsonb");
-
-                recipe.OwnsOne(r => r.ServiceName, sn =>
-                {
-                    // Forzar que el owned comparta la misma columna PK/FK que ServiceRecipe.recipe_id
-                    sn.WithOwner().HasForeignKey("recipe_id");
-                    sn.HasKey("recipe_id");
-
-                    // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                    sn.Property<Guid>("recipe_id")
-                        .HasColumnName("recipe_id")
-                        .IsRequired();
-                    
-                    sn.Property(n => n.Value).HasColumnName("service_name").HasMaxLength(150).IsRequired();
-                });
-
-                recipe.Property(r => r.ServiceDescription)
-                    .HasColumnName("service_description")
-                    .HasMaxLength(500);
-
-                recipe.Property(r => r.ServiceCategory)
-                    .HasConversion<string>()
-                    .HasColumnName("service_category")
-                    .HasMaxLength(50)
-                    .IsRequired();
-
-                recipe.OwnsOne(r => r.Pricing, pricing =>
-{
-                    // Forzar que el owned Pricing use la misma columna PK/FK que ServiceRecipe.recipe_id
-                    pricing.WithOwner().HasForeignKey("recipe_id");
-                    pricing.HasKey("recipe_id");
-
-                    // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                    pricing.Property<Guid>("recipe_id")
-                        .HasColumnName("recipe_id")
-                        .IsRequired();
-
-                    // MaterialsEstimate (Money) - reutilizar recipe_id
-                    pricing.OwnsOne(p => p.MaterialsEstimate, money =>
-                    {
-                        money.WithOwner().HasForeignKey("recipe_id");
-                        money.HasKey("recipe_id");
-
-                        money.Property<Guid>("recipe_id")
-                            .HasColumnName("recipe_id")
-                            .IsRequired();
-
-                        money.Property(m => m.Amount)
-                            .HasColumnName("materials_estimate_amount")
-                            .HasPrecision(18, 2);
-                        money.Property(m => m.Currency)
-                            .HasColumnName("materials_estimate_currency")
-                            .HasMaxLength(3);
-                    });
-
-                    // LaborCost (Money) - reutilizar recipe_id
-                    pricing.OwnsOne(p => p.LaborCost, money =>
-                    {
-                        money.WithOwner().HasForeignKey("recipe_id");
-                        money.HasKey("recipe_id");
-
-                        money.Property<Guid>("recipe_id")
-                            .HasColumnName("recipe_id")
-                            .IsRequired();
-
-                        money.Property(m => m.Amount)
-                            .HasColumnName("labor_cost_amount")
-                            .HasPrecision(18, 2);
-                        money.Property(m => m.Currency)
-                            .HasColumnName("labor_cost_currency")
-                            .HasMaxLength(3);
-                    });
-
-                    // TotalPrice (Money) - reutilizar recipe_id
-                    pricing.OwnsOne(p => p.TotalPrice, money =>
-                    {
-                        money.WithOwner().HasForeignKey("recipe_id");
-                        money.HasKey("recipe_id");
-
-                        money.Property<Guid>("recipe_id")
-                            .HasColumnName("recipe_id")
-                            .IsRequired();
-
-                        money.Property(m => m.Amount)
-                            .HasColumnName("total_price_amount")
-                            .HasPrecision(18, 2);
-                        money.Property(m => m.Currency)
-                            .HasColumnName("total_price_currency")
-                            .HasMaxLength(3);
-                    });
-                });
-
-                recipe.OwnsOne(r => r.EstimatedDuration, ed =>
-                {
-                    // Forzar que el owned use la misma columna PK/FK que ServiceRecipe.recipe_id
-                    ed.WithOwner().HasForeignKey("recipe_id");
-                    ed.HasKey("recipe_id");
-
-                    // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                    ed.Property<Guid>("recipe_id")
-                        .HasColumnName("recipe_id")
-                        .IsRequired();
-
-                    ed.Property(d => d.TotalMinutes)
-                        .HasColumnName("estimated_duration_minutes");
-                });
-
-                recipe.OwnsOne(r => r.WarrantyPeriod, wp =>
-                {
-                    // Forzar que el owned comparta la misma columna PK/FK que ServiceRecipe.recipe_id
-                    wp.WithOwner().HasForeignKey("recipe_id");
-                    wp.HasKey("recipe_id");
-
-                    // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                    wp.Property<Guid>("recipe_id")
-                        .HasColumnName("recipe_id")
-                        .IsRequired();
-
-                    wp.Property(w => w.Value)
-                        .HasColumnName("warranty_value");
-                    wp.Property(w => w.Unit)
-                        .HasConversion<string>()
-                        .HasColumnName("warranty_unit")
-                        .HasMaxLength(10);
-                });
-
-                recipe.Property(r => r.IsActive).HasColumnName("is_active");
-                recipe.Property(r => r.TimesRequested).HasColumnName("times_requested");
-                recipe.Property(r => r.DeactivationReason).HasColumnName("deactivation_reason").HasMaxLength(200);
+        builder.Entity<ServiceRecipe>()
+            .OwnsOne(r => r.EstimatedDuration, ed =>
+            {
+                ed.WithOwner().HasForeignKey("Id");
+                ed.Property(d => d.TotalMinutes).HasColumnName("estimated_duration_min").IsRequired();
             });
 
-            b.Ignore(c => c.DomainEvents);
-        });
-
-        // --- ServiceRequest Aggregate ---
-        builder.Entity<ServiceRequest>(b =>
-        {
-            b.ToTable("service_requests");
-
-            b.HasKey(r => r.Id);
-            b.Property(r => r.Id)
-                .HasConversion(
-                    v => v.Id,
-                    v => new RequestId(v))
-                .HasColumnName("request_id")
-                .IsRequired()
-                .ValueGeneratedNever();
-
-            b.Property(r => r.HomeownerId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new HomeownerId(v))
-                .HasColumnName("homeowner_id")
-                .IsRequired();
-
-            b.Property(r => r.Status)
-                .HasConversion<string>()
-                .HasColumnName("status")
-                .HasMaxLength(20)
-                .IsRequired();
-
-            b.Property(r => r.IsPriority)
-                .HasColumnName("is_priority");
-
-            // PropertySnapshot as owned
-            b.OwnsOne(r => r.PropertySnapshot, ps =>
+        builder.Entity<ServiceRecipe>()
+            .OwnsOne(r => r.Pricing, sp =>
             {
-                
-                ps.WithOwner().HasForeignKey("request_id");
-                ps.HasKey("request_id");
+                sp.WithOwner().HasForeignKey("Id");
 
-                // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                ps.Property<Guid>("request_id")
-                    .HasColumnName("request_id")
-                    .IsRequired();
-                
-                ps.Property(p => p.PropertyId).HasColumnName("property_id");
-                ps.Property(p => p.Address).HasColumnName("property_address").HasMaxLength(200);
-
-                ps.OwnsOne(p => p.Geolocation, geo =>
+                sp.OwnsOne(p => p.MaterialsEstimate, m =>
                 {
-                    // Mantener consistente la FK/PK para el owned anidado
-                    geo.WithOwner().HasForeignKey("request_id");
-                    geo.HasKey("request_id");
+                    m.WithOwner().HasForeignKey("Id");
+                    m.Property(v => v.Amount).HasColumnName("materials_estimate").HasColumnType("decimal(10,2)");
+                    m.Property(v => v.Currency).HasConversion<string>().HasColumnName("currency").HasMaxLength(3);
+                });
 
-                    geo.Property<Guid>("request_id")
-                        .HasColumnName("request_id")
-                        .IsRequired();
+                sp.OwnsOne(p => p.LaborCost, l =>
+                {
+                    l.WithOwner().HasForeignKey("Id");
+                    l.Property(v => v.Amount).HasColumnName("labor_cost").HasColumnType("decimal(10,2)");
+                });
 
-                    geo.Property(g => g.Latitude).HasColumnName("property_latitude");
-                    geo.Property(g => g.Longitude).HasColumnName("property_longitude");
+                sp.OwnsOne(p => p.TotalPrice, t =>
+                {
+                    t.WithOwner().HasForeignKey("Id");
+                    t.Property(v => v.Amount).HasColumnName("total_price").HasColumnType("decimal(10,2)");
                 });
             });
 
-            b.Property(r => r.SelectedRecipeId)
-                .HasConversion(
-                    v => v != null ? v.Id : (Guid?)null,
-                    v => v.HasValue ? new RecipeId(v.Value) : null)
-                .HasColumnName("selected_recipe_id");
+        builder.Entity<ServiceRecipe>().Property(r => r.Prerequisites).HasColumnName("prerequisites").HasColumnType("jsonb");
+        builder.Entity<ServiceRecipe>().Property(r => r.Deliverables).HasColumnName("deliverables").HasColumnType("jsonb");
 
-            b.Property(r => r.SelectedTechnicianId)
-                .HasConversion(
-                    v => v != null ? v.Id : (Guid?)null,
-                    v => v.HasValue ? new TechnicianId(v.Value) : null)
-                .HasColumnName("selected_technician_id");
-
-            // ReceiptData as owned
-            b.OwnsOne(r => r.ReceiptData, rd =>
+        builder.Entity<ServiceRecipe>()
+            .OwnsOne(r => r.WarrantyPeriod, wp =>
             {
-                rd.WithOwner().HasForeignKey("request_id");
-                rd.HasKey("request_id");
-
-                // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                rd.Property<Guid>("request_id")
-                    .HasColumnName("request_id")
-                    .IsRequired();
-
-                rd.Property(d => d.ConsumptionKwh)
-                    .HasColumnName("receipt_consumption_kwh").HasPrecision(10, 2);
-                rd.OwnsOne(d => d.AmountPaid, money =>
-                {
-                    // Compartir la misma FK/PK con el owner principal
-                    money.WithOwner().HasForeignKey("request_id");
-                    money.HasKey("request_id");
-
-                    // Mapear la misma propiedad sombra para mantener la columna única
-                    money.Property<Guid>("request_id")
-                        .HasColumnName("request_id")
-                        .IsRequired();
-
-                    money.Property(m => m.Amount)
-                        .HasColumnName("receipt_amount_paid")
-                        .HasPrecision(18, 2);
-                    money.Property(m => m.Currency)
-                        .HasColumnName("receipt_currency")
-                        .HasMaxLength(3);
-                });
-                rd.Property(d => d.BillingPeriod).HasColumnName("receipt_billing_period").HasMaxLength(7);
-                rd.Property(d => d.ReceiptNumber).HasColumnName("receipt_number").HasMaxLength(50);
+                wp.WithOwner().HasForeignKey("Id");
+                wp.Property(w => w.Months).HasColumnName("warranty_months").IsRequired();
             });
 
-            // RequestPreferences as owned
-            b.OwnsOne(r => r.Preferences, pref =>
+        builder.Entity<ServiceRecipe>().Property(r => r.IsActive).HasColumnName("is_active").HasDefaultValue(true).IsRequired();
+        builder.Entity<ServiceRecipe>().Property(r => r.TimesRequested).HasColumnName("times_requested").HasDefaultValue(0).IsRequired();
+
+        // ── ComponentRequirementItem ──────────────────────────────────────
+        builder.Entity<ComponentRequirementItem>().HasKey(c => c.Id);
+
+        builder.Entity<ComponentRequirementItem>()
+            .Property(c => c.Id)
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
+
+        builder.Entity<ComponentRequirementItem>().Ignore(c => c.RecipeId);
+
+        builder.Entity<ComponentRequirementItem>()
+            .Property<RecipeId>("ShadowRecipeId")
+            .HasConversion(RecipeIdConverter)
+            .HasColumnName("recipe_id")
+            .HasMaxLength(60)
+            .IsRequired();
+
+        builder.Entity<ComponentRequirementItem>().Property(c => c.ComponentTypeId).HasColumnName("component_type_id").HasMaxLength(100).IsRequired();
+        builder.Entity<ComponentRequirementItem>().Property(c => c.ComponentTypeName).HasColumnName("component_type_name").HasMaxLength(200).IsRequired();
+        builder.Entity<ComponentRequirementItem>().Property(c => c.Quantity).HasColumnName("quantity").IsRequired();
+        builder.Entity<ComponentRequirementItem>().Property(c => c.IsRequired).HasColumnName("is_required").HasDefaultValue(true).IsRequired();
+
+        // ── ServiceRequest ────────────────────────────────────────────────
+        builder.Entity<ServiceRequest>().HasKey(r => r.RequestId);
+
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.RequestId)
+            .HasConversion(RequestIdConverter)
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
+
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.HomeownerId)
+            .HasConversion(HomeownerIdConverter)
+            .HasColumnName("homeowner_id")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.Status)
+            .HasConversion<string>()
+            .HasColumnName("status")
+            .HasMaxLength(30)
+            .IsRequired();
+
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.PropertyId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                val => val == null ? null : PropertyId.From(val))
+            .HasColumnName("property_id")
+            .HasMaxLength(100);
+
+        builder.Entity<ServiceRequest>()
+            .OwnsOne(r => r.Geolocation, geo =>
             {
-                // Forzar que el owned use la misma columna PK/FK que ServiceRequest.request_id
-                pref.WithOwner().HasForeignKey("request_id");
-                pref.HasKey("request_id");
+                geo.WithOwner().HasForeignKey("Id");
 
-                // Propiedad sombra que mapeará la columna ya presente en la tabla principal
-                pref.Property<Guid>("request_id")
-                    .HasColumnName("request_id")
-                    .IsRequired();
-
-                pref.Property<string>("_preferredDatesJson")
-                    .HasColumnName("preferred_dates_json")
-                    .HasColumnType("jsonb");
-                pref.Property(p => p.TimePreference)
-                    .HasConversion<string>()
-                    .HasColumnName("time_preference")
+                geo.Property(g => g.Latitude)
+                    .HasColumnName("geolocation_lat")
+                    .HasColumnType("decimal(9,6)");
+                geo.Property(g => g.Longitude)
+                    .HasColumnName("geolocation_lon")
+                    .HasColumnType("decimal(9,6)");
+                geo.Property(g => g.Accuracy)
+                    .HasColumnName("geolocation_accuracy");
+                geo.Property(g => g.Source)
+                    .HasColumnName("geolocation_source")
                     .HasMaxLength(20);
-                pref.Property(p => p.ProblemDescription)
-                    .HasColumnName("problem_description")
-                    .HasMaxLength(1000);
             });
 
-            b.Property(r => r.AssignedServiceId)
-                .HasConversion(
-                    v => v != null ? v.Id : (Guid?)null,
-                    v => v.HasValue ? new ServiceId(v.Value) : null)
-                .HasColumnName("assigned_service_id");
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.SelectedRecipeId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                val => val == null ? null : RecipeId.From(val))
+            .HasColumnName("selected_recipe_id")
+            .HasMaxLength(60);
 
-            b.Property(r => r.CancellationReason)
-                .HasColumnName("cancellation_reason")
-                .HasMaxLength(500);
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.SelectedTechnicianId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                val => val == null ? null : TechnicianId.From(val))
+            .HasColumnName("selected_technician_id")
+            .HasMaxLength(100);
 
-            b.Ignore(r => r.DomainEvents);
-        });
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.RecipeSnapshot)
+            .HasColumnName("recipe_snapshot")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<RecipeSnapshot>(
+                    v, (JsonSerializerOptions?)null));
 
-        // --- ServiceAssignment Aggregate ---
-        builder.Entity<ServiceAssignment>(b =>
-        {
-            b.ToTable("service_assignments");
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.Preferences)
+            .HasColumnName("preferences")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<RequestPreferences>(
+                    v, (JsonSerializerOptions?)null));
 
-            b.HasKey(a => a.Id);
-            b.Property(a => a.Id)
-                .HasConversion(
-                    v => v.Id,
-                    v => new ServiceId(v))
-                .HasColumnName("service_id")
-                .IsRequired()
-                .ValueGeneratedNever();
+        builder.Entity<ServiceRequest>().Property(r => r.IsPriority).HasColumnName("is_priority").HasDefaultValue(false).IsRequired();
 
-            b.Property(a => a.RequestId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new RequestId(v))
-                .HasColumnName("request_id")
-                .IsRequired();
+        builder.Entity<ServiceRequest>()
+            .Property(r => r.AssignmentId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                val => val == null ? null : AssignmentId.From(val))
+            .HasColumnName("assignment_id")
+            .HasMaxLength(60);
 
-            b.Property(a => a.TechnicianId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new TechnicianId(v))
-                .HasColumnName("technician_id")
-                .IsRequired();
+        builder.Entity<ServiceRequest>().Property(r => r.CreatedDate).HasColumnName("created_at").IsRequired();
+        builder.Entity<ServiceRequest>().Property(r => r.UpdatedDate).HasColumnName("updated_at");
+        builder.Entity<ServiceRequest>().Ignore(r => r.DomainEvents);
 
-            b.Property(a => a.HomeownerId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new HomeownerId(v))
-                .HasColumnName("homeowner_id")
-                .IsRequired();
+        // ── ServiceAssignment ─────────────────────────────────────────────
+        builder.Entity<ServiceAssignment>().HasKey(a => a.AssignmentId);
 
-            b.Property(a => a.PropertyId)
-                .HasConversion(
-                    v => v.Id,
-                    v => new PropertyId(v))
-                .HasColumnName("property_id")
-                .IsRequired();
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.AssignmentId)
+            .HasConversion(AssignmentIdConverter)
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
 
-            // RecipeSnapshot as JSON
-            b.OwnsOne(a => a.RecipeSnapshot, rs =>
-            {
-                rs.Ignore(r => r.ComponentRequirements);
-                rs.Ignore(r => r.EstimatedDuration);
-                rs.Ignore(r => r.Pricing);
-                rs.Ignore(r => r.WarrantyPeriod);
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.RequestId)
+            .HasConversion(RequestIdConverter)
+            .HasColumnName("request_id")
+            .HasMaxLength(60)
+            .IsRequired();
 
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.TechnicianId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                val => val == null ? null : TechnicianId.From(val))
+            .HasColumnName("technician_id")
+            .HasMaxLength(100);
 
-                rs.ToJson("recipe_snapshot");
-            });
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.Status)
+            .HasConversion<string>()
+            .HasColumnName("status")
+            .HasMaxLength(20)
+            .IsRequired();
 
-            // ScheduledSlot as owned
-            b.OwnsOne(a => a.ScheduledSlot, slot =>
-            {
-                // Forzar que el owned use la misma columna PK/FK que el owner (ServiceAssignment.service_id)
-                slot.WithOwner().HasForeignKey("service_id");
-                slot.HasKey("service_id");
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.RecipeSnapshot)
+            .HasColumnName("recipe_snapshot")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<RecipeSnapshot>(
+                    v, (JsonSerializerOptions?)null));
 
-                // Mapear la propiedad sombra al mismo nombre de columna y tipo
-                slot.Property<Guid>("service_id")
-                    .HasColumnName("service_id")
-                    .IsRequired();
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.MatchingCriteria)
+            .HasColumnName("matching_criteria")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<MatchingCriteria>(
+                    v, (JsonSerializerOptions?)null));
 
-                slot.Property(s => s.StartDateTime).HasColumnName("scheduled_start_datetime");
-                slot.Property(s => s.EndDateTime).HasColumnName("scheduled_end_datetime");
-            });
-
-            b.Property(a => a.Status)
-                .HasConversion<string>()
-                .HasColumnName("status")
-                .HasMaxLength(20)
-                .IsRequired();
-
-            b.Property(a => a.IsPriority)
-                .HasColumnName("is_priority");
-
-            b.Ignore(a => a.DomainEvents);
-        });
-
-        // --- Schedule Entity (keep for backward compatibility) ---
-        builder.Entity<Schedule>(b =>
-        {
-            b.ToTable("schedules");
-
-            b.HasKey(s => s.ScheduleId);
-            b.Property(s => s.ScheduleId).HasColumnName("schedule_id").IsRequired();
-            b.Property(s => s.TechnicianId).HasColumnName("technician_id").IsRequired();
-            b.Property(s => s.Day).HasMaxLength(20).IsRequired();
-            b.Property(s => s.StartTime).HasColumnName("start_time").IsRequired();
-            b.Property(s => s.EndTime).HasColumnName("end_time").IsRequired();
-        });
+        builder.Entity<ServiceAssignment>().Property(a => a.FailureReason).HasColumnName("failure_reason").HasMaxLength(100);
+        builder.Entity<ServiceAssignment>().Property(a => a.RetryCount).HasColumnName("retry_count").HasDefaultValue(0).IsRequired();
+        builder.Entity<ServiceAssignment>().Property(a => a.CreatedDate).HasColumnName("created_at").IsRequired();
+        builder.Entity<ServiceAssignment>().Ignore(a => a.DomainEvents);
     }
 }
