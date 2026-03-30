@@ -1,3 +1,8 @@
 ﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 
-public record InvalidPricingException();
+public class InvalidPricingException : Exception
+{
+    public InvalidPricingException(string message) : base(message)
+    {
+    }
+}

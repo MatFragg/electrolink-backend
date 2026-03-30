@@ -2,5 +2,8 @@
 
 public enum ECancellationReason
 {
-    
+    ChangedMind,
+    FoundAlternative,
+    TimingIssue,
+    Other
 }

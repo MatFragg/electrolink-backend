@@ -1,8 +1,12 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record DeactivateServiceRecipeCommand(
-    Guid RecipeId,
-    Guid TechnicianId,
-    string Reason
-);
+    CatalogId CatalogId,
+    RecipeId RecipeId,
+    TechnicianId TechnicianId,
+    string Reason,
+    string? Notes = null);
 

@@ -7,7 +7,6 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 public record ServiceCatalogCreatedEvent(
     CatalogId CatalogId,
     TechnicianId TechnicianId,
-    string ProfileId,
     DateTime OccurredOn
 ) : IEvent
 {

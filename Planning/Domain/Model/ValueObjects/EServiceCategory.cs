@@ -2,5 +2,12 @@
 
 public enum EServiceCategory
 {
+    SolarInstallation,
+    Installation,
+    ElectricalMaintenance,
+    Repair,
+    Inspection,
+    Monitoring,
     
+    Upgrade
 }

@@ -1,60 +1,143 @@
 ﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Planning.Domain.Model.Events.Domain;
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 
-public partial class ServiceRequest
+public class ServiceRequest : BaseAggregateRoot
 {
-    public RequestId Id { get; private set; } = RequestId.NewId();
+    public RequestId RequestId { get; private set; }
     public HomeownerId HomeownerId { get; private set; }
-    public RequestStatus Status { get; private set; } = RequestStatus.Draft;
-    public bool IsPriority { get; private set; } = false;
-    
-    // Wizard step 2: Property selection
-    public PropertySnapshot? PropertySnapshot { get; private set; }
-    
-    // Wizard step 3-4: Service selection
+    public ERequestStatus Status { get; private set; }
+
+    public PropertyId? PropertyId { get; private set; }
+    public Geolocation? Geolocation { get; private set; }
     public RecipeId? SelectedRecipeId { get; private set; }
+    public EServiceCategory? RequestedCategory { get; private set; }
     public TechnicianId? SelectedTechnicianId { get; private set; }
-    public ReceiptData? ReceiptData { get; private set; }
+    public RecipeSnapshot? RecipeSnapshot { get; private set; }
+    public AssignmentId? AssignmentId { get; private set; }
     public RequestPreferences? Preferences { get; private set; }
-    
-    // Post-assignment
-    public ServiceId? AssignedServiceId { get; private set; }
-    public string? CancellationReason { get; private set; }
-    
-    // Domain Events
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyList<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-    
-    protected ServiceRequest() 
+    public bool IsPriority { get; private set; }
+
+    private ServiceRequest() { }
+
+    // ── Factory ───────────────────────────────────────────
+
+    public static ServiceRequest Initiate(
+        HomeownerId homeownerId,
+        bool canMarkAsPriority,
+        int? remainingRequests)
     {
-        HomeownerId = new HomeownerId(Guid.Empty);
-    }
-    
-    // Factory method - Wizard Step 1: Initiate
-    public static ServiceRequest Initiate(HomeownerId homeownerId)
-    {
-        if (homeownerId == null || homeownerId.Id == Guid.Empty)
-            throw new ArgumentException("Homeowner ID must be valid.", nameof(homeownerId));
-        
         var request = new ServiceRequest
         {
+            RequestId   = RequestId.NewId(),
             HomeownerId = homeownerId,
-            Status = RequestStatus.Draft
+            Status      = ERequestStatus.Draft,
+            IsPriority  = false,
         };
-        
-        request._domainEvents.Add(new ServiceRequestInitiatedEvent(
-            request.Id.Id,
-            homeownerId.Id,
-            DateTime.UtcNow
-        ));
-        
+        request.RaiseDomainEvent(new ServiceRequestInitiatedEvent(
+            request.RequestId, homeownerId, canMarkAsPriority, remainingRequests, DateTime.UtcNow));
         return request;
     }
-    
-    public void ClearDomainEvents() => _domainEvents.Clear();
+
+    // ── Commands ──────────────────────────────────────────
+    public void SelectCategory(EServiceCategory category)
+    {
+        EnsureStatus(ERequestStatus.PropertySelected);
+        RequestedCategory = category;
+        Status = ERequestStatus.CategorySelected;
+    }
+    public void SelectProperty(PropertyId propertyId, Geolocation geolocation)
+    {
+        EnsureStatus(ERequestStatus.Draft);
+        PropertyId  = propertyId;
+        Geolocation = geolocation;
+        Status = ERequestStatus.PropertySelected;
+        RaiseDomainEvent(new PropertySelectedForRequestEvent(RequestId, propertyId, geolocation, DateTime.UtcNow));
+    }
+
+    public void SelectRecipe(RecipeId recipeId, RecipeSnapshot snapshot)
+    {
+        EnsureStatus(ERequestStatus.Draft);
+        EnsurePropertySelected();
+        SelectedRecipeId = recipeId;
+        RecipeSnapshot = snapshot;
+    }
+
+    public void AddDetails(RequestPreferences preferences, bool isPriority)
+    {
+        EnsureStatus(ERequestStatus.CategorySelected);
+        //EnsureRecipeSelected();
+        Preferences = preferences;
+        IsPriority  = isPriority;
+        Status = ERequestStatus.ReadyToConfirm;
+        RaiseDomainEvent(new ServiceDetailsAddedEvent(RequestId, preferences, isPriority, DateTime.UtcNow));
+    }
+
+    public void Confirm()
+    {
+        EnsureStatus(ERequestStatus.ReadyToConfirm);
+        Status = ERequestStatus.PendingAssignment;
+        RaiseDomainEvent(new ServiceRequestCreatedEvent(
+            RequestId, HomeownerId, PropertyId!, SelectedRecipeId!,
+            SelectedTechnicianId!, RecipeSnapshot!, IsPriority, DateTime.UtcNow));
+    }
+
+    public void Cancel(CancellationReason reason, string? notes = null)
+    {
+        var cancellable = new[]
+        {
+            ERequestStatus.Draft,
+            ERequestStatus.ReadyToConfirm,
+            ERequestStatus.PendingAssignment
+        };
+
+        if (!cancellable.Contains(Status))
+            throw new CannotCancelAssignedRequestException(RequestId);
+
+        var wasInQueue = Status == ERequestStatus.PendingAssignment;
+        Status = ERequestStatus.Cancelled;
+        RaiseDomainEvent(new ServiceRequestCancelledEvent(
+            RequestId, HomeownerId, reason, wasInQueue, notes, DateTime.UtcNow));
+    }
+
+    public void MarkAsAssigned(AssignmentId assignmentId, TechnicianId technicianId, RecipeSnapshot snapshot)
+    {
+        EnsureStatus(ERequestStatus.PendingAssignment);
+        Status = ERequestStatus.Assigned;
+        SelectedTechnicianId = technicianId;
+        RecipeSnapshot = snapshot;
+        SelectedRecipeId = snapshot.RecipeId;
+        AssignmentId = assignmentId;
+    }
+
+    public void Expire()
+    {
+        EnsureStatus(ERequestStatus.PendingAssignment);
+        Status = ERequestStatus.Expired;
+        RaiseDomainEvent(new ServiceRequestExpiredEvent(RequestId, HomeownerId, DateTime.UtcNow));
+    }
+
+    // ── Invariants ────────────────────────────────────────
+
+    private void EnsureStatus(ERequestStatus expected)
+    {
+        if (Status != expected)
+            throw new InvalidRequestStatusException(RequestId, expected, Status);
+    }
+
+    private void EnsurePropertySelected()
+    {
+        if (PropertyId is null)
+            throw new PropertyNotSelectedOnRequestException(RequestId);
+    }
+
+    private void EnsureRecipeSelected()
+    {
+        if (SelectedRecipeId is null)
+            throw new RecipeNotSelectedOnRequestException(RequestId);
+    }
 }
-
-

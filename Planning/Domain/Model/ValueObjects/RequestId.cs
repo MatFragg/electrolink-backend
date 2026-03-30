@@ -1,15 +1,20 @@
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public record RequestId(Guid Id)
+public record RequestId
 {
-    public static RequestId NewId() => new(Guid.NewGuid());
-    
-    public static RequestId From(string id)
-    {
-        if (!Guid.TryParse(id, out var guid))
-            throw new ArgumentException($"Invalid RequestId format: {id}");
-        return new RequestId(guid);
-    }
+    public string Value { get; }
 
-    public override string ToString() => Id.ToString();
+    private RequestId(string value) => Value = value;
+
+    public static RequestId NewId() => new($"req-{Guid.NewGuid()}");
+
+    public static RequestId From(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("req-")) 
+            throw new ArgumentException("RequestId cannot be empty");
+             
+        return new RequestId(value);
+    }
+    
+    public override string ToString() => Value;
 }

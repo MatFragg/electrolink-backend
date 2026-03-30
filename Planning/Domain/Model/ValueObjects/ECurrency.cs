@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public enum ECurrency
-{
-    
-}
+public enum ECurrency { Usd, Pen, Eur }

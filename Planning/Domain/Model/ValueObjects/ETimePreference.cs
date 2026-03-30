@@ -2,5 +2,7 @@
 
 public enum ETimePreference
 {
-    
+    Morning,
+    Afternoon,
+    Anytime
 }

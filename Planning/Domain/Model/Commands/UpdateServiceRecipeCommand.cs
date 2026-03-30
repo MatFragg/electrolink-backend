@@ -1,21 +1,21 @@
 ﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record UpdateServiceRecipeCommand(
-    string RecipeId,
-    string TechnicianId,
-    string ServiceName,
-    string ServiceDescription,
-    List<ComponentRequirementDto> ComponentRequirements,
-    int EstimatedHours,
-    int EstimatedMinutes,
-    decimal MaterialsEstimate,
-    decimal LaborCost,
-    decimal TotalPrice,
-    string Currency,
-    int WarrantyValue,
-    WarrantyUnit WarrantyUnit,
-    List<string>? Prerequisites,
-    List<string>? Deliverables
-);
+    CatalogId CatalogId,
+    RecipeId RecipeId,
+    TechnicianId TechnicianId,
+    string? ServiceName,
+    string? ServiceDescription,
+    IReadOnlyList<ComponentRequirementItem>? ComponentRequirements,
+    int? EstimatedDurationHours,
+    int? EstimatedDurationMinutes,
+    decimal? MaterialsEstimate,
+    decimal? LaborCost,
+    decimal? TotalPrice,
+    string? Currency,
+    IReadOnlyList<string>? Prerequisites,
+    IReadOnlyList<string>? Deliverables,
+    int? WarrantyMonths);

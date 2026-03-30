@@ -1,6 +1,16 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public class CurrencyMismatchException
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+
+public class CurrencyMismatchException : DomainException
 {
-    
+    public ECurrency Expected { get; }
+    public ECurrency Actual { get; }
+
+    public CurrencyMismatchException(ECurrency expected, ECurrency actual)
+        : base($"Currency mismatch: expected {expected}, but got {actual}")
+    {
+        Expected = expected;
+        Actual = actual;
+    }
 }

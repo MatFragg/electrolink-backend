@@ -1,24 +1,23 @@
+using System.Text.Json.Serialization;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
 public record WarrantyPeriod
 {
-    public int Value { get; init; }
-    public WarrantyUnit Unit { get; init; }
-    
-    public WarrantyPeriod() : this(0, WarrantyUnit.Months) { }
-    
-    public WarrantyPeriod(int value, WarrantyUnit unit)
+    public int Months { get; }
+
+    private WarrantyPeriod() { }
+
+    [JsonConstructor]
+    public WarrantyPeriod(int months)
     {
-        Value = value;
-        Unit = unit;
+        Months = months;
     }
-    
-    public int ToMonths() => Unit == WarrantyUnit.Years ? Value * 12 : Value;
-}
 
-public enum WarrantyUnit
-{
-    Months,
-    Years
+    public static WarrantyPeriod OfMonths(int months) {
+        if (months < 0)
+            throw new InvalidWarrantyPeriodException("El período de garantía no puede ser negativo.");
+        return new WarrantyPeriod(months);
+    }
 }
-

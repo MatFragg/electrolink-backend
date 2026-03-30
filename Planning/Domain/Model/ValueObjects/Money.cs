@@ -1,51 +1,44 @@
+using System.Text.Json.Serialization;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
 public record Money
 {
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public decimal  Amount   { get; }
+    
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ECurrency Currency { get; }
 
-    public Money(decimal amount, string currency = "USD")
+    private Money() { }
+    
+    [JsonConstructor]
+    public Money(decimal amount, ECurrency currency)
     {
-        if (amount < 0)
-            throw new ArgumentException("Amount cannot be negative", nameof(amount));
-
-        if (string.IsNullOrWhiteSpace(currency))
-            throw new ArgumentException("Currency cannot be empty", nameof(currency));
-
-        Amount = amount;
-        Currency = currency.ToUpperInvariant();
+        if (amount < 0) throw new InvalidMoneyException("El monto no puede ser negativo.");
+        Amount = Math.Round(amount, 2);
+        Currency = currency;
     }
 
-    public static Money Zero(string currency = "USD") => new(0, currency);
+    public static Money Of(decimal amount, ECurrency currency)
+        => new(amount, currency);
 
     public Money Add(Money other)
     {
-        if (Currency != other.Currency)
-            throw new InvalidOperationException($"Cannot add different currencies: {Currency} and {other.Currency}");
-
+        AssertSameCurrency(other);
         return new Money(Amount + other.Amount, Currency);
     }
 
-    public Money Subtract(Money other)
+    public bool IsLessThan(Money other)
     {
-        if (Currency != other.Currency)
-            throw new InvalidOperationException($"Cannot subtract different currencies: {Currency} and {other.Currency}");
-
-        return new Money(Amount - other.Amount, Currency);
+        AssertSameCurrency(other);
+        return Amount < other.Amount;
     }
 
-    public Money Multiply(decimal factor)
-    {
-        return new Money(Amount * factor, Currency);
-    }
-
-    public bool IsGreaterThan(Money other)
+    private void AssertSameCurrency(Money other)
     {
         if (Currency != other.Currency)
-            throw new InvalidOperationException($"Cannot compare different currencies: {Currency} and {other.Currency}");
-
-        return Amount > other.Amount;
+            throw new CurrencyMismatchException(Currency, other.Currency);
     }
 
     public override string ToString() => $"{Amount:F2} {Currency}";

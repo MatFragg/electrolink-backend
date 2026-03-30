@@ -1,38 +1,37 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+﻿using System.Text.Json.Serialization;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
 public record EstimatedDuration
 {
     public int TotalMinutes { get; init; }
-    
-    internal EstimatedDuration()
-    {
-        TotalMinutes = 0;
-    }
+    public int Hours => TotalMinutes / 60;
+    public int RemainingMinutes => TotalMinutes % 60;
 
-    // Constructor público por minutos totales (valida > 0)
+    private EstimatedDuration() { }
+
+    [JsonConstructor]
     public EstimatedDuration(int totalMinutes)
     {
-        if (totalMinutes <= 0)
-            throw new ArgumentException("Duration must be greater than 0", nameof(totalMinutes));
         TotalMinutes = totalMinutes;
     }
 
-    // Constructor público por horas y minutos (valida horas/minutos y resultado > 0)
-    public EstimatedDuration(int hours, int minutes)
+    public static EstimatedDuration FromHoursAndMinutes(int hours, int minutes)
     {
-        if (hours < 0)
-            throw new ArgumentException("Hours cannot be negative", nameof(hours));
-        if (minutes < 0 || minutes >= 60)
-            throw new ArgumentException("Minutes must be between 0 and 59", nameof(minutes));
-
-        var total = checked(hours * 60 + minutes);
-        if (total <= 0)
-            throw new ArgumentException("Duration must be greater than 0");
-
-        TotalMinutes = total;
+        var totalMinutes = (hours * 60) + minutes;
+        
+        if (totalMinutes <= 0)
+            throw new InvalidDurationException("La duración debe ser mayor que 0.");
+            
+        return new EstimatedDuration(totalMinutes);
     }
 
-    public (int hours, int minutes) ToHoursAndMinutes() =>
-        (TotalMinutes / 60, TotalMinutes % 60);
+    public static EstimatedDuration FromMinutes(int minutes)
+    {
+        if (minutes <= 0)
+            throw new InvalidDurationException("La duración debe ser mayor que 0.");
+            
+        return new EstimatedDuration(minutes);
+    }
 }
-

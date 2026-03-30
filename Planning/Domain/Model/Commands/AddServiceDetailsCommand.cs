@@ -1,12 +1,18 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record AddServiceDetailsCommand(
-    Guid RequestId,
-    Guid HomeownerId,
-    Guid SelectedRecipeId,
-    Guid SelectedTechnicianId,
-    ReceiptDataDto ReceiptData,
+    RequestId RequestId,
+    HomeownerId HomeownerId,
+    string ProblemDescription,
+    decimal ConsumptionKwh,
+    decimal AmountPaid,
+    string AmountCurrency,
+    string BillingPeriod,
+    string ReceiptNumber,
     bool IsPriority,
-    RequestPreferencesDto Preferences
-);
-
+    IReadOnlyList<string> PreferredDates,
+    string TimePreference
+    );

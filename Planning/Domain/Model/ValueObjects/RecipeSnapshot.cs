@@ -1,45 +1,76 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+﻿using System.Text.Json.Serialization;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
 public record RecipeSnapshot
 {
-    public Guid RecipeId { get; init; }
-    public string ServiceName { get; init; }
-    public ServiceCategory ServiceCategory { get; init; }
-    public IReadOnlyCollection<ComponentRequirement> ComponentRequirements { get; init; }
-    public Pricing Pricing { get; init; }
-    public EstimatedDuration EstimatedDuration { get; init; }
-    public WarrantyPeriod WarrantyPeriod { get; init; }
-    public DateTime SnapshotTakenAt { get; init; }
-    
-    public RecipeSnapshot() : this(
-        Guid.Empty,
-        string.Empty,
-        ServiceCategory.Repair,
-        new List<ComponentRequirement>(),
-        new Pricing(),
-        new EstimatedDuration(),
-        new WarrantyPeriod(),
-        DateTime.UtcNow
-    ) { }
-    
-    public RecipeSnapshot(
-        Guid recipeId,
+    public RecipeId RecipeId { get; }
+    public string ServiceName { get; }
+    public EServiceCategory ServiceCategory { get; }
+    public IReadOnlyList<ComponentRequirementItem> ComponentRequirements { get; }
+    public ServicePricing Pricing { get; }
+    public EstimatedDuration EstimatedDuration { get; }
+    public WarrantyPeriod WarrantyPeriod { get; }
+    public DateTime SnapshotAt { get; }
+
+    [JsonConstructor]
+    private RecipeSnapshot(
+        RecipeId recipeId,
         string serviceName,
-        ServiceCategory serviceCategory,
-        IReadOnlyCollection<ComponentRequirement> componentRequirements,
-        Pricing pricing,
+        EServiceCategory serviceCategory,
+        IReadOnlyList<ComponentRequirementItem> componentRequirements,
+        ServicePricing pricing,
         EstimatedDuration estimatedDuration,
         WarrantyPeriod warrantyPeriod,
-        DateTime snapshotTakenAt)
+        DateTime snapshotAt)
     {
         RecipeId = recipeId;
-        ServiceName = serviceName ?? string.Empty;
+        ServiceName = serviceName;
         ServiceCategory = serviceCategory;
-        ComponentRequirements = componentRequirements ?? new List<ComponentRequirement>();
-        Pricing = pricing ?? new Pricing();
-        EstimatedDuration = estimatedDuration ?? new EstimatedDuration();
-        WarrantyPeriod = warrantyPeriod ?? new WarrantyPeriod();
-        SnapshotTakenAt = snapshotTakenAt;
+        ComponentRequirements = componentRequirements;
+        Pricing = pricing;
+        EstimatedDuration = estimatedDuration;
+        WarrantyPeriod = warrantyPeriod;
+        SnapshotAt = snapshotAt;
     }
+
+    /// <summary>
+    /// Factory method para crear un snapshot a partir de una ServiceRecipe.
+    /// Hotspot 2 & 7: Captura inmutable del recipe al momento de la asignación.
+    /// Garantiza que ni cambios posteriores ni desactivaciones afecten servicios ya asignados.
+    /// </summary>
+    public static RecipeSnapshot FromRecipe(ServiceRecipe recipe)
+        => new(
+            recipe.Id,
+            recipe.ServiceName,
+            recipe.ServiceCategory,
+            recipe.ComponentRequirements.ToList().AsReadOnly(),
+            recipe.Pricing,
+            recipe.EstimatedDuration,
+            recipe.WarrantyPeriod,
+            DateTime.UtcNow);
+
+    /// <summary>
+    /// Factory method para crear un snapshot manualmente.
+    /// </summary>
+    public static RecipeSnapshot Create(
+        RecipeId recipeId,
+        string serviceName,
+        EServiceCategory serviceCategory,
+        IEnumerable<ComponentRequirementItem> componentRequirements,
+        ServicePricing pricing,
+        EstimatedDuration estimatedDuration,
+        WarrantyPeriod warrantyPeriod,
+        DateTime snapshotAt)
+        => new(
+            recipeId,
+            serviceName,
+            serviceCategory,
+            componentRequirements.ToList().AsReadOnly(),
+            pricing,
+            estimatedDuration,
+            warrantyPeriod,
+            snapshotAt);
 }
 

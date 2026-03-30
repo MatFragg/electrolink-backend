@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public enum EAssignmentStatus
-{
-    
-}
+public enum EAssignmentStatus { Assigned, Failed }

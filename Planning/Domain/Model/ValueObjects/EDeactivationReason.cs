@@ -2,5 +2,8 @@
 
 public enum EDeactivationReason
 {
-    
+    TemporarilyUnavailable,
+    OutOfStock,
+    Seasonal,
+    Other
 }

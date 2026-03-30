@@ -1,15 +1,20 @@
-﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+﻿using System.Text.Json.Serialization;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public record ComponentRequirement
+public class ComponentRequirementItem
 {
-    public string ComponentTypeId { get; }
-    public string ComponentTypeName { get; }
-    public int Quantity { get; }
-    public bool IsRequired { get; }
+    public string Id { get; private set; } = Guid.NewGuid().ToString();
+    public string RecipeId { get; private set; } = string.Empty;
+    public string ComponentTypeId { get; private set; }
+    public string ComponentTypeName { get; private set; }
+    public int Quantity { get; private set; }
+    public bool IsRequired { get; private set; }
 
-    private ComponentRequirement(
+    protected ComponentRequirementItem() { }
+
+    private ComponentRequirementItem(
         string componentTypeId,
         string componentTypeName,
         int quantity,
@@ -24,11 +29,26 @@ public record ComponentRequirement
         IsRequired        = isRequired;
     }
 
-    public static ComponentRequirement Create(
+    [JsonConstructor]
+    public ComponentRequirementItem(
+        string componentTypeId,
+        string componentTypeName,
+        int quantity,
+        bool isRequired,
+        string? id = null,
+        string? recipeId = null)
+        : this(componentTypeId, componentTypeName, quantity, isRequired)
+    {
+        if (!string.IsNullOrWhiteSpace(id))
+            Id = id;
+        if (!string.IsNullOrWhiteSpace(recipeId))
+            RecipeId = recipeId;
+    }
+
+    public static ComponentRequirementItem Create(
         string componentTypeId,
         string componentTypeName,
         int quantity,
         bool isRequired)
         => new(componentTypeId, componentTypeName, quantity, isRequired);
 }
-

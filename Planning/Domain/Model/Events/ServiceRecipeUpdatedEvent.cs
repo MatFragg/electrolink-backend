@@ -8,7 +8,6 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 public record ServiceRecipeUpdatedEvent(
     ServiceRecipe Recipe,
     TechnicianId TechnicianId,
-    DeactivationReason Reason,
     DateTime OccurredOn
 ) : IEvent
 {

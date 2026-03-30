@@ -1,6 +1,6 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record InitiateServiceRequestCommand(
-    Guid HomeownerId
-);
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+
+public record InitiateServiceRequestCommand(HomeownerId HomeownerId);
 

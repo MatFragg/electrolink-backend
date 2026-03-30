@@ -2,5 +2,12 @@
 
 public enum ERequestStatus
 {
-    
+    Draft,
+    ReadyToConfirm,
+    PendingAssignment,
+    Assigned,
+    Cancelled,
+    CategorySelected,
+    PropertySelected,
+    Expired
 }

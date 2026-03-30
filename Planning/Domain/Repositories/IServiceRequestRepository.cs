@@ -1,14 +1,12 @@
 ﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 
-public interface IServiceRequestRepository
+public interface IServiceRequestRepository : IBaseRepository<ServiceRequest, RequestId>
 {
-    Task<ServiceRequest?> FindByIdAsync(RequestId requestId);
     Task<IEnumerable<ServiceRequest>> FindByHomeownerIdAsync(HomeownerId homeownerId);
-    Task<IEnumerable<ServiceRequest>> FindPendingAssignmentsAsync();
-    Task AddAsync(ServiceRequest request);
-    void Update(ServiceRequest request);
+    Task<IEnumerable<ServiceRequest>> FindPendingAssignmentAsync();
 }
-

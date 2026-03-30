@@ -1,3 +1,9 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
-public record SelectServiceRecipeCommand();
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+
+public record SelectServiceRecipeCommand(
+    RequestId RequestId,
+    HomeownerId HomeownerId,
+    EServiceCategory ServiceCategory);

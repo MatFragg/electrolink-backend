@@ -1,8 +1,9 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record SelectPropertyForRequestCommand(
-    Guid RequestId,
-    Guid HomeownerId,
-    Guid PropertyId
-);
-
+    RequestId RequestId,
+    HomeownerId HomeownerId,
+    PropertyId PropertyId);

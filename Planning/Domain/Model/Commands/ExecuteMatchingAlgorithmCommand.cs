@@ -1,4 +1,6 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 
-public record ExecuteMatchingAlgorithmCommand(string RequestId);
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
+
+public record ExecuteMatchingAlgorithmCommand(RequestId RequestId);
 

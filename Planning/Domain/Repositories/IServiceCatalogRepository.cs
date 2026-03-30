@@ -1,15 +1,16 @@
-﻿﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 
-public interface IServiceCatalogRepository
+public interface IServiceCatalogRepository : IBaseRepository<ServiceCatalog, CatalogId>
 {
-    Task<ServiceCatalog?> FindByIdAsync(CatalogId catalogId);
     Task<ServiceCatalog?> FindByTechnicianIdAsync(TechnicianId technicianId);
-    Task<IEnumerable<ServiceCatalog>> FindAllAsync();
-    Task AddAsync(ServiceCatalog catalog);
-    void Update(ServiceCatalog catalog);
+    Task<ServiceCatalog?> FindByCatalogIdAsync(CatalogId catalogId);
+    Task<bool> ExistsByTechnicianIdAsync(TechnicianId technicianId);
+    Task<ServiceRecipe?> FindActiveRecipeByIdAsync(RecipeId recipeId);
+    Task<ServiceRecipe?> FindActiveRecipeByCategoryAndTechnicianAsync(EServiceCategory serviceCategory, TechnicianId technicianId);
 }
-
-
