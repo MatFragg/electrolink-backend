@@ -1,0 +1,14 @@
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
+namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
+
+public record ServiceRecipeReactivatedEvent(
+    ServiceRecipe Recipe,
+    TechnicianId TechnicianId,
+    DateTime OccurredOn
+) : IEvent
+{
+    public Guid EventId { get; init; } = Guid.NewGuid();
+}

@@ -3,8 +3,8 @@
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record UpdateServiceRecipeCommand(
-    Guid RecipeId,
-    Guid TechnicianId,
+    string RecipeId,
+    string TechnicianId,
     string ServiceName,
     string ServiceDescription,
     List<ComponentRequirementDto> ComponentRequirements,
@@ -19,4 +19,3 @@ public record UpdateServiceRecipeCommand(
     List<string>? Prerequisites,
     List<string>? Deliverables
 );
-

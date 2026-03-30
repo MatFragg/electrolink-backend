@@ -2,11 +2,15 @@
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
-public record ReceiptData(
+public record AddDetailsCommand(
+    string RequestId,
+    string ProblemDescription,
     decimal ConsumptionKwh,
     decimal AmountPaid,
-    string Currency,
     string BillingPeriod,
-    string ReceiptNumber
+    string ReceiptNumber,
+    IReadOnlyList<DateOnly> PreferredDates,
+    string TimePreference,
+    bool IsPriority
 );
 

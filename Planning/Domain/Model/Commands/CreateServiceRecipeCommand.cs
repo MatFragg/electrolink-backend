@@ -3,8 +3,8 @@
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record CreateServiceRecipeCommand(
-    Guid CatalogId,
-    Guid TechnicianId,
+    string CatalogId,
+    string TechnicianId,
     string ServiceName,
     string ServiceDescription,
     ServiceCategory ServiceCategory,
@@ -20,4 +20,3 @@ public record CreateServiceRecipeCommand(
     List<string>? Prerequisites,
     List<string>? Deliverables
 );
-
