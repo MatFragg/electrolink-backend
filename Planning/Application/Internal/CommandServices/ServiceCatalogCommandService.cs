@@ -1,4 +1,4 @@
-﻿﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
@@ -7,144 +7,173 @@ using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using MediatR;
+using ComponentRequirementItem = Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects.ComponentRequirementItem;
+
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServices;
 
 public class ServiceCatalogCommandService(
     IServiceCatalogRepository catalogRepository,
-    IUnitOfWork unitOfWork,
-    IMediator mediator,
+    ExternalMonitoringService externalMonitoringService,
     ExternalAssetsService externalAssetsService,
+    IComponentTypeValidator componentTypeValidator,
+    IUnitOfWork unitOfWork,
     ILogger<ServiceCatalogCommandService> logger)
     : IServiceCatalogCommandService
 {
     public async Task<ServiceCatalog?> Handle(CreateServiceCatalogCommand command)
     {
-        // Validar que el técnico no tenga ya un catálogo
-        var existing = await catalogRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId.Id));
-        if (existing != null)
-            throw new InvalidOperationException("Technician already has a catalog");
-        
-        var catalog = new ServiceCatalog(command.TechnicianId);
+        logger.LogInformation("Creating service catalog for Technician {TechnicianId}", command.TechnicianId);
+
+        if (await catalogRepository.ExistsByTechnicianIdAsync(command.TechnicianId))
+            throw new CatalogAlreadyExistsException(command.TechnicianId);
+
+        var catalog = ServiceCatalog.Create(command.TechnicianId);
+
         await catalogRepository.AddAsync(catalog);
         await unitOfWork.CompleteAsync();
-        
-        // Publicar eventos de dominio
-        logger.LogInformation($"[Planning BC] Publishing {catalog.DomainEvents.Count} domain event(s) after catalog creation.");
-        foreach (var domainEvent in catalog.DomainEvents)
-        {
-            await mediator.Publish(domainEvent, CancellationToken.None);
-        }
-        catalog.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service catalog created for technician {command.TechnicianId.Id}");
+
         return catalog;
     }
-    
+
     public async Task<ServiceRecipe?> Handle(CreateServiceRecipeCommand command)
     {
-        var catalog = await catalogRepository.FindByIdAsync(new CatalogId(command.CatalogId))
-            ?? throw new CatalogNotFoundException(command.CatalogId);
-        
-        // Validar ownership
-        if (catalog.TechnicianId.Id != command.TechnicianId)
-            throw new UnauthorizedAccessException("Technician does not own this catalog");
-        
-        // Validar que componentes existen en Assets BC via ACL
-        foreach (var componentReq in command.ComponentRequirements)
+        var catalog = await catalogRepository.FindByTechnicianIdAsync(
+            command.TechnicianId) ?? throw new CatalogNotFoundException(command.TechnicianId);
+
+        if (catalog.CatalogId != command.CatalogId)
+            throw new UnauthorizedCatalogAccessException();
+
+        // Resolver nombres desde Assets BC
+        var componentRequirements = new List<ComponentRequirementItem>();
+        foreach (var cr in command.ComponentRequirements)
         {
-            var exists = await externalAssetsService.ValidateComponentTypeExistsAsync(componentReq.ComponentTypeId);
-            if (!exists)
-            {
-                logger.LogWarning($"[Planning BC] Component type {componentReq.ComponentTypeId} not found in Assets BC");
-                throw new ArgumentException($"Component type {componentReq.ComponentTypeName} does not exist");
-            }
+            var name = await externalAssetsService.GetComponentTypeNameAsync(cr.ComponentTypeId)
+                       ?? throw new ComponentTypeNotFoundException(cr.ComponentTypeId);
+
+            componentRequirements.Add(
+                ComponentRequirementItem.Create(cr.ComponentTypeId, name, cr.Quantity, cr.IsRequired));
         }
-        
-        var recipe = catalog.AddRecipe(command);
+
+        var currency = Enum.Parse<ECurrency>(command.Currency, ignoreCase: true);
+
+        catalog.AddRecipe(
+            command.ServiceName,
+            command.ServiceDescription,
+            Enum.Parse<EServiceCategory>(command.ServiceCategory, ignoreCase: true),
+            componentRequirements,
+            EstimatedDuration.FromHoursAndMinutes(command.EstimatedDurationHours, command.EstimatedDurationMinutes),
+            ServicePricing.Create(
+                Money.Of(command.MaterialsEstimate, currency),
+                Money.Of(command.LaborCost, currency),
+                Money.Of(command.TotalPrice, currency)),
+            command.Prerequisites,
+            command.Deliverables,
+            WarrantyPeriod.OfMonths(command.WarrantyMonths),
+            componentTypeValidator);
+
+        catalogRepository.Update(catalog);
         await unitOfWork.CompleteAsync();
-        
-        // Publicar eventos
-        logger.LogInformation($"[Planning BC] Publishing {catalog.DomainEvents.Count} domain event(s) after recipe creation.");
-        foreach (var domainEvent in catalog.DomainEvents)
-        {
-            await mediator.Publish(domainEvent, CancellationToken.None);
-        }
-        catalog.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service recipe created: {recipe.Id.Id}");
-        return recipe;
+
+        return catalog.Recipes.FirstOrDefault(r => r.ServiceName == command.ServiceName);
     }
-    
+
     public async Task<ServiceRecipe?> Handle(UpdateServiceRecipeCommand command)
     {
-        var catalog = await catalogRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId))
-            ?? throw new CatalogNotFoundException(Guid.Empty);
-        
-        // Validar ownership
-        if (catalog.TechnicianId.Id != command.TechnicianId)
-            throw new UnauthorizedAccessException("Technician does not own this catalog");
-        
-        catalog.UpdateRecipe(new RecipeId(command.RecipeId), command);
-        await unitOfWork.CompleteAsync();
-        
-        // Publicar eventos
-        foreach (var domainEvent in catalog.DomainEvents)
+        var catalog = await catalogRepository.FindByTechnicianIdAsync(command.TechnicianId)
+            ?? throw new CatalogNotFoundException(command.TechnicianId);
+
+        if (catalog.CatalogId != command.CatalogId)
+            throw new UnauthorizedCatalogAccessException();
+
+        var activeCount = await externalMonitoringService.CountActiveServicesForRecipeAsync(command.RecipeId.Value);
+
+        IReadOnlyList<ComponentRequirementItem>? components = null;
+        if (command.ComponentRequirements is not null)
         {
-            await mediator.Publish(domainEvent, CancellationToken.None);
+            var resolved = new List<ComponentRequirementItem>();
+            foreach (var cr in command.ComponentRequirements)
+            {
+                var name = await externalAssetsService.GetComponentTypeNameAsync(cr.ComponentTypeId)
+                    ?? throw new ComponentTypeNotFoundException(cr.ComponentTypeId);
+
+                resolved.Add(
+                    ComponentRequirementItem.Create(cr.ComponentTypeId, name, cr.Quantity, cr.IsRequired));
+            }
+            components = resolved;
         }
-        catalog.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service recipe updated: {command.RecipeId}");
-        return catalog.Recipes.FirstOrDefault(r => r.Id.Id == command.RecipeId);
+
+        ServicePricing? pricing = null;
+        EstimatedDuration? duration = null;
+        WarrantyPeriod? warranty = null;
+
+        if (command.TotalPrice.HasValue)
+        {
+            var currency = Enum.Parse<ECurrency>(command.Currency!, ignoreCase: true);
+            pricing = ServicePricing.Create(
+                Money.Of(command.MaterialsEstimate!.Value, currency),
+                Money.Of(command.LaborCost!.Value, currency),
+                Money.Of(command.TotalPrice.Value, currency));
+        }
+
+        if (command.EstimatedDurationHours.HasValue)
+            duration = EstimatedDuration.FromHoursAndMinutes(
+                command.EstimatedDurationHours.Value, command.EstimatedDurationMinutes ?? 0);
+
+        if (command.WarrantyMonths.HasValue)
+            warranty = WarrantyPeriod.OfMonths(command.WarrantyMonths.Value);
+
+        catalog.UpdateRecipe(
+            command.RecipeId,
+            command.ServiceName,
+            command.ServiceDescription,
+            components,
+            duration,
+            pricing,
+            command.Prerequisites,
+            command.Deliverables,
+            warranty,
+            activeCount,
+            componentTypeValidator);
+
+        catalogRepository.Update(catalog);
+        await unitOfWork.CompleteAsync();
+
+        return catalog.Recipes.FirstOrDefault(r => r.Id == command.RecipeId);
     }
-    
+
     public async Task<bool> Handle(DeactivateServiceRecipeCommand command)
     {
-        var catalog = await catalogRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId))
-            ?? throw new CatalogNotFoundException(Guid.Empty);
-        
-        // Validar ownership
-        if (catalog.TechnicianId.Id != command.TechnicianId)
-            throw new UnauthorizedAccessException("Technician does not own this catalog");
-        
-        catalog.DeactivateRecipe(new RecipeId(command.RecipeId), command.Reason);
+        var catalog = await catalogRepository.FindByTechnicianIdAsync(command.TechnicianId) ?? throw new CatalogNotFoundException(command.TechnicianId);
+
+        if (catalog.CatalogId != command.CatalogId)
+            throw new UnauthorizedCatalogAccessException();
+
+        var inProgressCount = await externalMonitoringService.CountInProgressServicesForRecipeAsync(command.RecipeId.Value);
+
+        catalog.DeactivateRecipe(command.RecipeId,
+            DeactivationReason.From(command.Reason),
+            inProgressCount);
+
+        catalogRepository.Update(catalog);
         await unitOfWork.CompleteAsync();
-        
-        // Publicar eventos
-        foreach (var domainEvent in catalog.DomainEvents)
-        {
-            await mediator.Publish(domainEvent, CancellationToken.None);
-        }
-        catalog.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service recipe deactivated: {command.RecipeId}");
+
         return true;
     }
-    
+
     public async Task<bool> Handle(ReactivateServiceRecipeCommand command)
     {
-        var catalog = await catalogRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId))
-            ?? throw new CatalogNotFoundException(Guid.Empty);
-        
-        // Validar ownership
-        if (catalog.TechnicianId.Id != command.TechnicianId)
-            throw new UnauthorizedAccessException("Technician does not own this catalog");
-        
-        catalog.ReactivateRecipe(new RecipeId(command.RecipeId));
+        var catalog = await catalogRepository.FindByTechnicianIdAsync(
+            command.TechnicianId) ?? throw new CatalogNotFoundException(command.TechnicianId);
+
+        if (catalog.CatalogId != command.CatalogId)
+            throw new UnauthorizedCatalogAccessException();
+
+        catalog.ReactivateRecipe(command.RecipeId);
+
+        catalogRepository.Update(catalog);
         await unitOfWork.CompleteAsync();
-        
-        // Publicar eventos
-        foreach (var domainEvent in catalog.DomainEvents)
-        {
-            await mediator.Publish(domainEvent, CancellationToken.None);
-        }
-        catalog.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service recipe reactivated: {command.RecipeId}");
+
         return true;
     }
 }
-
-

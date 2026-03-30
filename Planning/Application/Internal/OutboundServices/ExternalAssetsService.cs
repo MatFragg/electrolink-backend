@@ -1,87 +1,35 @@
-﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
 
 /// <summary>
 /// Anti-Corruption Layer para comunicación con Assets Bounded Context
 /// </summary>
-public class ExternalAssetsService(ILogger<ExternalAssetsService> logger)
+public class ExternalAssetsService(IAssetsContextFacade assetsContextFacade)
 {
-    /// <summary>
-    /// Obtiene el snapshot de una propiedad desde el Assets BC
-    /// </summary>
-    public async Task<PropertySnapshot?> GetPropertySnapshotAsync(Guid propertyId)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Getting property snapshot for property {propertyId} from Assets BC");
-        
-        // TODO: Implementar llamada al ACL de Assets BC o directamente al repositorio
-        // Por ahora retornamos un snapshot de ejemplo
-        
-        // Opción 1: Usar el IAssetsContextFacade (si existe)
-        // var property = await _assetsContextFacade.GetPropertyByIdAsync(propertyId);
-        
-        // Opción 2: Llamada HTTP a Assets API (si están separados)
-        // var response = await _httpClient.GetAsync($"/api/assets/properties/{propertyId}");
-        
-        // Placeholder - reemplazar con implementación real
-        await Task.Delay(10); // Simular operación async
-        
-        return new PropertySnapshot(
-            propertyId,
-            "123 Main Street, Lima", // TODO: obtener desde Assets BC
-            new Geolocation(-12.0464, -77.0428) // TODO: obtener desde Assets BC
-        );
-    }
+    public async Task<(double latitude, double longitude)?> GetPropertyGeolocationAsync(string propertyId, string ownerId)
+        => await assetsContextFacade.GetPropertyGeolocationAsync(propertyId, ownerId);
+    
+    public async Task<string?> GetComponentTypeNameAsync(string componentTypeId)
+        => await assetsContextFacade.GetComponentTypeNameAsync(componentTypeId);
+    
+    public async Task<bool> TechnicianHasStockForRecipeAsync(string technicianId,IReadOnlyList<(string componentTypeId, int quantity)> requirements)
+        => await assetsContextFacade.CheckAllComponentsInStockAsync(technicianId, requirements);
 
-    /// <summary>
-    /// Verifica si el técnico tiene stock disponible de los componentes requeridos
-    /// </summary>
-    public async Task<bool> CheckStockAvailabilityAsync(Guid technicianId, List<ComponentRequirement> requirements)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Checking stock availability for technician {technicianId}");
-        
-        // TODO: Implementar verificación de stock en Assets BC
-        // var inventory = await _assetsContextFacade.GetTechnicianInventoryAsync(technicianId);
-        // foreach (var requirement in requirements)
-        // {
-        //     var stock = inventory.GetStockForComponent(requirement.ComponentTypeId);
-        //     if (stock < requirement.Quantity) return false;
-        // }
-        
-        await Task.Delay(10);
-        
-        // Por ahora retornamos true (placeholder)
-        return true;
-    }
+    public async Task<bool> ReserveComponentsAsync(string technicianId,string serviceId,IReadOnlyList<(string componentTypeId, int quantity)> components)
+        => await assetsContextFacade.ReserveComponentsForServiceAsync(technicianId, serviceId, components);
 
-    /// <summary>
-    /// Reserva componentes en el inventario del técnico para un servicio
-    /// </summary>
-    public async Task<bool> ReserveComponentsAsync(Guid serviceId, Guid technicianId, List<ComponentRequirement> components)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Reserving components for service {serviceId}, technician {technicianId}");
-        
-        // TODO: Implementar reserva de componentes en Assets BC
-        // await _assetsContextFacade.ReserveComponentsAsync(technicianId, serviceId, components);
-        
-        await Task.Delay(10);
-        
-        return true;
-    }
+    public async Task<bool> ReleaseReservationAsync(string technicianId, string serviceId, string reason)
+        => await assetsContextFacade.ReleaseComponentReservationAsync(technicianId, serviceId, reason);
+    public async Task<bool> HomeownerHasPropertiesAsync(string homeownerId)
+        => await assetsContextFacade.HomeownerHasPropertiesAsync(homeownerId);
 
-    /// <summary>
-    /// Valida que un tipo de componente existe en el catálogo de Assets BC
-    /// </summary>
-    public async Task<bool> ValidateComponentTypeExistsAsync(string componentTypeId)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Validating component type {componentTypeId}");
-        
-        // TODO: Implementar validación con Assets BC
-        // return await _assetsContextFacade.ComponentTypeExistsAsync(componentTypeId);
-        
-        await Task.Delay(10);
-        
-        return true;
-    }
+    public async Task<bool> CheckComponentStockAsync(string technicianId, IReadOnlyList<(string componentTypeId, int quantity)> componentRequirements)
+        => await assetsContextFacade.CheckAllComponentsInStockAsync(technicianId, componentRequirements);
+    
+    public async Task<bool> ComponentTypeExistsAndIsActiveAsync(string componentTypeId)
+        => await assetsContextFacade.ComponentTypeExistsAndIsActiveAsync(componentTypeId);
+
 }
-

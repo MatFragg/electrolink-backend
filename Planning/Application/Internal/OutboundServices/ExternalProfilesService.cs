@@ -1,86 +1,46 @@
-﻿namespace Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
+﻿using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
+
+namespace Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
 
 /// <summary>
-/// DTO para perfil de técnico
+/// Service responsible for interacting with the external Profiles service to retrieve technician and homeowner information.
 /// </summary>
-public record TechnicianProfileDto(
-    Guid TechnicianId,
-    string FullName,
-    double Rating,
-    double Latitude,
-    double Longitude,
-    bool IsAvailable
-);
-
-/// <summary>
-/// Anti-Corruption Layer para comunicación con Profiles Bounded Context
-/// </summary>
-public class ExternalProfilesService(ILogger<ExternalProfilesService> logger)
+public class ExternalProfilesService(IProfilesContextFacade profilesContextFacade)
 {
     /// <summary>
-    /// Obtiene técnicos disponibles en una zona geográfica
+    /// Gets a list of technicians in a specific area based on latitude and longitude.
     /// </summary>
-    public async Task<List<TechnicianProfileDto>> GetTechniciansInZoneAsync(double latitude, double longitude, double radiusKm)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Getting technicians in zone (lat: {latitude}, lon: {longitude}, radius: {radiusKm}km)");
-        
-        // TODO: Implementar búsqueda geográfica en Profiles BC
-        // var technicians = await _profilesContextFacade.GetTechniciansNearLocationAsync(latitude, longitude, radiusKm);
-        
-        await Task.Delay(10);
-        
-        // Placeholder - retornar lista vacía
-        return new List<TechnicianProfileDto>();
-    }
+    /// <param name="latitude">The latitude of the area to search for technicians.</param>
+    /// <param name="longitude">The longitude of the area to search for technicians.</param>
+    /// <returns>A list of tuples containing technician ID, profile ID, full name, and rating.</returns>
+    public async Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>>
+        GetTechniciansInAreaAsync(double latitude, double longitude)
+        => await profilesContextFacade.GetTechniciansInAreaAsync(latitude, longitude);
 
     /// <summary>
-    /// Obtiene el perfil completo de un técnico
+    /// Checks if a homeowner profile is active based on the provided homeowner ID.
     /// </summary>
-    public async Task<TechnicianProfileDto?> GetTechnicianProfileAsync(Guid technicianId)
+    /// <param name="homeownerId"></param>
+    /// <returns>True or False depending on Homeowner's status</returns>
+    public async Task<bool> IsHomeownerActiveAsync(string homeownerId)
+        => await profilesContextFacade.IsHomeownerActiveAsync(homeownerId);
+    
+    public async Task<bool> HasPropertiesAsync(string homeownerId)
+        => await profilesContextFacade.HomeownerHasPropertiesAsync(homeownerId);
+    
+    public async Task EnsureHomeownerIsActiveAsync(string homeownerId)
     {
-        logger.LogInformation($"[Planning BC] ACL: Getting profile for technician {technicianId}");
-        
-        // TODO: Implementar obtención de perfil desde Profiles BC
-        // var profile = await _profilesContextFacade.GetTechnicianProfileAsync(technicianId);
-        
-        await Task.Delay(10);
-        
-        // Placeholder
-        return new TechnicianProfileDto(
-            TechnicianId: technicianId,
-            FullName: "John Doe",
-            Rating: 4.5,
-            Latitude: -12.0464,
-            Longitude: -77.0428,
-            IsAvailable: true
-        );
+        var isActive = await profilesContextFacade.IsHomeownerActiveAsync(homeownerId);
+        if (!isActive)
+            throw new InvalidOperationException(
+                $"Homeowner {homeownerId} does not have an active profile.");
     }
-
-    /// <summary>
-    /// Verifica si un técnico está disponible
-    /// </summary>
-    public async Task<bool> IsTechnicianAvailableAsync(Guid technicianId)
+    
+    public async Task EnsureHasPropertiesAsync(string homeownerId)
     {
-        logger.LogInformation($"[Planning BC] ACL: Checking if technician {technicianId} is available");
-        
-        var profile = await GetTechnicianProfileAsync(technicianId);
-        return profile?.IsAvailable ?? false;
-    }
-
-    /// <summary>
-    /// Obtiene el nombre completo de un homeowner
-    /// </summary>
-    public async Task<string> GetHomeownerNameAsync(Guid homeownerId)
-    {
-        logger.LogInformation($"[Planning BC] ACL: Getting name for homeowner {homeownerId}");
-        
-        // TODO: Implementar desde Profiles BC
-        // var profile = await _profilesContextFacade.GetHomeownerProfileAsync(homeownerId);
-        // return profile?.FullName ?? "Unknown";
-        
-        await Task.Delay(10);
-        
-        return "Homeowner Name"; // Placeholder
+        var hasProperties = await profilesContextFacade.HomeownerHasPropertiesAsync(homeownerId);
+        if (!hasProperties)
+            throw new InvalidOperationException(
+                $"Homeowner {homeownerId} has no registered properties.");
     }
 }
-

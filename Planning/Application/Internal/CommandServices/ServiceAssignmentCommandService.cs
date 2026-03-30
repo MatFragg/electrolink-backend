@@ -1,9 +1,13 @@
-﻿﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using MediatR;
 
@@ -12,95 +16,189 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServic
 public class ServiceAssignmentCommandService(
     IServiceAssignmentRepository assignmentRepository,
     IServiceRequestRepository requestRepository,
+    ExternalProfilesService externalProfilesService,
+    ExternalAssetsService externalAssetsService,
     IServiceCatalogRepository catalogRepository,
     IUnitOfWork unitOfWork,
-    IMediator mediator,
-    ExternalAssetsService externalAssetsService,
     ILogger<ServiceAssignmentCommandService> logger)
     : IServiceAssignmentCommandService
 {
-    public async Task<ServiceAssignment?> Handle(AssignServiceToTechnicianCommand command)
+    public async Task Handle(ExecuteMatchingAlgorithmCommand command)
     {
-        // 1. Obtener request
-        var request = await requestRepository.FindByIdAsync(new RequestId(command.RequestId))
-            ?? throw new ArgumentException("Request not found");
+        var request = await requestRepository.FindByIdAsync(RequestId.From(command.RequestId.Value)) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId.Value} not found.");
+
+        // Validación explícita antes de continuar
+        if (request.Geolocation is null)
+            throw new InvalidOperationException(
+                $"ServiceRequest {command.RequestId.Value} has no geolocation. " +
+                "The homeowner must select a property first.");
+
+        if (request.RequestedCategory is null)
+            throw new InvalidOperationException(
+                $"ServiceRequest {command.RequestId.Value} has no category selected. " +
+                "The homeowner must select a service category first.");
         
-        if (request.Status != RequestStatus.PendingAssignment)
-            throw new InvalidOperationException($"Request must be in PendingAssignment status, current: {request.Status}");
-        
-        // 2. Obtener recipe snapshot
-        var catalog = await catalogRepository.FindByTechnicianIdAsync(new TechnicianId(command.TechnicianId))
-            ?? throw new InvalidOperationException("Technician catalog not found");
-        
-        var recipe = catalog.Recipes.FirstOrDefault(r => r.Id.Id == command.RecipeId)
-            ?? throw new InvalidOperationException("Recipe not found in catalog");
-        
-        if (!recipe.IsActive)
-            throw new InvalidOperationException("Recipe is not active");
-        
-        var recipeSnapshot = recipe.ToSnapshot();
-        
-        // 3. Verificar stock de componentes via ACL a Assets BC
-        var hasStock = await externalAssetsService.CheckStockAvailabilityAsync(
-            command.TechnicianId,
-            recipeSnapshot.ComponentRequirements.ToList()
-        );
-        
-        if (!hasStock)
+        var techniciansInArea = (await externalProfilesService.GetTechniciansInAreaAsync(
+            request.Geolocation!.Latitude, request.Geolocation.Longitude)).ToList();
+
+        var candidates = await FilterCandidatesAsync(techniciansInArea, request);
+
+        if (!candidates.Any())
         {
-            logger.LogWarning($"[Planning BC] Technician {command.TechnicianId} does not have sufficient stock for recipe {command.RecipeId}");
-            throw new InvalidOperationException("Technician does not have sufficient component stock");
+            var existingRetries = await GetRetryCountAsync(request.RequestId);
+            var failed = ServiceAssignment.Fail(
+                request.RequestId, "NO_CANDIDATES_AVAILABLE", existingRetries);
+
+            await assignmentRepository.AddAsync(failed);
+            await unitOfWork.CompleteAsync();
+        
+            throw new NoCandidatesAvailableException("NO_CANDIDATES_AVAILABLE");
         }
-        
-        // 4. Buscar slot disponible (simplificado por ahora - en el futuro usar MatchingAlgorithmService)
-        var scheduledSlot = new ScheduledSlot(
-            DateTime.UtcNow.AddDays(3),
-            DateTime.UtcNow.AddDays(3).AddHours(recipeSnapshot.EstimatedDuration.TotalMinutes / 60.0)
-        );
-        
-        // 5. Crear assignment
-        var assignment = ServiceAssignment.Create(
-            new RequestId(command.RequestId),
-            new TechnicianId(command.TechnicianId),
-            request.HomeownerId,
-            new PropertyId(request.PropertySnapshot!.PropertyId),
-            recipeSnapshot,
-            scheduledSlot,
-            command.IsPriority
-        );
-        
+
+        var best = SelectBestCandidate(candidates, request.IsPriority);
+
+        var snapshot = RecipeSnapshot.FromRecipe(best.Recipe);
+
+        var criteria = MatchingCriteria.Create(
+            request.Geolocation,
+            best.Recipe.ComponentRequirements.Select(c => c.ComponentTypeId).ToList(),
+            request.IsPriority,
+            TechnicianId.From(best.TechnicianId));
+
+        var assignment = ServiceAssignment.Assign(
+            request.RequestId,
+            TechnicianId.From(best.TechnicianId),
+            snapshot,
+            criteria);
+
+        request.MarkAsAssigned(
+            assignment.AssignmentId,
+            TechnicianId.From(best.TechnicianId),
+            snapshot);
+
         await assignmentRepository.AddAsync(assignment);
-        
-        // 6. Marcar request como assigned
-        request.MarkAsAssigned(assignment.Id);
-        
+        requestRepository.Update(request);
+        await unitOfWork.CompleteAsync();
+    }
+
+    /*
+     * public async Task<bool> Handle(ExecuteMatchingAlgorithmCommand command)
+    {
+        var request = await requestRepository.FindByIdAsync(
+            RequestId.From(command.RequestId.Value)) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId.Value} not found.");
+
+        var techniciansInArea = (await externalProfilesService.GetTechniciansInAreaAsync(
+            request.Geolocation!.Latitude, request.Geolocation.Longitude)).ToList();
+
+        var candidates = await FilterCandidatesAsync(techniciansInArea, request);
+
+        if (!candidates.Any())
+        {
+            var existingRetries = await GetRetryCountAsync(request.RequestId);
+            var failed = ServiceAssignment.Fail(
+                request.RequestId, "NO_CANDIDATES_AVAILABLE", existingRetries);
+
+            await assignmentRepository.AddAsync(failed);
+            await unitOfWork.CompleteAsync();
+            
+            // Retorna false para indicar que NO fue asignado
+            return false;
+        }
+
+        var best = SelectBestCandidate(candidates, request.IsPriority);
+        var technicianId = TechnicianId.From(best.TechnicianId);
+
+        var snapshot = best.Recipe;
+        var criteria = MatchingCriteria.Create(
+            request.Geolocation,
+            best.Recipe.ComponentRequirements.Select(c => c.ComponentTypeId).ToList(),
+            request.IsPriority,
+            technicianId);
+
+        var assignment = ServiceAssignment.Assign(
+            request.RequestId,
+            technicianId,
+            snapshot,
+            criteria);
+
+        // Agregado el TechnicianId asumiendo que tu entidad de dominio lo necesita persisitir
+        // Tendrás que ajustar la firma del método MarkAsAssigned en tu clase ServiceRequest.
+        request.MarkAsAssigned(assignment.AssignmentId);
+
+        await assignmentRepository.AddAsync(assignment);
+        requestRepository.Update(request);
         await unitOfWork.CompleteAsync();
         
-        // 7. Reservar componentes en Assets BC
-        await externalAssetsService.ReserveComponentsAsync(
-            assignment.Id.Id,
-            command.TechnicianId,
-            recipeSnapshot.ComponentRequirements.ToList()
-        );
-        
-        // 8. Publicar eventos de assignment
-        logger.LogInformation($"[Planning BC] Publishing {assignment.DomainEvents.Count} domain event(s) after service assignment.");
-        foreach (var domainEvent in assignment.DomainEvents)
+        // Retorna true porque la asignación fue exitosa
+        return true;
+    }
+     */
+    
+    // OG VERSION
+    /*private async Task<IReadOnlyList<Candidate>> FilterCandidatesAsync(
+        IReadOnlyList<(string technicianId, string profileId, string fullName, double rating)> technicians,
+        ServiceRequest request)
+    {
+        var candidates = new List<Candidate>();
+
+        // RecipeSnapshot ya está validado como no-null antes de llamar este método
+        var componentRequirements = request.RecipeSnapshot.ComponentRequirements
+            .Select(c => (c.ComponentTypeId, c.Quantity))
+            .ToList();
+
+        foreach (var tech in technicians)
         {
-            await mediator.Publish(domainEvent, CancellationToken.None);
+            var stockCheck = await assetsFacade.CheckAllComponentsInStockAsync(
+                tech.technicianId,
+                componentRequirements);  // reutiliza la lista, no recalcula por cada técnico
+
+            if (!stockCheck) continue;
+
+            candidates.Add(new Candidate(tech.technicianId, tech.rating, request.RecipeSnapshot));
         }
-        assignment.ClearDomainEvents();
-        
-        // 9. Publicar eventos de request
-        foreach (var domainEvent in request.DomainEvents)
+
+        return candidates;
+    }*/
+
+    private async Task<IReadOnlyList<Candidate>> FilterCandidatesAsync(
+        IReadOnlyList<(string technicianId, string profileId, string fullName, double rating)> technicians,
+        ServiceRequest request)
+    {
+        var candidates = new List<Candidate>();
+
+        foreach (var tech in technicians)
         {
-            await mediator.Publish(domainEvent, CancellationToken.None);
+            // Busca el recipe activo del técnico para esa categoría
+            var recipe = await catalogRepository.FindActiveRecipeByCategoryAndTechnicianAsync(request.RequestedCategory!.Value,
+                TechnicianId.From(tech.technicianId));
+
+            if (recipe is null) continue;
+
+            // Verifica stock para ese recipe específico
+            var componentRequirements = recipe.ComponentRequirements
+                .Select(cr => (cr.ComponentTypeId, cr.Quantity))
+                .ToList();
+
+            var stockOk = await externalAssetsService.CheckComponentStockAsync(
+                tech.technicianId,
+                componentRequirements);
+
+            if (!stockOk) continue;
+
+            candidates.Add(new Candidate(tech.technicianId, tech.rating, recipe));
         }
-        request.ClearDomainEvents();
-        
-        logger.LogInformation($"[Planning BC] Service assigned: {assignment.Id.Id} for request {command.RequestId}");
-        return assignment;
+
+        return candidates;
+    }
+
+    private static Candidate SelectBestCandidate(IReadOnlyList<Candidate> candidates, bool isPriority)
+        => candidates.OrderByDescending(c => c.Rating).First();
+
+    private async Task<int> GetRetryCountAsync(RequestId requestId)
+    {
+        var existing = await assignmentRepository.FindByRequestIdAsync(requestId);
+        return existing?.RetryCount ?? 0;
     }
 }
 
-
+internal record Candidate(string TechnicianId, double Rating, ServiceRecipe Recipe);
