@@ -1,8 +1,11 @@
-﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using MediatR;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers;
 
@@ -11,48 +14,37 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers
 /// Marca el request como Assigned.
 /// Hotspot 4: Reactividad automática a eventos de asignación.
 /// </summary>
-public class ServiceAutomaticallyAssignedEventHandler
+public class ServiceAutomaticallyAssignedEventHandler(
+    IServiceRequestRepository requestRepository,
+    ExternalMonitoringService serviceOperationFacade,
+    IUnitOfWork unitOfWork,
+    ILogger<ServiceAutomaticallyAssignedEventHandler> logger)
+    : INotificationHandler<ServiceAutomaticallyAssignedEvent>
 {
-    private readonly IServiceRequestRepository _requestRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<ServiceAutomaticallyAssignedEventHandler> _logger;
-
-    public ServiceAutomaticallyAssignedEventHandler(
-        IServiceRequestRepository requestRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<ServiceAutomaticallyAssignedEventHandler> logger)
-    {
-        _requestRepository = requestRepository ?? throw new ArgumentNullException(nameof(requestRepository));
-        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    public async Task Handle(dynamic @event)
+    public async Task Handle(ServiceAutomaticallyAssignedEvent notification, CancellationToken cancellationToken)
     {
         try
         {
-            string requestId = @event.RequestId;
-            string serviceId = @event.ServiceId;
+            var requestId = notification.RequestId;
 
-            _logger.LogInformation($"[Planning] Handling ServiceAutomaticallyAssigned for Request {requestId}");
+            logger.LogInformation($"[Planning] Handling ServiceAutomaticallyAssigned for Request {requestId}");
 
-            var request = await _requestRepository.FindByIdAsync(RequestId.From(requestId));
+            var request = await requestRepository.FindByIdAsync(requestId);
             if (request == null)
             {
-                _logger.LogWarning($"[Planning] Request {requestId} not found");
+                logger.LogWarning($"[Planning] Request {requestId} not found");
                 return;
             }
 
-            _requestRepository.Update(request);
-            await _unitOfWork.CompleteAsync();
+            requestRepository.Update(request);
+            await unitOfWork.CompleteAsync();
 
-            _logger.LogInformation($"[Planning] Request {requestId} marked as Assigned");
+            logger.LogInformation($"[Planning] Request {requestId} marked as Assigned");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Planning] Error handling ServiceAutomaticallyAssigned event");
+            logger.LogError(ex, "[Planning] Error handling ServiceAutomaticallyAssigned event");
             throw;
         }
     }
 }
-
