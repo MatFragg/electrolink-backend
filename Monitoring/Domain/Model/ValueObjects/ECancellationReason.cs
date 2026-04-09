@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-public class ECancellationReason
-{
-    
-}
+public enum ECancellationReason { TechnicianUnresponsive, ScheduleConflict, PersonalReasons, TechnicianNoShow, Other }

@@ -1,6 +1,9 @@
 ﻿namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-public class ComponentUsage
-{
-    
-}
+public record ComponentUsage(
+    string ComponentTypeId,
+    string ComponentTypeName,
+    int QuantityUsed,
+    int QuantityReserved,
+    int Delta
+);

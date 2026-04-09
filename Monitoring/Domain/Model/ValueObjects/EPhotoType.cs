@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-public class EPhotoType
-{
-    
-}
+public enum EPhotoType { Before, During, After }

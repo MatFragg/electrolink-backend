@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-public class ECancelledBy
-{
-    
-}
+public enum ECancelledBy { Homeowner, Technician }

@@ -1,6 +1,3 @@
 ﻿namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 
-public class EExecutionStatus
-{
-    
-}
+public enum EExecutionStatus { Scheduled, InProgress, Completed, Cancelled }

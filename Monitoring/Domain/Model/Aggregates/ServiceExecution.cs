@@ -5,7 +5,6 @@ using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 

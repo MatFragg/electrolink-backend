@@ -9,7 +9,6 @@ public class ServiceCancellationRequest : BaseAggregateRoot
     public CancellationRequestId Id { get; private set; } = null!;
     public ServiceExecutionId ExecutionId { get; private set; } = null!;
     public ECancelledBy CancelledBy { get; private set; }
-    public UserId ActorId { get; private set; } = null!;
     public required string Reason { get; init; }
     public string? Notes { get; private set; }
     public bool RequestReassignment { get; private set; }
@@ -20,7 +19,6 @@ public class ServiceCancellationRequest : BaseAggregateRoot
     public static ServiceCancellationRequest Create(
         ServiceExecutionId executionId,
         ECancelledBy cancelledBy,
-        UserId actorId,
         string reason,
         string? notes,
         bool requestReassignment)
@@ -32,7 +30,6 @@ public class ServiceCancellationRequest : BaseAggregateRoot
             Id = CancellationRequestId.NewId(),
             ExecutionId = executionId,
             CancelledBy = cancelledBy,
-            ActorId = actorId,
             Reason = reason,
             Notes = notes,
             RequestReassignment = effectiveReassignment,
