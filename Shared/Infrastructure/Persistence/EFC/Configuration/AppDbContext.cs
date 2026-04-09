@@ -25,11 +25,6 @@ namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Confi
 /// </summary>
 public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
-    
-    public DbSet<Rating> Ratings { get; set; }
-    public DbSet<Report> Reports { get; set; }
-    public DbSet<ServiceOperation> ServiceOperations { get; set; }
-    
     public DbSet<Property> Properties { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<TechnicianInventory> TechnicianInventories { get; set; }
@@ -46,6 +41,9 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     public DbSet<ServiceRecipe> ServiceRecipes { get; set; }
     public DbSet<ServiceRequest> ServiceRequests { get; set; }
     public DbSet<ServiceAssignment> ServiceAssignments { get; set; }
+    
+    // Monitoring Bounded Context
+    public DbSet<ServiceExecution> ServiceExecutions { get; set; }
     
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {

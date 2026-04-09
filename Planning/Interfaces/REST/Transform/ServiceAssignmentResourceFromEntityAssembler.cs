@@ -1,6 +1,9 @@
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Interfaces.REST.Resources;
+
 namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Transform;
 public static class ServiceAssignmentResourceFromEntityAssembler
 {

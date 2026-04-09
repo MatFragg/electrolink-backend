@@ -1,10 +1,5 @@
 using System.Text;
 using Hampcoders.Electrolink.API.Monitoring.Application.ACL;
-using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
-using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
-using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
@@ -51,6 +46,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MediatR; 
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensions;
+using Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Monitoring.Application.Internal.QueryServices;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Repositories;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.EventHandlers;
@@ -197,21 +197,13 @@ builder.Services.AddCors(options =>
 // Shared
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<StripeEventMapper>();
-builder.Services.AddScoped<IServiceOperationRepository, ServiceOperationRepository>();
-builder.Services.AddScoped<IReportRepository, ReportRepository>();
-builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-builder.Services.AddScoped<IReportPhotoRepository, ReportPhotoRepository>();
-
 
 // Domain services for Monitoring
-builder.Services.AddScoped<IServiceOperationCommandService, ServiceOperationCommandService>();
-builder.Services.AddScoped<IServiceOperationQueryService, ServiceOperationQueryService>();
-builder.Services.AddScoped<IReportCommandService, ReportCommandService>();
-builder.Services.AddScoped<IReportQueryService, ReportQueryService>();
-builder.Services.AddScoped<IRatingCommandService, RatingCommandService>();
-builder.Services.AddScoped<IRatingQueryService, RatingQueryService>();
-
+builder.Services.AddScoped<IServiceExecutionCommandService, ServiceExecutionCommandService>();
+builder.Services.AddScoped<IServiceExecutionQueryService, ServiceOperationQueryService>();
+builder.Services.AddScoped<IServiceExecutionRepository, ServiceExecutionRepository>();
 builder.Services.AddScoped<IMonitoringContextFacade, MonitoringContextFacade>();
+builder.Services.AddScoped<IServiceCancellationRequestRepository, ServiceCancellationRequestRepository>();
 
 // Subscriptions and Payments Bounded Context
 builder.Services.AddScoped<IPlanRepository, PlanRepository>();

@@ -114,7 +114,7 @@ public class ServiceRequestCommandService(
 
         var currency = Enum.Parse<ECurrency>(command.AmountCurrency, ignoreCase: true);
         var dates = command.PreferredDates
-            .Select(d => DateOnly.ParseExact(d, "yyyy-MM-dd", CultureInfo.InvariantCulture))
+            .Select(d => DateOnly.ParseExact(d, "dd/MM/yyyy", CultureInfo.InvariantCulture))
             .ToList();
 
         var preferences = RequestPreferences.Create(

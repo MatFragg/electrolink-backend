@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Hampcoders.Electrolink.API.Shared.Interfaces.REST.Resources;
 
 namespace Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 

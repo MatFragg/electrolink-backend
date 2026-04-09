@@ -1,3 +1,7 @@
 ﻿namespace Hampcoders.Electrolink.API.Shared.Interfaces.REST.Resources;
 
-public record ComponentRequirementResource();
+public record ComponentRequirementResource(
+    string ComponentTypeId,
+    int Quantity,
+    bool IsRequired
+);
