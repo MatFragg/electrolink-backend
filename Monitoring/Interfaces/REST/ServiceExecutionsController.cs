@@ -7,7 +7,7 @@ using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Interfaces.REST;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Hampcoders.Electrolink.API.Monitoring.Interfaces;
+namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.REST;
 
 [ApiController]
 [Route("api/v1/service-executions")]
