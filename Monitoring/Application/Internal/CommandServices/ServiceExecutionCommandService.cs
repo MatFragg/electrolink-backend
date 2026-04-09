@@ -16,7 +16,6 @@ public class ServiceExecutionCommandService(
     ILogger<ServiceExecutionCommandService> logger)
     : IServiceExecutionCommandService
 {
-    // ── Triggered por IServiceOperationContextFacade.CreateServiceExecutionAsync ──
     public async Task<ServiceExecution> Handle(CreateServiceExecutionCommand command)
     {
         logger.LogInformation("[SOM BC] Creating ServiceExecution for assignment {AssignmentId}", command.AssignmentId);
@@ -35,7 +34,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico inicia en campo ──────────────────────────
     public async Task<ServiceExecution> Handle(StartServiceExecutionCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
@@ -48,16 +46,14 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico sube foto ────────────────────────────────
     public async Task<ServiceExecution> Handle(UploadWorkPhotoCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
 
-        if (!Enum.TryParse<EPhotoType>(command.PhotoType, true, out var photoType))
+        if (!Enum.TryParse<EPhotoType>(command.PhotoType.ToString(), true, out var photoType))
             throw new ArgumentException($"Invalid photo type: {command.PhotoType}");
 
-        string photoId = $"photo-{Guid.NewGuid()}";
-        execution.UploadPhoto(photoId, photoType, command.PhotoUrl, command.TakenAt, command.Notes);
+        execution.UploadPhoto(photoType, command.PhotoUrl, command.TakenAt, command.Notes);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);
@@ -65,7 +61,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico registra componentes ─────────────────────
     public async Task<ServiceExecution> Handle(RecordComponentsUsedCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
@@ -87,7 +82,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico actualiza reporte técnico ─────────────────
     public async Task<ServiceExecution> Handle(UpdateTechnicalReportCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
@@ -102,7 +96,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico completa el servicio ──────────────────────
     public async Task<ServiceExecution> Handle(CompleteServiceExecutionCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
@@ -113,18 +106,17 @@ public class ServiceExecutionCommandService(
         await PublishAndClearEventsAsync(execution);
 
         logger.LogInformation(
-            "[SOM BC] ⭐ Service {AssignmentId} completed by technician {TechnicianId}",
+            "[SOM BC] Service {AssignmentId} completed by technician {TechnicianId}",
             execution.AssignmentId.Value, command.TechnicianId);
 
         return execution;
     }
 
-    // ── Cancelación ───────────────────────────────────────
     public async Task<ServiceExecution> Handle(CancelServiceExecutionCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
 
-        if (!Enum.TryParse<ECancelledBy>(command.CancelledBy, true, out var cancelledBy))
+        if (!Enum.TryParse<ECancelledBy>(command.CancelledBy.ToString(), true, out var cancelledBy))
             throw new ArgumentException($"Invalid cancelledBy value: {command.CancelledBy}");
 
         if (!Enum.TryParse<ECancellationReason>(command.Reason, true, out var reason))
@@ -138,7 +130,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Propietario extiende el tiempo de espera ──────────
     public async Task<ServiceExecution> Handle(ExtendServiceWaitTimeCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
@@ -151,14 +142,13 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Propietario evalúa al técnico ─────────────────────
     public async Task<ServiceExecution> Handle(SubmitHomeownerReviewCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
 
         execution.SubmitHomeownerReview(
             command.ReviewerId, command.Rating,
-            command.Comment, command.Categories, command.SubmittedAt);
+            command.Comment, command.Categories.ToDictionary(k => k.Key.ToString(), v => v.Value), command.SubmittedAt);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);
@@ -166,14 +156,13 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Técnico evalúa al propietario ─────────────────────
     public async Task<ServiceExecution> Handle(SubmitTechnicianReviewCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
 
         execution.SubmitTechnicianReview(
             command.ReviewerId, command.Rating,
-            command.Comment, command.Categories, command.SubmittedAt);
+            command.Comment, command.Categories.ToDictionary(k => k.Key.ToString(), v => v.Value), command.SubmittedAt);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);
@@ -181,7 +170,6 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    // ── Helpers ───────────────────────────────────────────
     private async Task<ServiceExecution> GetOrThrowAsync(ServiceExecutionId executionId)
     {
         var execution = await repository.FindByIdAsync(executionId);
