@@ -1,5 +1,3 @@
-using Hampcoders.Electrolink.API.Monitoring.Domain.Repository;
-using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
 using Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
@@ -8,8 +6,6 @@ namespace Hampcoders.Electrolink.API.Monitoring.Application.ACL;
 
 /// <inheritdoc />
 public sealed class MonitoringContextFacade(
-    IServiceOperationCommandService   operationCmdService,
-    IServiceOperationRepository serviceOperationRepository,
     IProfilesContextFacade profilesContextFacade,   
     IUnitOfWork                       unitOfWork)
     : IMonitoringContextFacade
