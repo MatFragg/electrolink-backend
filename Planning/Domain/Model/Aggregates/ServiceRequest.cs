@@ -121,6 +121,23 @@ public class ServiceRequest : BaseAggregateRoot
         RaiseDomainEvent(new ServiceRequestExpiredEvent(RequestId, HomeownerId, DateTime.UtcNow));
     }
 
+    public void Reactivate()
+    {
+        if (Status != ERequestStatus.Assigned)
+            throw new InvalidOperationException(
+                $"ServiceRequest {RequestId} must be in Assigned status to reactivate. Current: {Status}.");
+
+        SelectedTechnicianId = null;
+        AssignmentId = null;
+        RecipeSnapshot = null;
+        SelectedRecipeId = null;
+
+        Status = ERequestStatus.PendingAssignment;
+
+        RaiseDomainEvent(new ServiceRequestReactivatedEvent(
+            RequestId, HomeownerId, IsPriority, DateTime.UtcNow));
+    }
+    
     // ── Invariants ────────────────────────────────────────
 
     private void EnsureStatus(ERequestStatus expected)

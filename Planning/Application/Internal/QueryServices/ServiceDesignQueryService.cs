@@ -257,6 +257,9 @@ private static string GetCategoryDisplayName(EServiceCategory category) => categ
 
         return new MatchingQueue(priorityQueue, normalQueue, sorted.Count);
     }
+
+    public async Task<ServiceRequest?> Handle(GetServiceRequestByIdQuery query) 
+        => await requestRepository.FindByIdAsync(query.RequestId);
 }
 
 

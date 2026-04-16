@@ -1,3 +1,5 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Monitoring.Interfaces.ACL;
 
 /// <summary>
@@ -24,4 +26,26 @@ public interface IMonitoringContextFacade
     /// Retrieves the execution status of a specific service. This method provides detailed information about the current state of a service, which can be essential for monitoring, debugging, and reporting purposes. The returned status may include information such as whether the service is running, completed, failed, or in any other relevant state.
     /// </summary>
     Task<string?> GetServiceExecutionStatusAsync(string serviceId);
+    
+    /// <summary>
+    /// Retrieves the execution history of a specific service. This method provides a comprehensive log of all the events and status changes that have occurred during the lifecycle of a service, which can be invaluable for monitoring, troubleshooting, and analyzing the performance of the service over time.
+    /// </summary>
+    /// <param name="assignmentId"></param>
+    /// <param name="requestId"></param>
+    /// <param name="technicianId"></param>
+    /// <param name="homeownerId"></param>
+    /// <param name="propertyId"></param>
+    /// <param name="recipeSnapshot"></param>
+    /// <param name="scheduledAt"></param>
+    /// <param name="isPriority"></param>
+    /// <returns></returns>
+    Task<string> CreateServiceExecutionAsync(
+        string assignmentId,
+        string requestId,
+        string technicianId,
+        string homeownerId,
+        string propertyId,
+        RecipeSnapshot recipeSnapshot,
+        DateTime scheduledAt,
+        bool isPriority);
 }

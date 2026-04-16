@@ -37,7 +37,7 @@ public class ServiceAssignment : BaseAggregateRoot
             RetryCount       = 0,
         };
         assignment.RaiseDomainEvent(new ServiceAutomaticallyAssignedEvent(
-            assignment.AssignmentId, requestId, technicianId, recipeSnapshot, DateTime.UtcNow));
+            assignment.AssignmentId, requestId, technicianId, recipeSnapshot, DateTime.UtcNow, matchingCriteria.IsPriority , DateTime.UtcNow));
         return assignment;
     }
 

@@ -1,8 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
-
-namespace Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
+﻿namespace Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 
 /// <summary>
 /// Interfaz de Anti-Corruption Layer (ACL).
@@ -11,63 +7,13 @@ namespace Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 /// </summary>
 public interface IServiceDesignContextFacade
 {
-    /// <summary>
-    /// Obtiene el catálogo de servicios de un técnico.
-    /// </summary>
-    Task<ServiceCatalogDto?> GetServiceCatalogAsync(string catalogId);
-
-    /// <summary>
-    /// Obtiene los detalles de una receta de servicio.
-    /// </summary>
-    Task<ServiceRecipeDetailDto?> GetServiceRecipeAsync(string recipeId);
-
-    /// <summary>
-    /// Obtiene servicios disponibles según criterios de búsqueda.
-    /// </summary>
-    Task<IEnumerable<AvailableServiceDto>> GetAvailableServicesAsync(
-        double latitude,
-        double longitude,
-        IReadOnlyList<string> componentTypeIds);
-
-    /// <summary>
-    /// Valida si un request es elegible para asignación automática.
-    /// </summary>
-    Task<bool> IsRequestEligibleForMatchingAsync(string requestId, string homeownerId);
-
-    /// <summary>
-    /// Obtiene el resumen de un request.
-    /// </summary>
-    Task<ServiceRequestDto?> GetServiceRequestAsync(string requestId);
+    Task<bool> CatalogExistsForTechnicianAsync(string technicianId);
+    Task<bool> RecipeIsActiveAsync(string recipeId, string technicianId);
+    Task<string?> GetRecipeNameAsync(string recipeId, string technicianId);
+    Task<decimal?> GetRecipeTotalPriceAsync(string recipeId, string technicianId);
+    Task<int?> GetRecipeEstimatedDurationMinutesAsync(string recipeId, string technicianId);
+    Task<int?> GetRecipeWarrantyMonthsAsync(string recipeId, string technicianId);
+    Task<string?> GetRecipeServiceCategoryAsync(string recipeId, string technicianId);
+    Task<IReadOnlyList<(string componentTypeId, int quantity)>> GetRecipeComponentRequirementsAsync(string recipeId, string technicianId);
+    Task ReactivateServiceRequestAsync(string requestId, string homeownerId,string reason);
 }
-
-// DTOs para el ACL
-public record ServiceCatalogDto(
-    string CatalogId,
-    string TechnicianId,
-    string Status,
-    int RecipeCount);
-
-public record ServiceRecipeDetailDto(
-    string RecipeId,
-    string ServiceName,
-    string ServiceCategory,
-    decimal TotalPrice,
-    string Currency,
-    int EstimatedHours,
-    int EstimatedMinutes,
-    bool IsActive,
-    int TimesRequested);
-
-public record AvailableServiceDto(
-    string RecipeId,
-    string ServiceName,
-    decimal TotalPrice,
-    string Currency,
-    int EstimatedHours);
-
-public record ServiceRequestDto(
-    string RequestId,
-    string HomeownerId,
-    string Status,
-    bool IsPriority);
-

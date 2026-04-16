@@ -13,4 +13,6 @@ public interface IServiceDesignQueryService
     Task<IEnumerable<AvailableService>> Handle(GetAvailableServicesQuery query); 
     Task<ServiceRequest?> Handle(GetServiceRequestSummaryQuery query);
     Task<MatchingQueue> Handle(GetMatchingQueueQuery query);
+    Task<ServiceRequest?> Handle(GetServiceRequestByIdQuery query);
+    
 }

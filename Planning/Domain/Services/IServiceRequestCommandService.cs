@@ -12,6 +12,9 @@ public interface IServiceRequestCommandService
     Task<ServiceRequest?> Handle(ConfirmServiceRequestCommand command);
     Task<bool> Handle(CancelServiceRequestCommand command);
     Task<ServiceRequest?> Handle(SelectServiceRecipeCommand command);
+    Task Handle(MarkServiceRequestAsAssignedCommand command);
+    Task Handle(ReactivateServiceRequestCommand command);
+    
 }
 
         

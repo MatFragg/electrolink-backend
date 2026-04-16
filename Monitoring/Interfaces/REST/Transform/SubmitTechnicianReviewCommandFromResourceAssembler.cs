@@ -10,7 +10,7 @@ public static class SubmitTechnicianReviewCommandFromResourceAssembler
     public static SubmitTechnicianReviewCommand ToCommandFromResource(string executionId, string technicianId, SubmitReviewResource resource)
     {
         var categoryDictionary = resource.Categories.ToDictionary(
-            kvp => Enum.Parse<EEvaluationCategory>(kvp.Key, true),
+            kvp => Enum.Parse<ETechnicianEvaluationCategory>(kvp.Key, true),
             kvp => kvp.Value
         );
 

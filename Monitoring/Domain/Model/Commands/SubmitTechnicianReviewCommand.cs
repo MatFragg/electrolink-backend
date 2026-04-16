@@ -11,6 +11,6 @@ public record SubmitTechnicianReviewCommand(
     TechnicianId ReviewerId,
     int Rating,
     string? Comment,
-    Dictionary<EEvaluationCategory, int> Categories,
+    Dictionary<ETechnicianEvaluationCategory, int> Categories,
     DateTime SubmittedAt
 );

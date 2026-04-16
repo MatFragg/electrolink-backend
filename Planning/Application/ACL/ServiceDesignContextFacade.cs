@@ -79,6 +79,11 @@ public class ServiceDesignContextFacade(
             .ToList();
     }
 
+    public async Task ReactivateServiceRequestAsync(string requestId, string homeownerId, string reason)
+    {
+        await requestCommandService.Handle(new ReactivateServiceRequestCommand(RequestId.From(requestId), HomeownerId.From(homeownerId), reason));
+    }
+
     public async Task<bool> ReactivateServiceRequestForReassignmentAsync(string requestId)
     {
         try
@@ -96,31 +101,7 @@ public class ServiceDesignContextFacade(
             return false;
         }
     }
-
-    public Task<ServiceCatalogDto?> GetServiceCatalogAsync(string catalogId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<ServiceRecipeDetailDto?> GetServiceRecipeAsync(string recipeId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<AvailableServiceDto>> GetAvailableServicesAsync(double latitude, double longitude, IReadOnlyList<string> componentTypeIds)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<bool> IsRequestEligibleForMatchingAsync(string requestId, string homeownerId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<ServiceRequestDto?> GetServiceRequestAsync(string requestId)
-    {
-        throw new NotImplementedException();
-    }
+    
 }
 
 

@@ -263,7 +263,7 @@ public class ServiceExecution : BaseAggregateRoot
     {
         EnsureStatus(EExecutionStatus.Completed);
         EnsureHomeownerOwnership(homeownerId);
-        EnsureEvaluationWindowOpen();
+        //EnsureEvaluationWindowOpen();
 
         if (_evaluations.Any(e => e.ReviewerId == homeownerId.Value && e.ReviewerRole == "Homeowner"))
             throw new InvalidOperationException("Homeowner has already submitted a review for this service.");
@@ -287,7 +287,7 @@ public class ServiceExecution : BaseAggregateRoot
     {
         EnsureStatus(EExecutionStatus.Completed);
         EnsureTechnicianOwnership(technicianId);
-        EnsureEvaluationWindowOpen();
+        //EnsureEvaluationWindowOpen();
 
         if (_evaluations.Any(e => e.ReviewerId == technicianId.Value && e.ReviewerRole == "Technician"))
             throw new InvalidOperationException("Technician has already submitted a review for this service.");

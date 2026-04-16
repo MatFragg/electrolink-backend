@@ -9,6 +9,8 @@ public record ServiceAutomaticallyAssignedEvent(
     RequestId RequestId,
     TechnicianId TechnicianId,
     RecipeSnapshot RecipeSnapshot,
+    DateTime ScheduledAt,
+    bool IsPriority,
     DateTime OccurredOn
 ) : IEvent
 {

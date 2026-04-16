@@ -1,5 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
-using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
@@ -20,6 +19,7 @@ public class ServiceAssignmentCommandService(
     ExternalAssetsService externalAssetsService,
     IServiceCatalogRepository catalogRepository,
     IUnitOfWork unitOfWork,
+    IMediator mediator,
     ILogger<ServiceAssignmentCommandService> logger)
     : IServiceAssignmentCommandService
 {
@@ -75,6 +75,19 @@ public class ServiceAssignmentCommandService(
             assignment.AssignmentId,
             TechnicianId.From(best.TechnicianId),
             snapshot);
+        
+        foreach (var domainEvent in request.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+
+        request.ClearDomainEvents();
+        
+        foreach (var domainEvent in assignment.DomainEvents)
+        {
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        }
+        assignment.ClearDomainEvents(); 
 
         await assignmentRepository.AddAsync(assignment);
         requestRepository.Update(request);

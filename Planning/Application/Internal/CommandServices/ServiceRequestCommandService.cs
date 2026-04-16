@@ -7,7 +7,6 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
-using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.ACL;
@@ -105,7 +104,51 @@ public class ServiceRequestCommandService(
 
         return request;
     }
-    
+
+    public async Task Handle(MarkServiceRequestAsAssignedCommand command)
+    {
+        var request = await requestRepository.FindByIdAsync(command.RequestId);
+
+        if (request is null)
+            throw new Exception("ServiceRequest not found");
+
+        request.MarkAsAssigned( 
+            command.AssignmentId, 
+            command.TechnicianId,
+            command.RecipeSnapshot);
+
+        requestRepository.Update(request);
+        await unitOfWork.CompleteAsync();
+    }
+
+    public async Task Handle(ReactivateServiceRequestCommand command)
+    {
+        var request = await requestRepository.FindByIdAsync(command.RequestId);
+
+        if (request is null)
+        {
+            logger.LogWarning("ServiceRequest {RequestId} not found", command.RequestId);
+            return;
+        }
+
+        if (request.HomeownerId != command.HomeownerId)
+        {
+            logger.LogWarning("Homeowner mismatch for {RequestId}", command.RequestId);
+            return;
+        }
+
+        if (request.Status != ERequestStatus.Assigned)
+        {
+            logger.LogWarning("Invalid status for reactivation {RequestId}", command.RequestId);
+            return;
+        }
+
+        request.Reactivate();
+
+        requestRepository.Update(request);
+        await unitOfWork.CompleteAsync();
+    }
+
     public async Task<ServiceRequest?> Handle(AddServiceDetailsCommand command)
     {
         var request = await requestRepository.FindByIdAsync(command.RequestId) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId} not found.");
