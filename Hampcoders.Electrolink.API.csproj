@@ -52,7 +52,6 @@
       <Folder Include="Assets\Application\Internal\OutboundServices\" />
       <Folder Include="Planning\Application\" />
       <Folder Include="Planning\Domain\" />
-      <Folder Include="Planning\Infrastructure\" />
         <Folder Include="Subscriptions\" />
     </ItemGroup>
 

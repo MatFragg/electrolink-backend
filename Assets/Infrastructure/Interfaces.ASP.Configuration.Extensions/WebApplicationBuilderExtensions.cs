@@ -1,0 +1,36 @@
+﻿using Hampcoders.Electrolink.API.Assets.Application.ACL;
+using Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Assets.Application.Internal.QueryServices;
+using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
+using Hampcoders.Electrolink.API.Assets.Domain.Services;
+using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Repositories;
+using Hampcoders.Electrolink.API.Assets.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
+
+namespace Hampcoders.Electrolink.API.Assets.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+
+public static class WebApplicationBuilderExtensions
+{
+    public static void AddAssetsContextService(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddScoped<IPropertyRepository, PropertyRepository>();
+        builder.Services.AddScoped<ITechnicianInventoryRepository, TechnicianInventoryRepository>();
+        builder.Services.AddScoped<IComponentRepository, ComponentRepository>();
+        builder.Services.AddScoped<IComponentTypeRepository, ComponentTypeRepository>();
+        builder.Services.AddScoped<IPropertyCommandService, PropertyCommandService>();
+        builder.Services.AddScoped<ITechnicianInventoryCommandService, TechnicianInventoryCommandService>();
+        builder.Services.AddScoped<IComponentCommandService, ComponentCommandService>();
+        builder.Services.AddScoped<IComponentTypeCommandService, ComponentTypeCommandService>();
+        builder.Services.AddScoped<IPropertyQueryService, PropertyQueryService>();
+        builder.Services.AddScoped<ITechnicianInventoryQueryService, TechnicianInventoryQueryService>();
+        builder.Services.AddScoped<IComponentQueryService, ComponentQueryService>();
+        builder.Services.AddScoped<IComponentTypeQueryService, ComponentTypeQueryService>();
+        builder.Services.AddScoped<IPropertyPortfolioCommandService, PropertyPortfolioCommandService>();
+        builder.Services.AddScoped<IPropertyPortfolioQueryService, PropertyPortfolioQueryService>();
+        builder.Services.AddScoped<IPropertyPortfolioRepository, PropertyPortfolioRepository>();
+        builder.Services.AddScoped<IAssetsContextFacade, AssetsContextFacade>();
+
+        builder.Services.AddScoped<IComponentTypeValidator, ComponentTypeValidator>();
+    } 
+}
