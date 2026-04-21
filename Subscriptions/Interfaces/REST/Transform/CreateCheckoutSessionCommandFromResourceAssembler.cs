@@ -13,7 +13,7 @@ public static class CreateCheckoutSessionCommandFromResourceAssembler
     {
         return new CreateCheckoutSessionCommand(
             userId,
-            new PlanId(resource.PlanId),
+            new PaymentGatewayPriceId(resource.PriceId),
             resource.SuccessUrl,
             resource.CancelUrl,
             resource.TrialPeriodDays

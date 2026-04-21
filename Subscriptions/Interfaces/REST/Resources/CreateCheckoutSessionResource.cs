@@ -4,7 +4,7 @@
 /// Resource to create a Stripe Checkout session.
 /// </summary>
 public record CreateCheckoutSessionResource(
-    Guid PlanId,
+    string PriceId,
     string SuccessUrl,
     string CancelUrl,
     int? TrialPeriodDays = null

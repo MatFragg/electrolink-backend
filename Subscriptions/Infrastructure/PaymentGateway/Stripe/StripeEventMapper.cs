@@ -1,4 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe;
 
@@ -47,7 +47,7 @@ public class StripeEventMapper
         {
             "active" => ESubscriptionStatus.Active,
             "trialing" => ESubscriptionStatus.Trial,
-            "past_due" => ESubscriptionStatus.PaymentDue,
+            "past_due" => ESubscriptionStatus.GracePeriod,
             "canceled" => ESubscriptionStatus.Cancelled,
             "unpaid" => ESubscriptionStatus.Expired,
             "incomplete" => ESubscriptionStatus.Pending,

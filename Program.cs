@@ -15,7 +15,7 @@ using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensio
 using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions;
-using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.EventHandlers;
+using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -151,9 +151,6 @@ builder.Services.AddHostedService<OutboxProcessorBackgroundService>();
 
 
 // Add Cortex Mediator for Event Handling
-var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-    .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
-    .ToArray();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -178,7 +175,7 @@ builder.Services.AddAuthentication(options =>
     });
 //builder.Services.AddMediatR(cfg => { }, assemblies);
 
-builder.Services.AddMediatR(typeof(StripeEventHandler).Assembly);
+builder.Services.AddMediatR(typeof(SubscriptionCommandService).Assembly);
 
 var app = builder.Build();
 

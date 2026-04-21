@@ -4,6 +4,6 @@
 /// Resource to change a subscription's plan.
 /// </summary>
 public record ChangeSubscriptionPlanResource(
-    Guid NewPlanId,
+    string NewPriceId,
     string ProrationBehavior = "create_prorations" // create_prorations, none, always_invoice
 );

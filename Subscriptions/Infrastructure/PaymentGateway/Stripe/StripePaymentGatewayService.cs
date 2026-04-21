@@ -1,5 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Stripe;
 using Stripe.Checkout;
@@ -209,18 +208,7 @@ public class StripePaymentGatewayService : IPaymentGatewayService
         };
 
         var session = await sessionService.CreateAsync(options);
-        _logger.LogInformation("Billing portal session created for Customer {CustomerId}", customerId);        
+        _logger.LogInformation("Billing portal session created for Customer {CustomerId}", customerId);
         return session.Url;
-    }
- 
-    private CheckoutSessionStatus MapStripeSessionStatus(string stripeStatus)
-    {
-        return stripeStatus switch
-        {
-            "open" => CheckoutSessionStatus.Open,
-            "complete" => CheckoutSessionStatus.Complete,
-            "expired" => CheckoutSessionStatus.Expired,
-            _ => CheckoutSessionStatus.Open
-        };
     }
 }

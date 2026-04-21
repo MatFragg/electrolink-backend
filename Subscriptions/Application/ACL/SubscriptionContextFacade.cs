@@ -1,4 +1,6 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Subscriptions.Interfaces.ACL;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.ACL;
@@ -8,67 +10,68 @@ public class SubscriptionContextFacade(
     ISubscriptionCommandService subscriptionCommandService)
     : ISubscriptionContextFacade
 {
-    public Task<bool> RecordServiceRequestUsageAsync(int ownerUserId)
+    public async Task<bool> RecordServiceRequestUsageAsync(int ownerUserId)
     {
-        throw new NotImplementedException();
+        var subscription = await subscriptionQueryService.Handle(
+            new GetMySubscriptionQuery(ownerUserId.ToString()));
+
+        var result = await subscriptionCommandService.Handle(
+            new IncrementSubscriptionUsageCommand(subscription.Id.Value));
+
+        return result.HasValue;
     }
 
-    public Task<bool> CanCreateRequestAsync(string homeownerId)
+    public async Task<bool> CanCreateRequestAsync(string homeownerId)
     {
-        throw new NotImplementedException();
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
+        return eligibility.CanRequest;
     }
 
-    public Task<bool> CanMarkAsPriorityAsync(string homeownerId)
+    public async Task<bool> CanMarkAsPriorityAsync(string homeownerId)
     {
-        throw new NotImplementedException();
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
+        return eligibility.IsPriorityAllowed;
     }
 
-    public Task<int?> GetRemainingRequestsAsync(string homeownerId)
+    public async Task<int?> GetRemainingRequestsAsync(string homeownerId)
     {
-        throw new NotImplementedException();
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
+        return eligibility.RemainingRequests;
     }
 
-    public Task<bool> IsTechnicianPremiumAsync(string technicianId)
+    public async Task<bool> IsTechnicianPremiumAsync(string technicianId)
     {
-        throw new NotImplementedException();
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(technicianId));
+        return eligibility.PlanType == "PREMIUM";
     }
 
     public async Task<(bool canCreate, string planType, int? remainingRequests, bool canMarkAsPriority)>
         GetRequestEligibilityAsync(string homeownerId)
     {
-        /*var result = await subscriptionQueryService.Handle(
-            new GetHomeownerEligibilityQuery(homeownerId));
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
 
         return (
-            result.CanCreate,
-            result.PlanType,
-            result.RemainingRequests,
-            result.CanMarkAsPriority
-        );*/
-        return (true, "PREMIUM", null, true);
+            eligibility.CanRequest,
+            eligibility.PlanType,
+            eligibility.RemainingRequests,
+            eligibility.IsPriorityAllowed
+        );
     }
 
     public async Task<bool> IncrementMonthlyRequestUsageAsync(string homeownerId)
     {
-        /*var result = await subscriptionCommandService.Handle(
-            new IncrementMonthlyUsageCommand(homeownerId));
-        return result;*/ 
-        return true;
+        if (!int.TryParse(homeownerId, out var ownerUserId)) return false;
+        return await RecordServiceRequestUsageAsync(ownerUserId);
     }
 
     public async Task<bool> TechnicianHasPremiumSubscriptionAsync(string technicianId)
     {
-        /*var plan = await subscriptionQueryService.Handle(
-            new GetTechnicianPlanQuery(technicianId));
-        return plan?.IsActive == true && plan.PlanType == "PREMIUM";*/
-        return true;
+        return await IsTechnicianPremiumAsync(technicianId);
     }
 
     public async Task<string?> GetTechnicianPlanTypeAsync(string technicianId)
     {
-        /*var plan = await subscriptionQueryService.Handle(
-            new GetTechnicianPlanQuery(technicianId));
-        return plan?.PlanType;*/
-        return "PREMIUM";
+        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(technicianId));
+        return eligibility.PlanType;
     }
 }

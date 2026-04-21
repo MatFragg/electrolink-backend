@@ -6,62 +6,58 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 
-public class SubscriptionQueryService(ISubscriptionRepository subscriptionRepository, IPlanRepository planRepository) : ISubscriptionQueryService
+public class SubscriptionQueryService(
+    ISubscriptionRepository subscriptionRepository,
+    IPaymentRecordRepository paymentRecordRepository) : ISubscriptionQueryService
 {
-    
-    /// <inheritdoc/>
-    public async Task<IEnumerable<Subscription>> Handle(GetAllSubscriptionsQuery query)
+    public async Task<Subscription> Handle(GetMySubscriptionQuery query)
     {
-        return await subscriptionRepository.ListAsync();
+        var userId = ParseUserId(query.UserId);
+        return await subscriptionRepository.FindByUserIdAsync(userId)
+               ?? throw new ArgumentException($"No subscription found for user {query.UserId}.");
     }
 
-    /// <inheritdoc/>
-    public async Task<Subscription?> Handle(GetSubscriptionByIdQuery query)
+    public async Task<RequestEligibilityResult> Handle(GetRequestEligibilityQuery query)
     {
-        return await subscriptionRepository.FindByIdAsync(new SubscriptionId(query.SubscriptionId));
+        var userId = ParseUserId(query.UserId);
+        var subscription = await subscriptionRepository.FindByUserIdAsync(userId)
+                           ?? throw new ArgumentException($"No subscription found for user {query.UserId}.");
+
+        if (subscription.PlanType.IsPremium)
+            return new RequestEligibilityResult(true, true, null, subscription.PlanType.ToString(), false);
+
+        var hasCapacity = subscription.UsageCounters?.HasCapacity ?? false;
+        return new RequestEligibilityResult(
+            hasCapacity,
+            false,
+            subscription.UsageCounters?.Remaining ?? 0,
+            subscription.PlanType.ToString(),
+            !hasCapacity);
     }
 
-    /// <inheritdoc/>
-    public async Task<Subscription?> Handle(GetSubscriptionByUserIdQuery query)
+    public async Task<IEnumerable<PaymentRecord>> Handle(GetPaymentHistoryQuery query)
     {
-        return await subscriptionRepository.FindByUserIdAsync(new UserId(query.UserId.Value));
+        var subscription = await Handle(new GetMySubscriptionQuery(query.UserId));
+        return await paymentRecordRepository.FindBySubscriptionIdAsync(subscription.Id);
     }
 
-    /// <inheritdoc/>
-    public async Task<IEnumerable<Subscription>> Handle(GetAllActiveSubscriptionsQuery query)
+    public async Task<Subscription?> Handle(GetSubscriptionStatusAlertQuery query)
     {
-        return await subscriptionRepository.ListActiveAsync();
+        var subscription = await Handle(new GetMySubscriptionQuery(query.UserId));
+        return subscription.Status == ESubscriptionStatus.GracePeriod ? subscription : null;
     }
 
-    /// <inheritdoc/>
-    public async Task<Benefit?> Handle(GetUserBenefitQuery query)
+    public async Task<Subscription?> Handle(GetSubscriptionByStripeCustomerIdQuery query)
     {
-        var userId = new UserId(query.UserId);
-        var subscription = await subscriptionRepository.FindByUserIdAsync(userId); // Corrected: int UserId
-        if (subscription == null)
-        {
-            // If no explicit subscription, consider the default freemium plan (if any)
-            // This assumes a user without an active subscription defaults to a freemium experience.
-            var defaultFreemiumPlan = (await planRepository.ListPlansByRoleAsync(EUserRole.All)) // Query all for All or specific role
-                .FirstOrDefault(p => p.MonetizationType == EMonetizationType.Free);
-
-            if (defaultFreemiumPlan != null)
-            {
-                return defaultFreemiumPlan.GetBenefit(query.BenefitType);
-            }
-            return null;
-        }
-
-        var plan = await planRepository.FindByIdAsync(subscription.PlanId);
-        if (plan == null) return null;
-
-        return plan.GetBenefit(query.BenefitType);
+        var customerId = new PaymentGatewayCustomerId(query.StripeCustomerId);
+        return await subscriptionRepository.FindByPaymentGatewayCustomerIdAsync(customerId);
     }
 
-    /// <inheritdoc/>
-    public async Task<Guid?> Handle(GetLocalSubscriptionIdQuery query)
+    private static UserId ParseUserId(string userId)
     {
-        var subscription = await subscriptionRepository.FindByPaymentGatewaySubscriptionIdAsync(new PaymentGatewaySubscriptionId(query.StripeSubscriptionId));
-        return subscription?.Id.Value; // Accedes al Guid del ValueObject
+        if (!int.TryParse(userId, out var value))
+            throw new ArgumentException($"Invalid user id format: {userId}");
+
+        return new UserId(value);
     }
 }

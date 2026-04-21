@@ -44,9 +44,9 @@ public class CheckoutController(
             var checkoutUrl = await subscriptionCommandService.Handle(createCheckoutSessionCommand);
 
             logger.LogInformation(
-                "Checkout session created for User {UserId} - Plan {PlanId}",
+                "Checkout session created for User {UserId} - Price {PriceId}",
                 userId,
-                resource.PlanId);
+                resource.PriceId);
 
             return Ok(new CheckoutSessionResource(
                 checkoutUrl,
@@ -117,21 +117,21 @@ public class CheckoutController(
             // Usa el comando específico de Stripe
             var command = new ChangeSubscriptionPlanInGatewayCommand(
                 new SubscriptionId(subscriptionId),
-                new PlanId(resource.NewPlanId),
+                new PaymentGatewayPriceId(resource.NewPriceId),
                 resource.ProrationBehavior
             );
 
             await subscriptionCommandService.Handle(command);
 
             logger.LogInformation(
-                "Subscription plan {SubscriptionId} changed to {NewPlanId}",
+                "Subscription price {SubscriptionId} changed to {NewPriceId}",
                 subscriptionId,
-                resource.NewPlanId);
+                resource.NewPriceId);
 
-            return Ok(new { 
+            return Ok(new {
                 message = "Subscription plan updated successfully",
                 subscriptionId,
-                newPlanId = resource.NewPlanId
+                newPriceId = resource.NewPriceId
             });
         }
         catch (ArgumentException ex)
