@@ -1,24 +1,20 @@
 ﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 /// <summary>
-/// Representa the unique ID of a Stripe webhook event.
-/// Used to garantice idempotency.
+/// LEGACY - Compatibility type. Not used in tactical domain.
 /// </summary>
 public record WebhookEventId
 {
-    public string Value { get; init; }
+    public string Value { get; }
 
     public WebhookEventId(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Webhook Event ID cannot be empty", nameof(value));
-        
-        if (!value.StartsWith("evt_"))
-            throw new ArgumentException("Invalid Stripe Event ID format. Must start with 'evt_'", nameof(value));
-
+            throw new ArgumentException("WebhookEventId cannot be empty.");
         Value = value;
     }
 
+    public static WebhookEventId NewWebhookEventId() => new($"whe-{Guid.NewGuid()}");
+    public static WebhookEventId From(string value) => new(value);
     public override string ToString() => Value;
 }
-

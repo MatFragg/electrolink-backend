@@ -1,8 +1,6 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
-
-public record CreateBillingPortalSessionCommand(
-    UserId UserId,
-    string ReturnUrl
-);
+/// <summary>
+/// LEGACY - Compatibility command. Not used in tactical design.
+/// </summary>
+public record CreateBillingPortalSessionCommand(string SubscriptionId);

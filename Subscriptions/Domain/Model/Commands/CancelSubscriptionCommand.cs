@@ -1,11 +1,10 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
-
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
 /// <summary>
-/// Command to cancel a subscription in Stripe.
+/// Command: Schedule voluntary cancellation at period end.
+/// User action via dashboard/API.
 /// </summary>
 public record CancelSubscriptionCommand(
-    SubscriptionId SubscriptionId,
-    bool Immediately = false // false = al final del período
-);
+    string UserId,
+    string Reason,
+    string? Feedback);

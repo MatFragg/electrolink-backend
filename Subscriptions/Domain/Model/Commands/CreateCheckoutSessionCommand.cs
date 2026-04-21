@@ -1,14 +1,6 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
-
-namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
+﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
 /// <summary>
-/// Command to create a Checkout session in Stripe.
+/// LEGACY - Compatibility command. Not used in tactical design.
 /// </summary>
-public record CreateCheckoutSessionCommand(
-    string UserId,
-    PlanId PlanId,
-    string SuccessUrl,
-    string CancelUrl,
-    int? TrialPeriodDays = null
-);
+public record CreateCheckoutSessionCommand(string SubscriptionId, string BillingCycle);

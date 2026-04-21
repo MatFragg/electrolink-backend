@@ -43,5 +43,8 @@ public interface ISubscriptionRepository : IBaseRepository<Subscription, Subscri
     /// <param name="userId">The user ID.</param>
     /// <returns>The active <see cref="Subscription"/> if found, otherwise null.</returns>
     Task<Subscription?> FindActiveByUserIdAsync(UserId userId);
-    
+
+    Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf);
+
+    Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync();
 }   
