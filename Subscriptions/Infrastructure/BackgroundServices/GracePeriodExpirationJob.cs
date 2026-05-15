@@ -19,15 +19,18 @@ public class GracePeriodExpirationJob(
             var repository = scope.ServiceProvider.GetRequiredService<ISubscriptionRepository>();
 
             var expired = await repository.FindAllInGracePeriodExpiredAsync(DateTime.UtcNow);
-            foreach (var _ in expired)
+            foreach (var subscription in expired)
             {
                 try
                 {
-                    await commandService.Handle(new DegradeSubscriptionCommand());
+                    await commandService.Handle(new DegradeSubscriptionCommand(
+                        StripeSubscriptionId: subscription.StripeSubscriptionId!.Value,
+                        Reason: "PAYMENT_FAILURE",
+                        DegradedAt: DateTime.UtcNow));
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error degrading expired subscription from grace period.");
+                    logger.LogError(ex, "Error degrading subscription {SubscriptionId}", subscription.SubscriptionId.Value);
                 }
             }
         }

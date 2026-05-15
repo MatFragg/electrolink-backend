@@ -1,4 +1,5 @@
-﻿﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 
@@ -10,7 +11,7 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 /// 
 /// No domain logic; purely a trace entity for audit/reporting.
 /// </summary>
-public class PaymentRecord
+public class PaymentRecord : BaseAggregateRoot
 {
     public PaymentRecordId PaymentRecordId { get; private set; }
     public SubscriptionId SubscriptionId { get; private set; }
@@ -56,4 +57,3 @@ public class PaymentRecord
             processedAt);
     }
 }
-

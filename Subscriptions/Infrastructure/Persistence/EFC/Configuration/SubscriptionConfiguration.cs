@@ -1,4 +1,5 @@
-﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,95 +12,80 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
     {
         builder.ToTable("sp_subscriptions");
 
-        builder.HasKey(s => s.Id);
+        builder.HasKey(s => s.SubscriptionId);
 
-        builder.Property(s => s.Id)
+        builder.Property(s => s.SubscriptionId)
             .HasColumnName("id")
-            .HasConversion(id => id.Value, value => new SubscriptionId(value));
+            .HasConversion(id => id.Value, v => SubscriptionId.From(v))
+            .HasMaxLength(50)
+            .IsRequired();
 
         builder.Property(s => s.UserId)
             .HasColumnName("user_id")
-            .HasConversion(id => id.Value, value => new UserId(value))
-            .IsRequired();
-
-        builder.Property(s => s.PlanId)
-            .HasColumnName("plan_id")
-            .HasConversion(id => id.Value, value => new PlanId(value))
+            .HasConversion(id => id.Value, v => UserId.From(v))
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(s => s.BusinessRole)
             .HasColumnName("business_role")
-            .HasConversion(role => role.ToString(), value => BusinessRole.From(value))
+            .HasConversion(r => r.ToString(), v => BusinessRole.From(v))
             .HasMaxLength(20)
             .IsRequired();
 
         builder.Property(s => s.PlanType)
             .HasColumnName("plan_type")
-            .HasConversion(plan => plan.ToString(), value => PlanType.From(value))
+            .HasConversion(p => p.ToString(), v => PlanType.From(v))
             .HasMaxLength(20)
             .IsRequired();
 
         builder.Property(s => s.BillingCycle)
             .HasColumnName("billing_cycle")
             .HasConversion(
-                cycle => cycle == null ? null : cycle.ToString(),
-                value => string.IsNullOrWhiteSpace(value) ? null : BillingCycle.From(value))
+                c => c == null ? null : c.ToString(),
+                v => v == null ? null : BillingCycle.From(v))
             .HasMaxLength(20);
 
         builder.Property(s => s.Status)
             .HasColumnName("status")
-            .HasConversion<string>()
+            .HasConversion(st => st.ToString(), v => SubscriptionStatus.From(v))
             .HasMaxLength(30)
             .IsRequired();
 
         builder.Property(s => s.CancelAtPeriodEnd)
             .HasColumnName("cancel_at_period_end")
-            .HasDefaultValue(false)
             .IsRequired();
 
-        builder.Property(s => s.GatewayCustomerId)
+        builder.Property(s => s.StripeCustomerId)
             .HasColumnName("stripe_customer_id")
-            .HasConversion(id => id.Value, value => new PaymentGatewayCustomerId(value))
+            .HasConversion(id => id.Value, v => StripeCustomerId.From(v))
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(s => s.GatewaySubscriptionId)
+        builder.Property(s => s.StripeSubscriptionId)
             .HasColumnName("stripe_subscription_id")
             .HasConversion(
                 id => id == null ? null : id.Value,
-                value => string.IsNullOrWhiteSpace(value) ? null : new PaymentGatewaySubscriptionId(value))
+                v => v == null ? null : StripeSubscriptionId.From(v))
             .HasMaxLength(100);
-
-        builder.Property(s => s.StartDate)
-            .HasColumnName("start_date")
-            .IsRequired();
-
-        builder.Property(s => s.EndDate)
-            .HasColumnName("end_date")
-            .IsRequired();
-
-        builder.Property(s => s.CancellationEffectiveDate)
-            .HasColumnName("cancellation_effective_date");
-
-        builder.Property(s => s.TrialEndsAt)
-            .HasColumnName("trial_ends_at");
 
         builder.Property(s => s.GracePeriodEndsAt)
             .HasColumnName("grace_period_ends_at");
 
-        builder.Property(s => s.CurrentUsage)
-            .HasColumnName("current_usage")
-            .HasDefaultValue(0)
-            .IsRequired();
-
         builder.OwnsOne(s => s.BillingPeriod, period =>
         {
-            period.Property(p => p.PeriodStart).HasColumnName("period_start");
-            period.Property(p => p.PeriodEnd).HasColumnName("period_end");
+            period.WithOwner().HasForeignKey("id"); // 🔥 CLAVE
+
+            period.Property(p => p.PeriodStart)
+                .HasColumnName("period_start");
+
+            period.Property(p => p.PeriodEnd)
+                .HasColumnName("period_end");
         });
 
         builder.OwnsOne(s => s.UsageCounters, usage =>
         {
+            usage.WithOwner().HasForeignKey("id"); // 🔥 MISMO FIX
+
             usage.Property(u => u.MonthlyRequestsUsed)
                 .HasColumnName("monthly_requests_used")
                 .HasDefaultValue(0);
@@ -112,17 +98,14 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
             .IsUnique()
             .HasDatabaseName("uix_sp_subscriptions_user");
 
-        builder.HasIndex(s => s.GatewayCustomerId)
+        builder.HasIndex(s => s.StripeCustomerId)
             .HasDatabaseName("ix_sp_subscriptions_stripe_cust");
 
-        builder.HasIndex(s => s.GatewaySubscriptionId)
+        builder.HasIndex(s => s.StripeSubscriptionId)
             .HasDatabaseName("ix_sp_subscriptions_stripe_sub");
 
         builder.HasIndex(s => s.Status)
             .HasDatabaseName("ix_sp_subscriptions_status");
-
-        builder.HasIndex(s => s.GracePeriodEndsAt)
-            .HasDatabaseName("ix_sp_subscriptions_grace");
     }
 }
 

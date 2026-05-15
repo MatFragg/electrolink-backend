@@ -18,7 +18,7 @@ public class MonthlyCounterResetJob(IServiceScopeFactory scopeFactory) : Backgro
             using var scope = scopeFactory.CreateScope();
             var commandService = scope.ServiceProvider.GetRequiredService<ISubscriptionCommandService>();
 
-            await commandService.Handle(new ResetMonthlyRequestCountersCommand());
+            await commandService.Handle(new ResetMonthlyRequestCountersCommand(DateTime.UtcNow));
         }
     }
 }

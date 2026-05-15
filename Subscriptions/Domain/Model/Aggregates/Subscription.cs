@@ -1,4 +1,5 @@
-using Hampcoders.Electrolink.API.Shared.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
@@ -13,38 +14,26 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 /// 
 /// States: ACTIVE, GRACE_PERIOD, CANCELLED_PENDING, DEGRADED
 /// </summary>
-public class Subscription
+public class Subscription : BaseAggregateRoot
 {
-    // ── Identity ──────────────────────────────────────────
     public SubscriptionId SubscriptionId { get; private set; }
     public UserId UserId { get; private set; }
 
-    // ── Tactical Design ───────────────────────────────────
     public BusinessRole BusinessRole { get; private set; }
     public PlanType PlanType { get; private set; }
     public BillingCycle? BillingCycle { get; private set; }
 
-    // ── Status ────────────────────────────────────────────
     public SubscriptionStatus Status { get; private set; }
     public bool CancelAtPeriodEnd { get; private set; }
 
-    // ── Stripe References ─────────────────────────────────
     public StripeCustomerId StripeCustomerId { get; private set; }
     public StripeSubscriptionId? StripeSubscriptionId { get; private set; }
 
-    // ── Billing Period ────────────────────────────────────
     public BillingPeriod? BillingPeriod { get; private set; }
 
-    // ── Grace Period ──────────────────────────────────────
     public DateTime? GracePeriodEndsAt { get; private set; }
 
-    // ── Usage Counters (BASIC HOMEOWNER only) ─────────────
     public UsageCounters? UsageCounters { get; private set; }
-
-    // ── Domain Events ─────────────────────────────────────
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyCollection<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-
 
     private Subscription() { }
 
@@ -65,7 +54,7 @@ public class Subscription
             SubscriptionId = SubscriptionId.NewSubscriptionId(),
             UserId = userId,
             BusinessRole = businessRole,
-            PlanType = PlanType.Basic(),
+            PlanType = PlanType.Basic,
             BillingCycle = null,
             Status = SubscriptionStatus.Active,
             CancelAtPeriodEnd = false,
@@ -74,7 +63,7 @@ public class Subscription
             BillingPeriod = null,
             GracePeriodEndsAt = null,
             UsageCounters = businessRole.Value == EBusinessRole.Homeowner
-                ? ValueObjects.UsageCounters.Initial()
+                ? Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects.UsageCounters.Initial()
                 : null
         };
 
@@ -99,13 +88,11 @@ public class Subscription
         BillingCycle billingCycle,
         StripeCheckoutSessionId sessionId)
     {
-        if (!PlanType.Value.Equals(EPlanType.Basic))
+        if (!PlanType.IsBasic)
             throw new InvalidOperationException("User is already on a Premium plan.");
         
         if (Status.IsInGracePeriod)
             throw new InvalidOperationException("Cannot initiate checkout while in grace period.");
-
-        BillingCycle = billingCycle;
 
         RaiseDomainEvent(new CheckoutInitiatedEvent(
             SubscriptionId.Value,
@@ -130,13 +117,13 @@ public class Subscription
         BillingPeriod billingPeriod)
     {
         // Idempotency check
-        if (PlanType.Value == EPlanType.Premium && StripeSubscriptionId == stripeSubscriptionId)
+        if (PlanType.IsPremium && StripeSubscriptionId == stripeSubscriptionId)
             return;
 
-        if (!PlanType.Value.Equals(EPlanType.Basic))
+        if (!PlanType.IsBasic)
             throw new InvalidOperationException("Subscription is not in BASIC plan to activate.");
 
-        PlanType = PlanType.Premium();
+        PlanType = PlanType.Premium;
         BillingCycle = billingCycle;
         StripeSubscriptionId = stripeSubscriptionId;
         BillingPeriod = billingPeriod;
@@ -185,7 +172,7 @@ public class Subscription
     /// </summary>
     public void StartGracePeriod(StripeInvoiceId invoiceId, DateTime failedAt)
     {
-        if (!PlanType.Value.Equals(EPlanType.Premium) || !Status.IsActive)
+        if (!PlanType.IsPremium || !Status.IsActive)
             throw new InvalidOperationException(
                 "Grace period only applies to active Premium subscriptions.");
 
@@ -218,7 +205,7 @@ public class Subscription
             throw new InvalidOperationException(
                 "Subscription cannot be degraded from its current status.");
 
-        PlanType = PlanType.Basic();
+        PlanType = PlanType.Basic;
         Status = SubscriptionStatus.Active;
         StripeSubscriptionId = null;
         BillingCycle = null;
@@ -228,7 +215,7 @@ public class Subscription
 
         // Restore usage counters for HOMEOWNER
         if (BusinessRole.Value == EBusinessRole.Homeowner)
-            UsageCounters = ValueObjects.UsageCounters.Initial();
+            UsageCounters = Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects.UsageCounters.Initial();
 
         RaiseDomainEvent(new SubscriptionDegradedEvent(
             SubscriptionId.Value,
@@ -248,7 +235,7 @@ public class Subscription
     /// </summary>
     public void ScheduleCancellation(string cancellationReason, DateTime scheduledAt)
     {
-        if (!PlanType.Value.Equals(EPlanType.Premium))
+        if (!PlanType.IsPremium)
             throw new InvalidOperationException("Only Premium subscriptions can be cancelled.");
         
         if (CancelAtPeriodEnd)
@@ -275,7 +262,7 @@ public class Subscription
     /// </summary>
     public void IncrementRequestCounter()
     {
-        if (PlanType.Value == EPlanType.Premium || BusinessRole.Value != EBusinessRole.Homeowner)
+        if (PlanType.IsPremium || BusinessRole.Value != EBusinessRole.Homeowner)
             return;  // Not applicable
 
         if (UsageCounters is null)
@@ -301,7 +288,7 @@ public class Subscription
     /// </summary>
     public void ResetMonthlyCounters()
     {
-        if (PlanType.Value == EPlanType.Basic && BusinessRole.Value == EBusinessRole.Homeowner && UsageCounters is not null)
+        if (PlanType.IsBasic && BusinessRole.Value == EBusinessRole.Homeowner && UsageCounters is not null)
             UsageCounters = UsageCounters.Reset();
     }
 
@@ -323,16 +310,5 @@ public class Subscription
             newCycle.ToString(),
             newPeriod.PeriodEnd,
             DateTime.UtcNow));
-    }
-
-    // ── Domain Event Management ──────────────────────────
-    protected void RaiseDomainEvent(IEvent domainEvent)
-    {
-        _domainEvents.Add(domainEvent);
-    }
-
-    public void ClearDomainEvents()
-    {
-        _domainEvents.Clear();
     }
 }

@@ -1,6 +1,7 @@
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using UserId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.UserId;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 
@@ -15,36 +16,27 @@ public interface ISubscriptionRepository : IBaseRepository<Subscription, Subscri
     /// </summary>
     /// <param name="userId">The user ID.</param>
     /// <returns>The <see cref="Subscription"/> if found, otherwise null.</returns>
-    Task<Subscription?> FindByUserIdAsync(UserId userId);
+    Task<Subscription?> FindByUserIdAsync(string userId);
     
-    /// <summary>
-    /// <para>Lists all active subscriptions.</para>
-    /// </summary>
-    /// <returns>An enumerable of active <see cref="Subscription"/> objects.</returns>
-    Task<IEnumerable<Subscription>> ListActiveAsync();
-    
+    Task<Subscription> FindByUserIdOrFailAsync(string userId);
+
     /// <summary>
     /// Finds a subscription by its Stripe Customer ID.
     /// </summary>
-    /// <param name="gatewayCustomerId">The Payment Gateway Customer ID.</param>
+    /// <param name="stripeCustomerId">The Stripe Customer ID.</param>
     /// <returns>The <see cref="Subscription"/> if found, otherwise null.</returns>
-    Task<Subscription?> FindByPaymentGatewayCustomerIdAsync(PaymentGatewayCustomerId gatewayCustomerId); 
+    Task<Subscription?> FindByStripeCustomerIdAsync(string stripeCustomerId);
+    Task<Subscription> FindByStripeCustomerIdOrFailAsync(string stripeCustomerId);
 
     /// <summary>
     /// Finds a subscription by its Stripe Subscription ID.
     /// </summary>
-    /// <param name="gatewaySubscriptionId">The Payment Gateway Subscription ID.</param>
+    /// <param name="stripeSubscriptionId">The Stripe Subscription ID.</param>
     /// <returns>The <see cref="Subscription"/> if found, otherwise null.</returns>
-    Task<Subscription?> FindByPaymentGatewaySubscriptionIdAsync(PaymentGatewaySubscriptionId gatewaySubscriptionId); 
-    
-    /// <summary>
-    /// Finds an active subscription by the user's unique identifier.
-    /// </summary>
-    /// <param name="userId">The user ID.</param>
-    /// <returns>The active <see cref="Subscription"/> if found, otherwise null.</returns>
-    Task<Subscription?> FindActiveByUserIdAsync(UserId userId);
+    Task<Subscription?> FindByStripeSubscriptionIdAsync(string stripeSubscriptionId);
+    Task<Subscription> FindByStripeSubscriptionIdOrFailAsync(string stripeSubscriptionId);
 
+    Task<bool> ExistsByUserIdAsync(UserId userId);
     Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf);
-
     Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync();
-}   
+}

@@ -1,0 +1,6 @@
+projectKey=electrolonk-iot
+serverUrl=http://localhost:9000
+serverVersion=26.5.0.122743
+dashboardUrl=http://localhost:9000/dashboard?id=electrolonk-iot
+ceTaskId=96cfd066-e95d-4938-b3c5-a2a909785c59
+ceTaskUrl=http://localhost:9000/api/ce/task?id=96cfd066-e95d-4938-b3c5-a2a909785c59

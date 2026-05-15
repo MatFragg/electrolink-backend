@@ -11,12 +11,11 @@ public record StripeInvoiceId
 
     public static StripeInvoiceId From(string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith("in_"))
-            throw new ArgumentException("Invalid StripeInvoiceId format.");
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("StripeInvoiceId cannot be empty.");
 
         return new StripeInvoiceId(value);
     }
 
     public override string ToString() => Value;
 }
-

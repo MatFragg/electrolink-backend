@@ -6,7 +6,6 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 
 public interface IPaymentRecordRepository : IBaseRepository<PaymentRecord, PaymentRecordId>
 {
-    Task<bool> ExistsByStripeInvoiceIdAsync(StripeInvoiceId stripeInvoiceId);
-    Task<IEnumerable<PaymentRecord>> FindBySubscriptionIdAsync(SubscriptionId subscriptionId);
+    Task<bool> ExistsByStripeInvoiceIdAsync(string stripeInvoiceId);
+    Task<IEnumerable<PaymentRecord>> FindBySubscriptionIdAsync(string subscriptionId);
 }
-

@@ -15,11 +15,11 @@ public record PlanType
         Value = value;
     }
 
+    public static PlanType Basic => new(EPlanType.Basic);
+    public static PlanType Premium => new(EPlanType.Premium);
+
+    public bool IsBasic => Value == EPlanType.Basic;
     public bool IsPremium => Value == EPlanType.Premium;
-
-    public static PlanType Basic() => new(EPlanType.Basic);
-
-    public static PlanType Premium() => new(EPlanType.Premium);
 
     public static PlanType From(string value)
     {
@@ -28,12 +28,11 @@ public record PlanType
 
         return value.Trim().ToUpperInvariant() switch
         {
-            "BASIC" => Basic(),
-            "PREMIUM" => Premium(),
+            "BASIC" => Basic,
+            "PREMIUM" => Premium,
             _ => throw new ArgumentException($"Invalid PlanType: {value}")
         };
     }
 
     public override string ToString() => Value.ToString().ToUpperInvariant();
 }
-

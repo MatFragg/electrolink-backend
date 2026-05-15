@@ -12,66 +12,87 @@ public class SubscriptionContextFacade(
 {
     public async Task<bool> RecordServiceRequestUsageAsync(int ownerUserId)
     {
-        var subscription = await subscriptionQueryService.Handle(
-            new GetMySubscriptionQuery(ownerUserId.ToString()));
-
-        var result = await subscriptionCommandService.Handle(
-            new IncrementSubscriptionUsageCommand(subscription.Id.Value));
-
-        return result.HasValue;
+        try
+        {
+            await subscriptionCommandService.Handle(new IncrementMonthlyRequestCounterCommand(ownerUserId.ToString()));
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> CanCreateRequestAsync(string homeownerId)
-    {
-        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
-        return eligibility.CanRequest;
-    }
+        => (await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId))).CanRequest;
 
     public async Task<bool> CanMarkAsPriorityAsync(string homeownerId)
-    {
-        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
-        return eligibility.IsPriorityAllowed;
-    }
+        => (await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId))).IsPriorityAllowed;
 
     public async Task<int?> GetRemainingRequestsAsync(string homeownerId)
-    {
-        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
-        return eligibility.RemainingRequests;
-    }
+        => (await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId))).RemainingRequests;
 
     public async Task<bool> IsTechnicianPremiumAsync(string technicianId)
     {
-        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(technicianId));
-        return eligibility.PlanType == "PREMIUM";
+        try
+        {
+            var subscription = await subscriptionQueryService.Handle(new GetMySubscriptionQuery(technicianId));
+            return subscription.PlanType.IsPremium && subscription.Status.IsActive;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
     public async Task<(bool canCreate, string planType, int? remainingRequests, bool canMarkAsPriority)>
         GetRequestEligibilityAsync(string homeownerId)
     {
         var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId));
-
         return (
             eligibility.CanRequest,
             eligibility.PlanType,
             eligibility.RemainingRequests,
-            eligibility.IsPriorityAllowed
-        );
+            eligibility.IsPriorityAllowed);
     }
 
     public async Task<bool> IncrementMonthlyRequestUsageAsync(string homeownerId)
     {
-        if (!int.TryParse(homeownerId, out var ownerUserId)) return false;
-        return await RecordServiceRequestUsageAsync(ownerUserId);
+        if (string.IsNullOrWhiteSpace(homeownerId))
+            return false;
+
+        try
+        {
+            await subscriptionCommandService.Handle(new IncrementMonthlyRequestCounterCommand(homeownerId));
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
-    public async Task<bool> TechnicianHasPremiumSubscriptionAsync(string technicianId)
-    {
-        return await IsTechnicianPremiumAsync(technicianId);
-    }
+    public Task<bool> TechnicianHasPremiumSubscriptionAsync(string technicianId)
+        => IsTechnicianPremiumAsync(technicianId);
 
     public async Task<string?> GetTechnicianPlanTypeAsync(string technicianId)
     {
-        var eligibility = await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(technicianId));
-        return eligibility.PlanType;
+        try
+        {
+            var subscription = await subscriptionQueryService.Handle(new GetMySubscriptionQuery(technicianId));
+            return subscription.PlanType.ToString();
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 }

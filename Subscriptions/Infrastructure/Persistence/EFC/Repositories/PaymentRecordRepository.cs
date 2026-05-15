@@ -10,15 +10,14 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EF
 public class PaymentRecordRepository(AppDbContext context)
     : BaseRepository<PaymentRecord, PaymentRecordId>(context), IPaymentRecordRepository
 {
-    public async Task<bool> ExistsByStripeInvoiceIdAsync(StripeInvoiceId stripeInvoiceId)
+    public async Task<bool> ExistsByStripeInvoiceIdAsync(string stripeInvoiceId)
         => await Context.Set<PaymentRecord>()
-            .AnyAsync(p => p.StripeInvoiceId == stripeInvoiceId);
+            .AnyAsync(p => p.StripeInvoiceId.Value == stripeInvoiceId);
 
-    public async Task<IEnumerable<PaymentRecord>> FindBySubscriptionIdAsync(SubscriptionId subscriptionId)
+    public async Task<IEnumerable<PaymentRecord>> FindBySubscriptionIdAsync(string subscriptionId)
         => await Context.Set<PaymentRecord>()
-            .Where(p => p.SubscriptionId == subscriptionId)
+            .Where(p => p.SubscriptionId.Value == subscriptionId)
             .OrderByDescending(p => p.ProcessedAt)
             .AsNoTracking()
             .ToListAsync();
 }
-

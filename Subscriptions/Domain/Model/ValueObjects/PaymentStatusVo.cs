@@ -1,42 +1,22 @@
 ﻿namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
-/// <summary>
-/// Enum representing the status of a payment record.
-/// </summary>
-public enum EPaymentStatusVo
+public enum EPaymentStatus
 {
-    Succeeded,
-    Failed,
-    Refunded
+    Succeeded = 1,
+    Failed = 2,
+    Refunded = 3
 }
 
-/// <summary>
-/// Value Object representing the outcome of a payment attempt.
-/// </summary>
 public record PaymentStatus
 {
-    public EPaymentStatusVo Value { get; }
+    public EPaymentStatus Value { get; }
 
-    private PaymentStatus(EPaymentStatusVo value) => Value = value;
+    private PaymentStatus(EPaymentStatus value) => Value = value;
 
-    /// <summary>
-    /// Payment succeeded and invoice was paid.
-    /// </summary>
-    public static PaymentStatus Succeeded => new(EPaymentStatusVo.Succeeded);
+    public static PaymentStatus Succeeded => new(EPaymentStatus.Succeeded);
+    public static PaymentStatus Failed => new(EPaymentStatus.Failed);
+    public static PaymentStatus Refunded => new(EPaymentStatus.Refunded);
 
-    /// <summary>
-    /// Payment failed (will trigger grace period or degradation).
-    /// </summary>
-    public static PaymentStatus Failed => new(EPaymentStatusVo.Failed);
-
-    /// <summary>
-    /// Payment was refunded.
-    /// </summary>
-    public static PaymentStatus Refunded => new(EPaymentStatusVo.Refunded);
-
-    /// <summary>
-    /// Parse from string representation.
-    /// </summary>
     public static PaymentStatus From(string value) => value.ToUpperInvariant() switch
     {
         "SUCCEEDED" => Succeeded,
@@ -45,15 +25,11 @@ public record PaymentStatus
         _ => throw new ArgumentException($"Invalid PaymentStatus: {value}")
     };
 
-    /// <summary>
-    /// String representation in uppercase.
-    /// </summary>
     public override string ToString() => Value switch
     {
-        EPaymentStatusVo.Succeeded => "SUCCEEDED",
-        EPaymentStatusVo.Failed => "FAILED",
-        EPaymentStatusVo.Refunded => "REFUNDED",
-        _ => Value.ToString()
+        EPaymentStatus.Succeeded => "SUCCEEDED",
+        EPaymentStatus.Failed => "FAILED",
+        EPaymentStatus.Refunded => "REFUNDED",
+        _ => Value.ToString().ToUpperInvariant()
     };
 }
-

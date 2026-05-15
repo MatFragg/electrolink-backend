@@ -1,3 +1,5 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 
 /// <summary>
@@ -5,5 +7,5 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
 /// Called by InitializeSubscriptionForNewUser policy when ProfileCompleted event is received.
 /// </summary>
 public record CreateSubscriptionCommand(
-    string UserId,
+    UserId UserId,
     string BusinessRole);  // "TECHNICIAN" | "HOMEOWNER"

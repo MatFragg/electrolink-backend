@@ -17,7 +17,6 @@ using Hampcoders.Electrolink.API.Planning.Infrastructure.Interfaces.ASP.Configur
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Interfaces.ASP.Configuration.Extensions;
-using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.Stripe;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Stripe;

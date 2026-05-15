@@ -15,9 +15,8 @@ public record BillingCycle
         Value = value;
     }
 
-    public static BillingCycle Monthly() => new(EBillingCycle.Monthly);
-
-    public static BillingCycle Annual() => new(EBillingCycle.Annual);
+    public static BillingCycle Monthly => new(EBillingCycle.Monthly);
+    public static BillingCycle Annual => new(EBillingCycle.Annual);
 
     public static BillingCycle From(string value)
     {
@@ -26,12 +25,11 @@ public record BillingCycle
 
         return value.Trim().ToUpperInvariant() switch
         {
-            "MONTHLY" => Monthly(),
-            "ANNUAL" => Annual(),
+            "MONTHLY" => Monthly,
+            "ANNUAL" => Annual,
             _ => throw new ArgumentException($"Invalid BillingCycle: {value}")
         };
     }
 
     public override string ToString() => Value.ToString().ToUpperInvariant();
 }
-

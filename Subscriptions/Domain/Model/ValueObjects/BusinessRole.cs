@@ -15,9 +15,8 @@ public record BusinessRole
         Value = value;
     }
 
-    public static BusinessRole Technician() => new(EBusinessRole.Technician);
-
-    public static BusinessRole Homeowner() => new(EBusinessRole.Homeowner);
+    public static BusinessRole Technician => new(EBusinessRole.Technician);
+    public static BusinessRole Homeowner => new(EBusinessRole.Homeowner);
 
     public static BusinessRole From(string value)
     {
@@ -26,12 +25,11 @@ public record BusinessRole
 
         return value.Trim().ToUpperInvariant() switch
         {
-            "TECHNICIAN" => Technician(),
-            "HOMEOWNER" => Homeowner(),
+            "TECHNICIAN" => Technician,
+            "HOMEOWNER" => Homeowner,
             _ => throw new ArgumentException($"Invalid BusinessRole: {value}")
         };
     }
 
     public override string ToString() => Value.ToString().ToUpperInvariant();
 }
-

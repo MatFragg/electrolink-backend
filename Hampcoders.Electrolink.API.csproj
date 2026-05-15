@@ -50,6 +50,7 @@
       <Folder Include="Analytics\Infrastructure\" />
       <Folder Include="Analytics\Interface\" />
       <Folder Include="Assets\Application\Internal\OutboundServices\" />
+      <Folder Include="docs\output\" />
       <Folder Include="Planning\Application\" />
       <Folder Include="Planning\Domain\" />
         <Folder Include="Subscriptions\" />

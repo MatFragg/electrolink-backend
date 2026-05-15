@@ -18,5 +18,6 @@ public record BillingPeriod
 
         return new BillingPeriod(periodStart, periodEnd);
     }
-}
 
+    public bool IsActive(DateTime at) => at >= PeriodStart && at <= PeriodEnd;
+}

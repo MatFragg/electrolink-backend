@@ -21,7 +21,8 @@ public class PaymentRecordConfiguration : IEntityTypeConfiguration<PaymentRecord
 
         builder.Property(p => p.SubscriptionId)
             .HasColumnName("subscription_id")
-            .HasConversion(id => id.Value, value => new SubscriptionId(value))
+            .HasConversion(id => id.Value, value => SubscriptionId.From(value))
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(p => p.StripeInvoiceId)
@@ -30,24 +31,29 @@ public class PaymentRecordConfiguration : IEntityTypeConfiguration<PaymentRecord
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(p => p.AmountInCents)
-            .HasColumnName("amount")
-            .IsRequired();
-
-        builder.Property(p => p.Currency)
-            .HasColumnName("currency")
-            .HasMaxLength(3)
-            .IsRequired();
-
         builder.Property(p => p.Status)
             .HasColumnName("status")
-            .HasConversion<string>()
+            .HasConversion(s => s.ToString(), v => PaymentStatus.From(v))
             .HasMaxLength(20)
             .IsRequired();
 
         builder.Property(p => p.ProcessedAt)
             .HasColumnName("processed_at")
             .IsRequired();
+
+        builder.OwnsOne(p => p.Amount, money =>
+        {
+            money.WithOwner().HasForeignKey("id"); // 🔥 CLAVE
+
+            money.Property(m => m.Amount)
+                .HasColumnName("amount")
+                .IsRequired();
+
+            money.Property(m => m.Currency)
+                .HasColumnName("currency")
+                .HasMaxLength(3)
+                .IsRequired();
+        });
 
         builder.HasIndex(p => p.StripeInvoiceId)
             .IsUnique()
