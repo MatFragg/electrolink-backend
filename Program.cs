@@ -211,7 +211,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Uncomment the following line to enable OpenAPI documentation (Development Server)
-app.Urls.Add("http://*:8088");
-// app.Urls.Add("http://*:8080");
+//app.Urls.Add("http://*:8088");
+app.Urls.Add("http://*:8080");
 builder.Logging.AddConsole();
 app.Run();
