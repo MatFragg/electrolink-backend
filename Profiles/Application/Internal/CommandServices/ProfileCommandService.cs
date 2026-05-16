@@ -7,12 +7,14 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.CommandServices;
 
 public class ProfileCommandService(
   IProfileRepository profileRepository,
+  IFileStorageProvider fileStorageProvider,
   ExternalAssetService externalAssetService,
   ExternalIamService externalIamService,
   IUnitOfWork unitOfWork,
@@ -180,6 +182,27 @@ public class ProfileCommandService(
           preferences,
           emergencyContact);
       
+      profileRepository.Update(profile);
+      await unitOfWork.CompleteAsync();
+
+      return profile;
+  }
+
+  public async Task<Profile> Handle(UploadProfilePictureCommand command)
+  {
+      var profile = await profileRepository.FindByIdAsync(ProfileId.From(command.ProfileId)) 
+          ?? throw new ArgumentException("Profile not found.");
+
+      if (command.File == null || command.File.Length == 0)
+          throw new ArgumentException("File is empty.");
+
+      using var stream = command.File.OpenReadStream();
+      var fileName = $"{command.ProfileId}-{Guid.NewGuid()}{Path.GetExtension(command.File.FileName)}";
+      
+      var result = await fileStorageProvider.UploadAsync(stream, fileName, "profiles/pictures");
+      
+      profile.UpdateProfilePicture(result.PublicUrl);
+
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
 

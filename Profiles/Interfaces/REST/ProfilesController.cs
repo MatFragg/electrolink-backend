@@ -55,10 +55,23 @@ public class ProfilesController(
     public async Task<IActionResult> CompleteAsTechnician(
         [FromBody] CompleteProfileAsTechnicianResource resource)
     {
-        var command = CompleteProfileAsTechnicianCommandFromResourceAssembler
-            .ToCommandFromResource(resource, UserId);
-        var profile = await commandService.Handle(command);
-        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
+        try
+        {
+            var command = CompleteProfileAsTechnicianCommandFromResourceAssembler
+                .ToCommandFromResource(resource, UserId);
+            var profile = await commandService.Handle(command);
+            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
+        }
+        catch (InvalidPhoneNumberException ex)           { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidDniException ex)                   { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidDateOfBirthException ex)           { return BadRequest(new { message = ex.Message }); }
+        catch (UnderageUserException ex)                 { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidServiceAreaException ex)            { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidBusinessRoleException ex)           { return BadRequest(new { message = ex.Message }); }
+        catch (AtLeastOneSpecialtyRequiredException ex)   { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidProfileStatusException ex)          { return Conflict(new { message = ex.Message }); }
+        catch (DniAlreadyInUseException ex)               { return Conflict(new { message = ex.Message }); }
+        catch (ArgumentException ex)                      { return NotFound(new { message = ex.Message }); }
     }
 
     // ── ANTES COMENTADO ───────────────────────────────────────────────────
@@ -124,6 +137,30 @@ public class ProfilesController(
         catch (UnauthorizedProfileAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
         catch (InvalidProfileStatusException ex)      { return Conflict(new { message = ex.Message }); }
         catch (ArgumentException ex)                  { return NotFound(new { message = ex.Message }); }
+    }
+
+    // POST api/v1/profiles/me/picture
+    [HttpPost("me/picture")]
+    [SwaggerOperation(Summary = "Upload profile picture", OperationId = "UploadProfilePicture")]
+    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile file)
+    {
+        try
+        {
+            var profileId = await GetProfileIdAsync();
+            if (profileId is null) return NotFound(new { message = "Profile not found." });
+
+            var command = new UploadProfilePictureCommand(profileId, file);
+            var profile = await commandService.Handle(command);
+            
+            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // PATCH api/v1/profiles/me/technician

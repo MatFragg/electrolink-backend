@@ -8,7 +8,9 @@ public enum ESubscriptionStatus
     Active,
     GracePeriod,
     CancelledPending,
-    Degraded
+    Degraded,
+    PendingInstallation,
+    CancelledRefunded
 }
 
 /// <summary>
@@ -41,6 +43,16 @@ public record SubscriptionStatus
     public static SubscriptionStatus Degraded => new(ESubscriptionStatus.Degraded);
 
     /// <summary>
+    /// Enterprise subscription paid, awaiting IoT device installation.
+    /// </summary>
+    public static SubscriptionStatus PendingInstallation => new(ESubscriptionStatus.PendingInstallation);
+
+    /// <summary>
+    /// Enterprise subscription cancelled with refund.
+    /// </summary>
+    public static SubscriptionStatus CancelledRefunded => new(ESubscriptionStatus.CancelledRefunded);
+
+    /// <summary>
     /// Parse from string representation.
     /// </summary>
     public static SubscriptionStatus From(string value) => value.ToUpperInvariant() switch
@@ -49,6 +61,8 @@ public record SubscriptionStatus
         "GRACE_PERIOD" => GracePeriod,
         "CANCELLED_PENDING" => CancelledPending,
         "DEGRADED" => Degraded,
+        "PENDING_INSTALLATION" => PendingInstallation,
+        "CANCELLED_REFUNDED" => CancelledRefunded,
         _ => throw new ArgumentException($"Invalid SubscriptionStatus: {value}")
     };
 
@@ -73,6 +87,16 @@ public record SubscriptionStatus
     public bool IsDegraded => Value == ESubscriptionStatus.Degraded;
 
     /// <summary>
+    /// Check if awaiting installation.
+    /// </summary>
+    public bool IsPendingInstallation => Value == ESubscriptionStatus.PendingInstallation;
+
+    /// <summary>
+    /// Check if cancelled with refund.
+    /// </summary>
+    public bool IsCancelledRefunded => Value == ESubscriptionStatus.CancelledRefunded;
+
+    /// <summary>
     /// String representation in uppercase with underscores.
     /// </summary>
     public override string ToString() => Value switch
@@ -81,6 +105,8 @@ public record SubscriptionStatus
         ESubscriptionStatus.GracePeriod => "GRACE_PERIOD",
         ESubscriptionStatus.CancelledPending => "CANCELLED_PENDING",
         ESubscriptionStatus.Degraded => "DEGRADED",
+        ESubscriptionStatus.PendingInstallation => "PENDING_INSTALLATION",
+        ESubscriptionStatus.CancelledRefunded => "CANCELLED_REFUNDED",
         _ => Value.ToString()
     };
 }

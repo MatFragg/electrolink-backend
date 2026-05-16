@@ -5,6 +5,7 @@ public record MyProfileResource(
     string UserId,
     string Status,
     string? BusinessRole,
+    string? ProfilePictureUrl,
     string? FirstName,
     string? LastName,
     string? PhoneNumber,

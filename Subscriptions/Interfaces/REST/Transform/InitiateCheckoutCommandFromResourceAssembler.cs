@@ -8,6 +8,7 @@ public static class InitiateCheckoutCommandFromResourceAssembler
     public static InitiateCheckoutCommand ToCommand(string userId, InitiateCheckoutResource resource)
         => new(
             UserId: userId,
+            PlanType: resource.PlanType,
             BillingCycle: resource.BillingCycle,
             SuccessUrl: resource.SuccessUrl,
             CancelUrl: resource.CancelUrl);

@@ -265,5 +265,14 @@ public static class ModelBuilderExtensions
         builder.Entity<Property>()
             .Property(p => p.IsActive)
             .IsRequired();
+
+        builder.Entity<Property>()
+            .OwnsMany(p => p.Photos, photo =>
+            {
+                photo.WithOwner().HasForeignKey("PropertyId");
+                photo.ToTable("property_photos");
+                photo.Property(p => p.PhotoUrl).HasColumnName("photo_url").IsRequired();
+                photo.HasKey("PropertyId", "PhotoUrl"); // Composite key or configure correctly
+            });
     }
 }

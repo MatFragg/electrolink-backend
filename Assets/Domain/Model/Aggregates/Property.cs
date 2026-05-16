@@ -13,6 +13,9 @@ public class Property : BaseAggregateRoot
     public Geolocation Geolocation { get; private set; } = null!;
     public EPropertyStatus Status { get; private set; }
     public bool IsActive { get; private set; } = true;
+    
+    private readonly List<PropertyPhoto> _photos = new();
+    public IReadOnlyCollection<PropertyPhoto> Photos => _photos.AsReadOnly();
 
     private Property() { }
     
@@ -78,6 +81,12 @@ public class Property : BaseAggregateRoot
     {
         RaiseDomainEvent(new PropertyMaintenanceRecordedEvent(
             Id, assignmentId, technicianId, workSummary, completedAt, DateTime.UtcNow));
+    }
+
+    internal void AddPhoto(string photoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(photoUrl)) return;
+        _photos.Add(new PropertyPhoto(photoUrl));
     }
 
     internal void MarkAsInPortfolio()

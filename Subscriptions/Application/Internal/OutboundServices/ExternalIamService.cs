@@ -8,4 +8,9 @@ public class ExternalIamService(IIamContextFacade iamContextFacade)
     {
         return await iamContextFacade.UserExistsAsync(userId);
     }
+
+    public async Task<string> GetUserEmailAsync(string userId)
+    {
+        return await iamContextFacade.FetchEmailByUserId(userId);
+    }
 }

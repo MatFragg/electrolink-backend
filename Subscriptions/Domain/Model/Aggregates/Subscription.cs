@@ -311,4 +311,49 @@ public class Subscription : BaseAggregateRoot
             newPeriod.PeriodEnd,
             DateTime.UtcNow));
     }
+
+    // ── Method: ActivateEnterprisePendingInstallation ──
+    /// <summary>
+    /// Webhook: checkout.session.completed (Enterprise)
+    /// Transitions to PENDING_INSTALLATION state after enterprise payment.
+    /// </summary>
+    public void ActivateEnterprisePendingInstallation(
+        StripeSubscriptionId stripeSubscriptionId,
+        BillingPeriod billingPeriod)
+    {
+        if (!PlanType.IsBasic)
+            throw new InvalidOperationException("Enterprise subscription can only be activated from BASIC plan.");
+
+        PlanType = PlanType.Enterprise;
+        StripeSubscriptionId = stripeSubscriptionId;
+        BillingPeriod = billingPeriod;
+        Status = SubscriptionStatus.PendingInstallation;
+
+        RaiseDomainEvent(new EnterpriseSubscriptionPendingInstallationEvent(
+            SubscriptionId.Value,
+            UserId.Value,
+            stripeSubscriptionId.Value,
+            DateTime.UtcNow));
+    }
+
+    // ── Method: CancelWithRefund ────────────────────────
+    /// <summary>
+    /// Enterprise activation policy: if installation doesn't occur in 30 days.
+    /// Cancels subscription and marks as CANCELLED_REFUNDED.
+    /// </summary>
+    public void CancelWithRefund(string reason)
+    {
+        if (PlanType != PlanType.Enterprise)
+            throw new InvalidOperationException("Only Enterprise subscriptions can be cancelled with refund.");
+
+        Status = SubscriptionStatus.CancelledRefunded;
+        StripeSubscriptionId = null;
+
+        RaiseDomainEvent(new EnterpriseSubscriptionCancelledRefundedEvent(
+            SubscriptionId.Value,
+            UserId.Value,
+            string.Empty, // RefundId will be set by the command service
+            reason,
+            DateTime.UtcNow));
+    }
 }

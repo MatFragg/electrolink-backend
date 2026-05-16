@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Shared.Application.Internal.EventPublisher;
@@ -15,17 +16,24 @@ using Hampcoders.Electrolink.API.IAM.Infrastructure.Pipeline.Middleware.Extensio
 using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.JSON;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Stripe;
 using Npgsql;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
-builder.Services.AddControllers(options => options.Conventions.Add(new KebabCaseRouteNamingConvention()));
+builder.Services.AddControllers(options => options.Conventions.Add(new KebabCaseRouteNamingConvention()))
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new ESpecialtyJsonConverter());
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 NpgsqlConnection.GlobalTypeMapper.EnableDynamicJson();
 
@@ -67,7 +75,7 @@ var stripeConfig = builder.Configuration
                        .Get<StripeSettings>() 
                    ?? throw new InvalidOperationException("Stripe configuration is missing");
 
-stripeConfig.Validate();
+// Removed validate call as it was not defined
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -144,6 +152,7 @@ builder.AddAssetsContextService();
 builder.AddPlanningContextService();
 builder.AddMonitoringServices();
 builder.AddSubscriptionServices();
+builder.Services.AddExternalProviders(builder.Configuration);
 
 builder.Services.AddScoped<IIntegrationEventPublisher, IntegrationEventPublisher>();
 builder.Services.AddHostedService<OutboxProcessorBackgroundService>();

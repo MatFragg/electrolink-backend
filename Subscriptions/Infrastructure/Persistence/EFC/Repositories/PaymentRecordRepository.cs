@@ -20,4 +20,10 @@ public class PaymentRecordRepository(AppDbContext context)
             .OrderByDescending(p => p.ProcessedAt)
             .AsNoTracking()
             .ToListAsync();
+
+    public async Task<PaymentRecord?> FindLastSuccessfulBySubscriptionIdAsync(SubscriptionId subscriptionId)
+        => await Context.Set<PaymentRecord>()
+            .Where(p => p.SubscriptionId == subscriptionId && p.Status == PaymentStatus.Succeeded)
+            .OrderByDescending(p => p.ProcessedAt)
+            .FirstOrDefaultAsync();
 }

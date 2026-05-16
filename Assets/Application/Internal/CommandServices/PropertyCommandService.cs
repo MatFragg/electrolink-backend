@@ -24,18 +24,16 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
         return property;
     }
 
-    /*public async Task<Property?> Handle(AddPhotoToPropertyCommand command)
+    public async Task<Property?> Handle(AddPhotoToPropertyCommand command)
     {
-        var property = await propertyRepository.FindByIdAsync(new PropertyId(command.Id));
+        var property = await propertyRepository.FindByIdAsync(command.PropertyId);
         if (property is null) throw new ArgumentException("Property not found.");
 
-        // Delegamos la lógica al manejador del agregado
-        property.Handle(command);
+        property.AddPhoto(command.PhotoUrl);
 
-        // EF Core Change Tracking se encarga de detectar la actualización
         await unitOfWork.CompleteAsync();
         return property;
-    }*/
+    }
 
     public async Task<Property?> Handle(UpdatePropertyAddressCommand command)
     {

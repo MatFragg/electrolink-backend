@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 
 public record PropertyResource(
@@ -6,5 +8,6 @@ public record PropertyResource(
     AddressResource Address,
     GeolocationResource Geolocation,
     string Status,
-    bool IsActive
+    bool IsActive,
+    IEnumerable<string> Photos
 );

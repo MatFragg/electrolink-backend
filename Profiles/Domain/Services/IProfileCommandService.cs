@@ -16,6 +16,7 @@ public interface IProfileCommandService
     Task<Profile> Handle(UpdateProfilePersonalDataCommand command);
     Task<Profile> Handle(UpdateTechnicianDataCommand command);
     Task<Profile> Handle(UpdateCommunicationPreferencesCommand command);
+    Task<Profile> Handle(UploadProfilePictureCommand command);
     Task Handle(DeactivateProfileCommand command);
     Task Handle(ReactivateProfileCommand command);
 }

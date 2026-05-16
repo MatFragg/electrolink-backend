@@ -8,6 +8,7 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServices;
@@ -20,6 +21,7 @@ public class ServiceAssignmentCommandService(
     IServiceCatalogRepository catalogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
+    IAIMatchingProvider aiMatchingProvider,
     ILogger<ServiceAssignmentCommandService> logger)
     : IServiceAssignmentCommandService
 {
@@ -55,7 +57,7 @@ public class ServiceAssignmentCommandService(
             throw new NoCandidatesAvailableException("NO_CANDIDATES_AVAILABLE");
         }
 
-        var best = SelectBestCandidate(candidates, request.IsPriority);
+        var best = await SelectBestCandidateAsync(candidates, request);
 
         var snapshot = RecipeSnapshot.FromRecipe(best.Recipe);
 
@@ -204,8 +206,40 @@ public class ServiceAssignmentCommandService(
         return candidates;
     }
 
-    private static Candidate SelectBestCandidate(IReadOnlyList<Candidate> candidates, bool isPriority)
-        => candidates.OrderByDescending(c => c.Rating).First();
+    private async Task<Candidate> SelectBestCandidateAsync(IReadOnlyList<Candidate> candidates, ServiceRequest request)
+    {
+        var contextCandidates = candidates.Select(c => new TechnicianCandidate(
+            c.TechnicianId,
+            0.0, // We could calculate actual distance here if needed
+            c.Rating,
+            10, // Mock completed count
+            true, // Mock IoT cert
+            new List<string>(), // Mock specialties
+            true,
+            30 // Mock response time
+        )).ToList();
+
+        var context = new MatchingContext(
+            request.RequestedCategory?.ToString() ?? "General",
+            request.Preferences?.ProblemDescription ?? "",
+            request.IsPriority,
+            request.Geolocation!,
+            contextCandidates,
+            null
+        );
+
+        var scored = await aiMatchingProvider.ScoreTechnicianCandidatesAsync(context);
+
+        if (scored.Any())
+        {
+            var topCandidateId = scored.OrderByDescending(s => s.Score).First().TechnicianId;
+            var topCandidate = candidates.FirstOrDefault(c => c.TechnicianId == topCandidateId);
+            if (topCandidate != null)
+                return topCandidate;
+        }
+
+        return candidates.OrderByDescending(c => c.Rating).First();
+    }
 
     private async Task<int> GetRetryCountAsync(RequestId requestId)
     {

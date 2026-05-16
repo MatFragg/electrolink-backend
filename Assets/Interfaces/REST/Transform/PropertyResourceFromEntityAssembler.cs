@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
+using System.Linq;
 
 namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
 
@@ -17,6 +18,7 @@ public static class PropertyResourceFromEntityAssembler
                 entity.Geolocation.Latitude, entity.Geolocation.Longitude,
                 entity.Geolocation.Accuracy, entity.Geolocation.Source),
             entity.Status.ToString(),
-            entity.IsActive
+            entity.IsActive,
+            entity.Photos.Select(p => p.PhotoUrl).ToList()
         );
 }

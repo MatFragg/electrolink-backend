@@ -23,6 +23,9 @@ public partial class Profile : BaseAggregateRoot
 
     // ── Personal Data ─────
     public PersonalData? PersonalData { get; private set; }
+    
+    // ── Profile Picture ──
+    public string? ProfilePictureUrl { get; private set; }
 
     // ── Sub-entities according to role ──
     public Technician? Technician { get; private set; }
@@ -94,6 +97,12 @@ public partial class Profile : BaseAggregateRoot
             DateTime.UtcNow));
     }
     
+    public void UpdateProfilePicture(string photoUrl)
+    {
+        ProfilePictureUrl = photoUrl;
+        // RaiseDomainEvent(new ProfilePictureUpdatedEvent(ProfileId, photoUrl)); // Optional
+    }
+
     public void UpdatePersonalData(string? firstName, string? lastName, PhoneNumber? phone, Address? address)
     {
         EnsureStatus(EProfileStatus.Active);

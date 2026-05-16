@@ -1,4 +1,5 @@
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Commands;
@@ -7,13 +8,17 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Repository;
 using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 
 public class SubscriptionCommandService(
     ISubscriptionRepository subscriptionRepository,
     IPaymentRecordRepository paymentRecordRepository,
-    IStripeService stripeService,
+    IPaymentProvider paymentProvider,
+    ExternalIamService externalIamService,
+    SubscriptionPlanPriceResolver priceResolver,
+    IOptions<SubscriptionSettings> settings,
     IUnitOfWork unitOfWork,
     IMediator mediator) : ISubscriptionCommandService
 {
@@ -23,12 +28,16 @@ public class SubscriptionCommandService(
             throw new InvalidOperationException($"Subscription already exists for user {command.UserId}.");
 
         var businessRole = BusinessRole.From(command.BusinessRole);
-        var stripeCustomerId = await stripeService.CreateCustomerAsync(command.UserId.Value);
+        var email = await externalIamService.GetUserEmailAsync(command.UserId.Value);
+        var name = email.Split('@')[0];
+
+        var externalCustomerId = await paymentProvider.CreateCustomerAsync(
+            email, name, new Dictionary<string, string> { ["userId"] = command.UserId.Value }.AsReadOnly());
 
         var subscription = Subscription.Initialize(
             command.UserId,
             businessRole,
-            StripeCustomerId.From(stripeCustomerId));
+            StripeCustomerId.From(externalCustomerId.Value));
 
         await subscriptionRepository.AddAsync(subscription);
         await unitOfWork.CompleteAsync();
@@ -37,25 +46,37 @@ public class SubscriptionCommandService(
         return subscription;
     }
 
-    public async Task<string> Handle(InitiateCheckoutCommand command)
+    public async Task<InitiateCheckoutResult> Handle(InitiateCheckoutCommand command)
     {
         var subscription = await subscriptionRepository.FindByUserIdOrFailAsync(command.UserId);
+        var planType = PlanType.From(command.PlanType);
         var billingCycle = BillingCycle.From(command.BillingCycle);
 
-        var (sessionId, checkoutUrl) = await stripeService.CreateCheckoutSessionAsync(
-            subscription.StripeCustomerId.Value,
-            subscription.BusinessRole.Value,
-            billingCycle.Value,
-            command.SuccessUrl,
-            command.CancelUrl);
+        var priceId = planType.IsEnterprise
+            ? throw new InvalidOperationException("Enterprise checkout requires special handling.")
+            : priceResolver.ResolvePriceIdForRole(subscription.BusinessRole.Value, billingCycle.Value);
 
-        subscription.InitiateCheckout(billingCycle, StripeCheckoutSessionId.From(sessionId));
+        var metadata = new Dictionary<string, string>
+        {
+            ["userId"] = command.UserId,
+            ["planType"] = command.PlanType,
+            ["billingCycle"] = command.BillingCycle
+        }.AsReadOnly();
+
+        var result = await paymentProvider.CreateCheckoutSessionAsync(
+            new ExternalCustomerId(subscription.StripeCustomerId.Value),
+            priceId,
+            command.SuccessUrl,
+            command.CancelUrl,
+            metadata);
+
+        subscription.InitiateCheckout(billingCycle, StripeCheckoutSessionId.From(result.SessionId));
 
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
-        return checkoutUrl;
+        return new InitiateCheckoutResult(result.CheckoutUrl, result.SessionId);
     }
 
     public async Task<Subscription> Handle(ActivateSubscriptionCommand command)
@@ -68,6 +89,32 @@ public class SubscriptionCommandService(
         subscription.Activate(
             StripeSubscriptionId.From(command.StripeSubscriptionId),
             BillingCycle.From(command.BillingCycle),
+            BillingPeriod.Of(command.PeriodStart, command.PeriodEnd));
+
+        var paymentRecord = PaymentRecord.Create(
+            subscription.SubscriptionId,
+            StripeInvoiceId.From(command.StripeInvoiceId),
+            Money.Of(command.AmountPaid, command.Currency),
+            PaymentStatus.Succeeded,
+            DateTime.UtcNow);
+
+        subscriptionRepository.Update(subscription);
+        await paymentRecordRepository.AddAsync(paymentRecord);
+        await unitOfWork.CompleteAsync();
+        await PublishAndClearAsync(subscription);
+
+        return subscription;
+    }
+
+    public async Task<Subscription> Handle(ActivateEnterpriseSubscriptionPendingInstallationCommand command)
+    {
+        if (await paymentRecordRepository.ExistsByStripeInvoiceIdAsync(command.StripeInvoiceId))
+            return await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
+
+        var subscription = await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
+
+        subscription.ActivateEnterprisePendingInstallation(
+            StripeSubscriptionId.From(command.StripeSubscriptionId),
             BillingPeriod.Of(command.PeriodStart, command.PeriodEnd));
 
         var paymentRecord = PaymentRecord.Create(
@@ -153,7 +200,10 @@ public class SubscriptionCommandService(
     {
         var subscription = await subscriptionRepository.FindByUserIdOrFailAsync(command.UserId);
 
-        await stripeService.CancelAtPeriodEndAsync(subscription.StripeSubscriptionId!.Value);
+        if (subscription.StripeSubscriptionId is not null)
+        {
+            await paymentProvider.CancelSubscriptionAsync(subscription.StripeSubscriptionId.Value, true);
+        }
 
         subscription.ScheduleCancellation(command.Reason, DateTime.UtcNow);
 
@@ -196,6 +246,44 @@ public class SubscriptionCommandService(
         subscription.UpdateBillingCycle(
             BillingCycle.From(command.NewBillingCycle),
             BillingPeriod.Of(command.NewPeriodStart, command.NewPeriodEnd));
+
+        subscriptionRepository.Update(subscription);
+        await unitOfWork.CompleteAsync();
+        await PublishAndClearAsync(subscription);
+
+        return subscription;
+    }
+
+    public async Task<CustomerPortalResult> Handle(OpenCustomerPortalCommand command)
+    {
+        var subscription = await subscriptionRepository.FindByUserIdOrFailAsync(command.UserId);
+
+        if (subscription.StripeCustomerId is null)
+            throw new InvalidOperationException("No Stripe customer associated with this subscription.");
+
+        var result = await paymentProvider.OpenCustomerPortalAsync(
+            new ExternalCustomerId(subscription.StripeCustomerId.Value),
+            command.ReturnUrl);
+
+        return new CustomerPortalResult(result.Url);
+    }
+
+    public async Task<Subscription> Handle(CancelEnterpriseSubscriptionWithRefundCommand command)
+    {
+        var subscriptionId = SubscriptionId.From(command.SubscriptionId);
+        var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId)
+            ?? throw new KeyNotFoundException($"Subscription {command.SubscriptionId} not found.");
+
+        var lastPayment = await paymentRecordRepository.FindLastSuccessfulBySubscriptionIdAsync(subscriptionId);
+        if (lastPayment is null || lastPayment.StripePaymentIntentId is null)
+            throw new InvalidOperationException("No successful payment record found for this subscription.");
+
+        var refundResult = await paymentProvider.CreateRefundAsync(
+            lastPayment.StripePaymentIntentId.Value,
+            command.RefundAmount,
+            "requested_by_customer");
+
+        subscription.CancelWithRefund(command.Reason);
 
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();

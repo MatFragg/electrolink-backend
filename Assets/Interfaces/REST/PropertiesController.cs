@@ -5,6 +5,7 @@ using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -16,7 +17,8 @@ namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST;
 [SwaggerTag("Properties Controller Endpoints")]
 public class PropertiesController(
     IPropertyCommandService commandService,
-    IPropertyQueryService   queryService) : ControllerBase
+    IPropertyQueryService   queryService,
+    IFileStorageProvider fileStorageProvider) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PropertyResource>), StatusCodes.Status200OK)]
@@ -140,6 +142,38 @@ public class PropertiesController(
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Agrega una foto a una propiedad</summary>
+    [HttpPost("{propertyId}/photos")]
+    [ProducesResponseType(typeof(PropertyResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AddPhoto([FromRoute] string homeownerId, [FromRoute] string propertyId, IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "File is empty." });
+
+            var property = await queryService.Handle(new GetPropertyByIdQuery(PropertyId.From(propertyId), HomeownerId.From(homeownerId)));
+            if (property is null) return NotFound(new { message = $"Property {propertyId} not found." });
+
+            using var stream = file.OpenReadStream();
+            var fileName = $"{propertyId}-{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            
+            var result = await fileStorageProvider.UploadAsync(stream, fileName, "properties/photos");
+            
+            var command = new AddPhotoToPropertyCommand(PropertyId.From(propertyId), result.PublicUrl);
+            var updatedProperty = await commandService.Handle(command);
+
+            if (updatedProperty is null) return NotFound();
+            return Ok(PropertyResourceFromEntityAssembler.ToResourceFromEntity(updatedProperty));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

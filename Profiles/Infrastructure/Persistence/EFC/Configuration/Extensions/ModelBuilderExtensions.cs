@@ -46,6 +46,11 @@ public static class ModelBuilderExtensions
                 .HasConversion<string>()
                 .HasColumnName("business_role");
 
+            b.Property(p => p.ProfilePictureUrl)
+                .HasColumnName("profile_picture_url")
+                .HasMaxLength(500)
+                .IsRequired(false);
+
             b.OwnsOne(p => p.PersonalData, n =>
             {
                 n.WithOwner().HasForeignKey("profile_id"); 

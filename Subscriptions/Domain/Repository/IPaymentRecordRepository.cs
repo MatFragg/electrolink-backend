@@ -8,4 +8,5 @@ public interface IPaymentRecordRepository : IBaseRepository<PaymentRecord, Payme
 {
     Task<bool> ExistsByStripeInvoiceIdAsync(string stripeInvoiceId);
     Task<IEnumerable<PaymentRecord>> FindBySubscriptionIdAsync(string subscriptionId);
+    Task<PaymentRecord?> FindLastSuccessfulBySubscriptionIdAsync(SubscriptionId subscriptionId);
 }

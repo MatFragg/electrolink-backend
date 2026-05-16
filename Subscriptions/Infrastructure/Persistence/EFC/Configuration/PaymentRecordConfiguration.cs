@@ -31,6 +31,12 @@ public class PaymentRecordConfiguration : IEntityTypeConfiguration<PaymentRecord
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(p => p.StripePaymentIntentId)
+            .HasColumnName("stripe_payment_intent_id")
+            .HasConversion(id => id!.Value, value => StripePaymentIntentId.From(value))
+            .HasMaxLength(100)
+            .IsRequired(false);
+
         builder.Property(p => p.Status)
             .HasColumnName("status")
             .HasConversion(s => s.ToString(), v => PaymentStatus.From(v))
