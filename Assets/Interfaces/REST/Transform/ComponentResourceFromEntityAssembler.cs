@@ -6,10 +6,13 @@ namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
 public static class ComponentResourceFromEntityAssembler
 {
     public static ComponentResource ToResourceFromEntity(Component entity) 
-        => new ComponentResource(
+    {
+        var resource = new ComponentResource(
             entity.Id.Value,
             entity.Name,
             entity.Description,
             entity.IsActive
         );
+        return resource;
+    }
 }
