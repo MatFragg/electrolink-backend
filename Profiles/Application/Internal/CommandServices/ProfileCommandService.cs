@@ -5,17 +5,19 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
 using Hampcoders.Electrolink.API.Shared.Infrastructure;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Profiles.Application.Internal.CommandServices;
 
 public class ProfileCommandService(
   IProfileRepository profileRepository,
-  IFileStorageProvider fileStorageProvider,
-  ExternalAssetService externalAssetService,
+  IFileStorageService fileStorageService,
+  IOrphanedFileRepository orphanedFileRepository,
   ExternalIamService externalIamService,
   IUnitOfWork unitOfWork,
   IMediator mediator,
@@ -23,6 +25,7 @@ public class ProfileCommandService(
   ILogger<ProfileCommandService> logger)
   : IProfileCommandService
 {
+
   public async Task<Profile?> Handle(CreateProfileCommand command)
   { 
       var userId = UserId.From(command.UserId);
@@ -40,9 +43,24 @@ public class ProfileCommandService(
       return profile;
   }
 
-  public Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command)
+  public async Task<bool> Handle(UpdateTechnicianSpecialtiesCommand command)
   {
-      throw new NotImplementedException();
+      var profile = await profileRepository.FindByTechnicianIdAsync(
+          TechnicianId.From(command.TechnicianId));
+
+      if (profile?.Technician is null)
+          throw new ArgumentException($"Technician with ID {command.TechnicianId} not found.");
+
+      var specialties = command.Specialties
+          .Select(s => Enum.TryParse<ESpecialty>(s, true, out var parsed) ? parsed : (ESpecialty?)null)
+          .Where(s => s.HasValue)
+          .Select(s => s!.Value)
+          .ToList();
+
+      profile.Technician.UpdateSpecialties(specialties);
+      profileRepository.Update(profile);
+      await unitOfWork.CompleteAsync();
+      return true;
   }
 
   public async Task<Profile> Handle(CompleteProfileAsTechnicianCommand command)
@@ -71,7 +89,7 @@ public class ProfileCommandService(
               command.CenterLongitude,
               command.RadiusKm)); 
 
-  profile.CompleteAsTechnician(personalData, technicianData, uniquenessChecker);
+  await profile.CompleteAsTechnician(personalData, technicianData, uniquenessChecker);
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
@@ -102,7 +120,7 @@ public class ProfileCommandService(
           command.EmergencyContact
       );
 
-      profile.CompleteAsHomeowner(personalData, homeownerData, uniquenessChecker);
+      await profile.CompleteAsHomeowner(personalData, homeownerData, uniquenessChecker);
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
@@ -141,6 +159,7 @@ public class ProfileCommandService(
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
       return profile;
   }
 
@@ -158,6 +177,7 @@ public class ProfileCommandService(
       
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
       return profile;
   }
 
@@ -184,7 +204,7 @@ public class ProfileCommandService(
       
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
-
+      await PublishAndClearEventsAsync(profile);
       return profile;
   }
 
@@ -193,20 +213,90 @@ public class ProfileCommandService(
       var profile = await profileRepository.FindByIdAsync(ProfileId.From(command.ProfileId)) 
           ?? throw new ArgumentException("Profile not found.");
 
-      if (command.File == null || command.File.Length == 0)
-          throw new ArgumentException("File is empty.");
+      EnsureOwnership(profile, command.UserId);
 
-      using var stream = command.File.OpenReadStream();
-      var fileName = $"{command.ProfileId}-{Guid.NewGuid()}{Path.GetExtension(command.File.FileName)}";
+      using var stream = command.FileStream;
+      var fileName = command.FileName;
       
-      var result = await fileStorageProvider.UploadAsync(stream, fileName, "profiles/pictures");
+      var result = await fileStorageService.UploadProfilePhotoAsync(profile.UserId.Value, stream, fileName);
       
-      profile.UpdateProfilePicture(result.PublicUrl);
+      var photo = ProfilePhoto.Create(result.PublicUrl, result.ProviderId);
+      profile.UpdateProfilePhoto(photo);
 
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
 
       return profile;
+  }
+
+  public async Task<SignedUploadData> Handle(GetProfilePhotoUploadUrlCommand command)
+  {
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+
+      EnsureOwnership(profile, command.UserId);
+
+      return await fileStorageService.GetSignedUploadUrlForProfileAsync(profile.UserId.Value);
+  }
+
+  public async Task<Profile> Handle(UpdateProfilePhotoCommand command)
+  {
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+
+      EnsureOwnership(profile, command.UserId);
+
+      try
+      {
+          if (profile.Photo is not null)
+          {
+              await fileStorageService.DeleteProfilePhotoAsync(profile.Photo.ProviderId);
+          }
+
+          var photo = ProfilePhoto.Create(command.PublicUrl, command.ProviderId);
+          profile.UpdateProfilePhoto(photo);
+
+          profileRepository.Update(profile);
+          await unitOfWork.CompleteAsync();
+          await PublishAndClearEventsAsync(profile);
+
+          return profile;
+      }
+      catch
+      {
+          await orphanedFileRepository.AddAsync(
+              OrphanedFileDeletion.Create(command.ProviderId, $"electrolink/profiles/{profile.UserId.Value}/avatar", "Profile photo registration failed"));
+          await unitOfWork.CompleteAsync();
+          throw;
+      }
+  }
+
+  public async Task Handle(RemoveProfilePhotoCommand command)
+  {
+      var profile = await profileRepository.FindByIdAsync(
+          ProfileId.From(command.ProfileId)) ?? throw new ArgumentException("Profile not found.");
+
+      EnsureOwnership(profile, command.UserId);
+
+      var oldProviderId = profile.RemoveProfilePhoto();
+
+      if (oldProviderId is not null)
+      {
+          try
+          {
+              await fileStorageService.DeleteProfilePhotoAsync(oldProviderId);
+          }
+          catch
+          {
+              await orphanedFileRepository.AddAsync(
+                  OrphanedFileDeletion.Create(oldProviderId, $"electrolink/profiles/{profile.UserId.Value}/avatar", "Profile photo deletion failed"));
+          }
+      }
+
+      profileRepository.Update(profile);
+      await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
   }
 
   public async Task Handle(DeactivateProfileCommand command)
@@ -219,6 +309,7 @@ public class ProfileCommandService(
       profile.Deactivate();
       profileRepository.Update(profile);
       await unitOfWork.CompleteAsync();
+      await PublishAndClearEventsAsync(profile);
   }
 
   public async Task Handle(ReactivateProfileCommand command)
@@ -248,4 +339,3 @@ public class ProfileCommandService(
           throw new UnauthorizedProfileAccessException();
   }
 }
-

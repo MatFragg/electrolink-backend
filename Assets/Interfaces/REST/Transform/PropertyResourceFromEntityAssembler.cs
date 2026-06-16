@@ -6,11 +6,10 @@ namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
 
 public static class PropertyResourceFromEntityAssembler
 {
-    // Convierte el Agregado del Dominio en un Resource para la respuesta de la API
-    public static PropertyResource ToResourceFromEntity(Property entity) 
+    public static PropertyResource ToResourceFromEntity(Property entity)
         => new PropertyResource(
             entity.Id.Value,
-            entity.OwnerId.Value, 
+            entity.OwnerId.Value,
             new AddressResource(
                 entity.Address.Street, entity.Address.Number, entity.Address.District, entity.Address.City,
                 entity.Address.Country, entity.Address.PostalCode),
@@ -19,6 +18,7 @@ public static class PropertyResourceFromEntityAssembler
                 entity.Geolocation.Accuracy, entity.Geolocation.Source),
             entity.Status.ToString(),
             entity.IsActive,
-            entity.Photos.Select(p => p.PhotoUrl).ToList()
+            entity.MainPhotoProviderId,
+            entity.Photos.Select(p => PropertyPhotoResourceFromEntityAssembler.ToResource(p)).ToList()
         );
 }

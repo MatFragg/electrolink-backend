@@ -9,5 +9,6 @@ public record PropertyResource(
     GeolocationResource Geolocation,
     string Status,
     bool IsActive,
-    IEnumerable<string> Photos
+    string? MainPhotoProviderId,
+    IEnumerable<PropertyPhotoResource> Photos
 );

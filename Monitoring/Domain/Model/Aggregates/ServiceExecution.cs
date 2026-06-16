@@ -2,18 +2,41 @@
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Events;
+using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 
-/// <summary>
-/// ServiceExecution Aggregate Root represents the execution of a scheduled service assignment.
-/// Tracks the entire lifecycle from scheduling through evaluation.
-/// </summary>
-public class ServiceExecution : BaseAggregateRoot
+public class ServiceExecution : BaseAggregateRoot, IExecutable
 {
+    private static readonly HashSet<(EExecutionStatus From, string Action)> _validTransitions = new()
+    {
+        (EExecutionStatus.Notified, nameof(Start)),
+        (EExecutionStatus.Notified, nameof(MarkEnRoute)),
+        (EExecutionStatus.EnRoute, nameof(MarkArrived)),
+        (EExecutionStatus.Arrived, nameof(Complete)),
+        (EExecutionStatus.InProgress, nameof(Complete)),
+        (EExecutionStatus.InProgress, nameof(UploadPhoto)),
+        (EExecutionStatus.InProgress, nameof(RecordComponentsUsed)),
+        (EExecutionStatus.InProgress, nameof(UpdateTechnicalReport)),
+        (EExecutionStatus.InProgress, nameof(RemotelyToggleCircuit)),
+        (EExecutionStatus.PendingReview, nameof(SubmitClientReview)),
+        (EExecutionStatus.PendingReview, nameof(SubmitTechnicianReview)),
+        (EExecutionStatus.Completed, nameof(SubmitClientReview)),
+        (EExecutionStatus.Completed, nameof(SubmitTechnicianReview)),
+        (EExecutionStatus.Completed, nameof(TryFinalizeAfterReviews)),
+        (EExecutionStatus.PendingReview, nameof(TryFinalizeAfterReviews)),
+        (EExecutionStatus.Notified, nameof(RecordNoShow)),
+        (EExecutionStatus.Notified, nameof(ExtendWaitTime)),
+    };
+
+    private static readonly HashSet<EExecutionStatus> _cancelableStatuses = new()
+    {
+        EExecutionStatus.Notified, EExecutionStatus.EnRoute, EExecutionStatus.Arrived, EExecutionStatus.InProgress, EExecutionStatus.PendingReview
+    };
+
     public ServiceExecutionId Id { get; private set; } = null!;
     public AssignmentId AssignmentId { get; private set; } = null!;
     public RequestId RequestId { get; private set; } = null!;
@@ -26,21 +49,22 @@ public class ServiceExecution : BaseAggregateRoot
     public DateTime? StartedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public DateTime? CancelledAt { get; private set; }
+    public EServiceType ServiceType { get; private set; }
+    public IoTContextSnapshot? IotContext { get; private set; }
     private readonly List<WorkPhoto> _workPhotos = new();
     public IReadOnlyCollection<WorkPhoto> WorkPhotos => _workPhotos.AsReadOnly();
     private readonly List<ComponentUsageRecord> _componentSubstitutions = new();
     public IReadOnlyCollection<ComponentUsageRecord> ComponentSubstitutions => _componentSubstitutions.AsReadOnly();
-    [MaxLength(255)]
+    private readonly List<RelayActionRecord> _relayActionRecords = new();
+    public IReadOnlyCollection<RelayActionRecord> RelayActionRecords => _relayActionRecords.AsReadOnly();
+    [MaxLength(4000)]
     public string? TechnicalReportContent { get; private set; }
-    [MaxLength(255)]
+    [MaxLength(4000)]
     public string? TechnicalReportFindings { get; private set; }
-    [MaxLength(255)]
+    [MaxLength(4000)]
     public string? TechnicalReportRecommendations { get; private set; }
     public int TechnicalReportVersion { get; private set; }
     public bool IsPriority { get; private set; }
-    public CancellationRequestId? CancellationRequestId { get; private set; }
-    public EvaluationId? HomeownerEvaluationId { get; private set; }
-    public EvaluationId? TechnicianEvaluationId { get; private set; }
     private readonly List<ServiceEvaluation> _evaluations = new();
     public IReadOnlyCollection<ServiceEvaluation> Evaluations => _evaluations.AsReadOnly();
     public DateTime? NoShowDetectedAt { get; private set; }
@@ -50,9 +74,6 @@ public class ServiceExecution : BaseAggregateRoot
 
     protected ServiceExecution() { }
 
-    /// <summary>
-    /// Factory method to create a new ServiceExecution from an assignment.
-    /// </summary>
     public static ServiceExecution Create(CreateServiceExecutionCommand command)
     {
         if (command.AssignmentId == null) throw new ArgumentNullException(nameof(AssignmentId));
@@ -72,56 +93,99 @@ public class ServiceExecution : BaseAggregateRoot
             PropertyId = command.PropertyId,
             RecipeSnapshot = command.RecipeSnapshot,
             ScheduledDateTime = command.ScheduledDateTime,
-            Status = EExecutionStatus.Scheduled,
+            Status = EExecutionStatus.Notified,
             IsPriority = command.IsPriority,
+            ServiceType = command.ServiceType,
+            IotContext = command.IotContext,
             TechnicalReportVersion = 0
         };
 
         return exec;
     }
 
-    /// <summary>
-    /// Starts the service execution.
-    /// Transitions status from Scheduled to InProgress.
-    /// </summary>
     public void Start(TechnicianId technicianId, DateTime startedAt)
     {
-        EnsureStatus(EExecutionStatus.Scheduled);
+        EnsureTransitionValid(nameof(Start));
         EnsureTechnicianOwnership(technicianId);
 
+        var previous = Status;
         Status = EExecutionStatus.InProgress;
         StartedAt = startedAt;
 
         RaiseDomainEvent(new ServiceExecutionStartedEvent(
             Id, AssignmentId,
             TechnicianId, HomeownerId,
-            EExecutionStatus.Scheduled, EExecutionStatus.InProgress,
-            startedAt, new DateTime()));
+            previous, Status,
+            startedAt, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Uploads a work photo during the service execution.
-    /// </summary>
-    public void UploadPhoto(EPhotoType photoType, string photoUrl, DateTime takenAt, string? notes)
+    public void MarkEnRoute(TechnicianId technicianId, DateTime timestamp)
     {
-        EnsureStatus(EExecutionStatus.InProgress);
+        EnsureTransitionValid(nameof(MarkEnRoute));
+        EnsureTechnicianOwnership(technicianId);
+
+        var previous = Status;
+        Status = EExecutionStatus.EnRoute;
+
+        RaiseDomainEvent(new ServiceStatusChangedEvent(
+            Id, AssignmentId, TechnicianId, HomeownerId,
+            previous, Status, timestamp, DateTime.UtcNow));
+    }
+
+    public void MarkArrived(TechnicianId technicianId, DateTime timestamp)
+    {
+        EnsureTransitionValid(nameof(MarkArrived));
+        EnsureTechnicianOwnership(technicianId);
+
+        var previous = Status;
+        Status = EExecutionStatus.Arrived;
+
+        RaiseDomainEvent(new ServiceStatusChangedEvent(
+            Id, AssignmentId, TechnicianId, HomeownerId,
+            previous, Status, timestamp, DateTime.UtcNow));
+    }
+
+    public void UploadPhoto(
+        EPhotoType photoType,
+        string photoUrl,
+        string providerId,
+        string? thumbnailUrl,
+        long sizeBytes,
+        string format,
+        DateTime takenAt,
+        string? notes)
+    {
+        EnsureTransitionValid(nameof(UploadPhoto));
 
         if (string.IsNullOrWhiteSpace(photoUrl))
             throw new ArgumentException("Photo URL cannot be empty.", nameof(photoUrl));
 
-        var photo = WorkPhoto.Create(Id, photoType, photoUrl, takenAt, notes);
+        const int maxTotalPhotos = 10;
+        if (_workPhotos.Count >= maxTotalPhotos)
+            throw new MaxWorkPhotosExceededException(maxTotalPhotos, _workPhotos.Count);
+
+        int maxPerType = photoType switch
+        {
+            EPhotoType.Before => 3,
+            EPhotoType.During => 3,
+            EPhotoType.After => 4,
+            _ => throw new ArgumentException($"Invalid photo type: {photoType}")
+        };
+
+        int currentCountForType = _workPhotos.Count(p => p.PhotoType == photoType);
+        if (currentCountForType >= maxPerType)
+            throw new MaxWorkPhotosPerTypeExceededException(photoType, maxPerType, currentCountForType);
+
+        var photo = WorkPhoto.Create(Id, photoType, photoUrl, providerId, thumbnailUrl, sizeBytes, format, takenAt, notes);
         _workPhotos.Add(photo);
 
         RaiseDomainEvent(new WorkPhotoUploadedEvent(
             Id, photo.Id, photoType, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Records actual component usage during the service.
-    /// </summary>
     public void RecordComponentsUsed(IReadOnlyList<ComponentUsageRecord> components, DateTime recordedAt)
     {
-        EnsureStatus(EExecutionStatus.InProgress);
+        EnsureTransitionValid(nameof(RecordComponentsUsed));
 
         if (components is null || components.Count == 0)
             throw new ArgumentException("At least one component must be recorded.");
@@ -141,12 +205,9 @@ public class ServiceExecution : BaseAggregateRoot
             recordedAt, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Updates the technical report with findings and recommendations.
-    /// </summary>
     public void UpdateTechnicalReport(string content, string findings, string recommendations, DateTime updatedAt)
     {
-        EnsureStatus(EExecutionStatus.InProgress);
+        EnsureTransitionValid(nameof(UpdateTechnicalReport));
 
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Report content cannot be empty.", nameof(content));
@@ -160,14 +221,9 @@ public class ServiceExecution : BaseAggregateRoot
             Id, TechnicalReportVersion, updatedAt));
     }
 
-    /// <summary>
-    /// Completes the service execution.
-    /// Transitions status from InProgress to Completed.
-    /// Opens evaluation window for both homeowner and technician.
-    /// </summary>
     public void Complete(TechnicianId technicianId, DateTime completedAt)
     {
-        EnsureStatus(EExecutionStatus.InProgress);
+        EnsureTransitionValid(nameof(Complete));
         EnsureTechnicianOwnership(technicianId);
 
         if (_workPhotos.Count == 0)
@@ -179,7 +235,7 @@ public class ServiceExecution : BaseAggregateRoot
         if (_componentSubstitutions.Count == 0)
             throw new InvalidOperationException("At least one component record is required to complete the service.");
 
-        Status = EExecutionStatus.Completed;
+        Status = EExecutionStatus.PendingReview;
         CompletedAt = completedAt;
 
         bool hasOverage = _componentSubstitutions.Any(c => c.Delta > 0);
@@ -201,25 +257,14 @@ public class ServiceExecution : BaseAggregateRoot
             completedAt, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Cancels the service execution.
-    /// Can only be cancelled if not already completed or cancelled.
-    /// </summary>
-    public void Cancel(
-        string cancelledById,
-        ECancelledBy cancelledBy,
-        ECancellationReason reason,
-        string? notes,
-        bool requestReassignment)
+    public void Cancel(CancellationRequestId? cancellationRequestId, string cancelledById, ECancelledBy cancelledBy, ECancellationReason reason, string? notes, bool requestReassignment)
     {
-        if (Status == EExecutionStatus.Completed)
-            throw new InvalidOperationException("Cannot cancel a completed service.");
-        if (Status == EExecutionStatus.Cancelled)
-            throw new InvalidOperationException("Service is already cancelled.");
+        if (!_cancelableStatuses.Contains(Status))
+            throw new InvalidOperationException($"Cannot cancel a service in status {Status}.");
 
-        // Si el técnico cancela, la reasignación no aplica
         bool effectiveReassignment = cancelledBy == ECancelledBy.Technician ? false : requestReassignment;
 
+        var previous = Status;
         Status = EExecutionStatus.Cancelled;
         CancelledAt = DateTime.UtcNow;
 
@@ -232,18 +277,31 @@ public class ServiceExecution : BaseAggregateRoot
             cancelledBy,
             reason.ToString(),
             notes,
-            Status.ToString(),
+            previous.ToString(),
             effectiveReassignment,
             CancelledAt.Value,
             DateTime.UtcNow));
     }
-    
+
+    public void TryFinalizeAfterReviews()
+    {
+        EnsureTransitionValid(nameof(TryFinalizeAfterReviews));
+
+        bool clientEvaluated = _evaluations.Any(e => e.ReviewerRole == "Client");
+        bool technicianEvaluated = _evaluations.Any(e => e.ReviewerRole == "Technician");
+
+        if (clientEvaluated && technicianEvaluated)
+        {
+            Status = EExecutionStatus.Completed;
+        }
+    }
+
     public void OpenEvaluationWindow()
     {
-        if (Status != EExecutionStatus.Completed)
-            throw new InvalidOperationException("Evaluation window can only be opened for completed services.");
+        if (Status != EExecutionStatus.PendingReview && Status != EExecutionStatus.Completed)
+            throw new InvalidOperationException("Evaluation window can only be opened for completed or pending-review services.");
 
-        EvaluationWindowExpiresAt = DateTime.UtcNow.AddDays(7);
+        EvaluationWindowExpiresAt = DateTime.UtcNow.AddHours(72);
         EvaluationWindowExpired = false;
 
         RaiseDomainEvent(new EvaluationWindowOpenedEvent(
@@ -256,38 +314,38 @@ public class ServiceExecution : BaseAggregateRoot
             DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Records a homeowner review/evaluation.
-    /// </summary>
-    public void SubmitHomeownerReview(HomeownerId homeownerId, int rating, string? comment, Dictionary<string, int> categories, DateTime submittedAt)
+    public void SubmitClientReview(HomeownerId HomeownerId, int rating, string? comment, Dictionary<string, int> categories, DateTime submittedAt)
     {
-        EnsureStatus(EExecutionStatus.Completed);
-        EnsureHomeownerOwnership(homeownerId);
-        //EnsureEvaluationWindowOpen();
+        if (Status != EExecutionStatus.PendingReview && Status != EExecutionStatus.Completed)
+            throw new InvalidOperationException(
+                $"Client review can only be submitted for PendingReview or Completed services, but status is {Status}.");
 
-        if (_evaluations.Any(e => e.ReviewerId == homeownerId.Value && e.ReviewerRole == "Homeowner"))
-            throw new InvalidOperationException("Homeowner has already submitted a review for this service.");
+        EnsureClientOwnership(HomeownerId);
+        EnsureEvaluationWindowOpen();
+
+        if (_evaluations.Any(e => e.ReviewerId == HomeownerId.Value && e.ReviewerRole == "Client"))
+            throw new InvalidOperationException("Client has already submitted a review for this service.");
 
         if (rating < 1 || rating > 5)
             throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 5.");
 
-        var eval = ServiceEvaluation.Create(Id, homeownerId.Value, TechnicianId.Value, "Homeowner", rating, comment, categories, submittedAt);
+        var eval = ServiceEvaluation.Create(Id, HomeownerId.Value, TechnicianId.Value, "Client", rating, comment, categories, submittedAt);
         _evaluations.Add(eval);
 
-        RaiseDomainEvent(new HomeownerReviewSubmittedEvent(
+        RaiseDomainEvent(new ClientReviewSubmittedEvent(
             Id, AssignmentId,
-            homeownerId.Value, TechnicianId.Value,
+            HomeownerId.Value, TechnicianId.Value,
             rating, categories, submittedAt, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Records a technician review/evaluation.
-    /// </summary>
     public void SubmitTechnicianReview(TechnicianId technicianId, int rating, string? comment, Dictionary<string, int> categories, DateTime submittedAt)
     {
-        EnsureStatus(EExecutionStatus.Completed);
+        if (Status != EExecutionStatus.PendingReview && Status != EExecutionStatus.Completed)
+            throw new InvalidOperationException(
+                $"Technician review can only be submitted for PendingReview or Completed services, but status is {Status}.");
+
         EnsureTechnicianOwnership(technicianId);
-        //EnsureEvaluationWindowOpen();
+        EnsureEvaluationWindowOpen();
 
         if (_evaluations.Any(e => e.ReviewerId == technicianId.Value && e.ReviewerRole == "Technician"))
             throw new InvalidOperationException("Technician has already submitted a review for this service.");
@@ -304,9 +362,6 @@ public class ServiceExecution : BaseAggregateRoot
             rating, categories, submittedAt, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Closes the evaluation window.
-    /// </summary>
     public void ExpireEvaluationWindow()
     {
         if (EvaluationWindowExpired)
@@ -314,22 +369,21 @@ public class ServiceExecution : BaseAggregateRoot
 
         EvaluationWindowExpired = true;
 
-        bool homeownerEvaluated  = _evaluations.Any(e => e.ReviewerRole == "Homeowner");
+        bool clientEvaluated = _evaluations.Any(e => e.ReviewerRole == "Client");
         bool technicianEvaluated = _evaluations.Any(e => e.ReviewerRole == "Technician");
+
+        if (clientEvaluated && technicianEvaluated)
+            Status = EExecutionStatus.Completed;
 
         RaiseDomainEvent(new EvaluationWindowExpiredEvent(
             Id, AssignmentId,
-            homeownerEvaluated, technicianEvaluated,
+            clientEvaluated, technicianEvaluated,
             DateTime.UtcNow, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Records a no-show incident for the technician.
-    /// Used when technician fails to appear for the scheduled service.
-    /// </summary>
     public void RecordNoShow(DateTime detectedAt, int minutesLate)
     {
-        EnsureStatus(EExecutionStatus.Scheduled);
+        EnsureTransitionValid(nameof(RecordNoShow));
 
         NoShowDetectedAt = detectedAt;
 
@@ -339,14 +393,10 @@ public class ServiceExecution : BaseAggregateRoot
             ScheduledDateTime, detectedAt, minutesLate, DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// Extends the wait time for the service.
-    /// Used when the technician needs more time to arrive.
-    /// </summary>
-    public void ExtendWaitTime(HomeownerId homeownerId, int extendMinutes, DateTime requestedAt)
+    public void ExtendWaitTime(HomeownerId HomeownerId, int extendMinutes, DateTime requestedAt)
     {
-        EnsureStatus(EExecutionStatus.Scheduled);
-        EnsureHomeownerOwnership(homeownerId);
+        EnsureTransitionValid(nameof(ExtendWaitTime));
+        EnsureClientOwnership(HomeownerId);
 
         if (extendMinutes <= 0)
             throw new ArgumentException("Extension minutes must be positive.", nameof(extendMinutes));
@@ -354,15 +404,56 @@ public class ServiceExecution : BaseAggregateRoot
         WaitExtendedUntil = (NoShowDetectedAt ?? requestedAt).AddMinutes(extendMinutes);
 
         RaiseDomainEvent(new ServiceWaitTimeExtendedEvent(
-            Id, homeownerId,
+            Id, HomeownerId,
             extendMinutes, WaitExtendedUntil.Value, requestedAt, DateTime.UtcNow));
     }
-    
-    private void EnsureStatus(EExecutionStatus expected)
+
+    public void RemotelyToggleCircuit(TechnicianId technicianId, ERelayState targetState, string actorId)
     {
-        if (Status != expected)
+        EnsureTransitionValid(nameof(RemotelyToggleCircuit));
+        EnsureTechnicianOwnership(technicianId);
+
+        if (IotContext is null)
+            throw new InvalidOperationException("No IoT device is associated with this service execution.");
+
+        var record = RelayActionRecord.Create(Id, IotContext.DeviceId, DateTime.UtcNow);
+        _relayActionRecords.Add(record);
+
+        RaiseDomainEvent(new CircuitToggleRequestedEvent(
+            Id,
+            IotContext.DeviceId,
+            targetState,
+            DateTime.UtcNow));
+    }
+
+    public void RecordCircuitToggle(DeviceId deviceId, ERelayState targetState, ERelayActionStatus actionStatus, string? failureReason)
+    {
+        if (IotContext is null)
+            throw new InvalidOperationException("No IoT device context found for this service execution.");
+
+        if (IotContext.DeviceId != deviceId)
+            throw new InvalidOperationException($"Device {deviceId} is not associated with this service execution.");
+
+        var pending = _relayActionRecords.FirstOrDefault(r =>
+            r.DeviceId == deviceId && r.Status == ERelayActionStatus.Pending);
+        if (pending is null)
+            throw new InvalidOperationException("No pending relay action found for this service execution.");
+
+        if (actionStatus == ERelayActionStatus.Executed)
+            pending.MarkExecuted(DateTime.UtcNow);
+        else
+            pending.MarkFailed(failureReason ?? "Unknown error", DateTime.UtcNow);
+
+        RaiseDomainEvent(new CircuitToggleRecordedEvent(
+            Id, deviceId, targetState,
+            actionStatus, failureReason, DateTime.UtcNow));
+    }
+
+    private void EnsureTransitionValid(string action)
+    {
+        if (!_validTransitions.Contains((Status, action)))
             throw new InvalidOperationException(
-                $"ServiceExecution {Id.Value} must be in status {expected} but is {Status}.");
+                $"Transition from {Status} via {action} is not valid.");
     }
 
     private void EnsureTechnicianOwnership(TechnicianId technicianId)
@@ -372,11 +463,11 @@ public class ServiceExecution : BaseAggregateRoot
                 $"Technician {technicianId} is not assigned to this service execution.");
     }
 
-    private void EnsureHomeownerOwnership(HomeownerId homeownerId)
+    private void EnsureClientOwnership(HomeownerId HomeownerId)
     {
-        if (HomeownerId != homeownerId)
+        if (HomeownerId != HomeownerId)
             throw new UnauthorizedAccessException(
-                $"Homeowner {homeownerId} is not the owner of this service execution.");
+                $"Client {HomeownerId} is not the owner of this service execution.");
     }
 
     private void EnsureEvaluationWindowOpen()

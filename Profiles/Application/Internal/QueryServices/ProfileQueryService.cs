@@ -1,8 +1,6 @@
-using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
-using Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
@@ -28,7 +26,7 @@ public class ProfileQueryService(IProfileRepository profileRepository) : IProfil
         return profile;
     }
 
-    public async Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> Handle(GetTechniciansInAreaQuery query)
+    public async Task<IEnumerable<(string technicianId, string profileId, string fullName)>> Handle(GetTechniciansInAreaQuery query)
         => await profileRepository.FindTechniciansInAreaAsync(query.Latitude, query.Longitude);
 
     public Task<(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)?> Handle(GetProfileClaimsQuery query)
@@ -61,31 +59,4 @@ public class ProfileQueryService(IProfileRepository profileRepository) : IProfil
             _ => throw new ArgumentOutOfRangeException(nameof(profile.Status), profile.Status, "Invalid profile status")
         };
 
-    private static MyProfileReadModel MapToMyProfileReadModel(Profile profile)
-    {
-        return new MyProfileReadModel(
-            ProfileId:    profile.ProfileId.Value,
-            UserId:       profile.UserId.Value,
-            BusinessRole: profile.BusinessRole?.ToString(),
-            Status:       profile.Status.ToString(),
-            PersonalData: profile.PersonalData is null ? null : MapPersonalData(profile.PersonalData),
-            Technician:   profile.Technician   is null ? null : MapTechnician(profile.Technician),
-            Homeowner:    profile.Homeowner    is null ? null : MapHomeowner(profile.Homeowner));
-    }
-
-    private static PersonalDataReadModel MapPersonalData(PersonalData personalData) =>
-        new(personalData.FirstName, personalData.LastName,  personalData.PhoneNumber.Value,
-            personalData.Address.ToString(), personalData.DateOfBirth.Value.ToString("yyyy-MM-dd"));
-
-    private static TechnicianReadModel MapTechnician(Technician technician) =>
-        new(technician.TechnicianId.Value,
-            technician.Specialties.Select(s => s.ToString()).ToList(),
-            technician.ExperienceYears, technician.AboutMe);
-
-    private static HomeownerReadModel MapHomeowner(HomeOwner homeowner) =>
-        new(homeowner.HomeownerId.Value,
-            homeowner.PreferredContactTime.ToString(),
-            homeowner.CommunicationPreferences.SmsNotifications,
-            homeowner.CommunicationPreferences.EmailNotifications,
-            homeowner.CommunicationPreferences.PushNotifications);
 }

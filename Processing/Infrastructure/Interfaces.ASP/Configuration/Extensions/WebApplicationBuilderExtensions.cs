@@ -1,0 +1,38 @@
+using Hampcoders.Electrolink.API.Processing.Domain.Repositories;
+using Hampcoders.Electrolink.API.Processing.Domain.Services;
+using Hampcoders.Electrolink.API.Processing.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Processing.Application.Internal.QueryServices;
+using Hampcoders.Electrolink.API.Processing.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Processing.Infrastructure.Persistence.EFC.Repositories;
+using Hampcoders.Electrolink.API.Processing.Infrastructure.Services;
+using Hampcoders.Electrolink.API.Processing.Interfaces.ACL;
+using Hampcoders.Electrolink.API.Processing.Interfaces.ACL.Services;
+
+namespace Hampcoders.Electrolink.API.Processing.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+
+public static class WebApplicationBuilderExtensions
+{
+    public static void AddProcessingContextServices(this WebApplicationBuilder builder)
+    {
+        // Repositories
+        builder.Services.AddScoped<IDeviceReadingStreamRepository, DeviceReadingStreamRepository>();
+        builder.Services.AddScoped<IAnomalyRecordRepository, AnomalyRecordRepository>();
+        builder.Services.AddScoped<IRelayControlCommandRepository, RelayControlCommandRepository>();
+
+        // Command Services
+        builder.Services.AddScoped<IDeviceReadingStreamCommandService, DeviceReadingStreamCommandService>();
+        builder.Services.AddScoped<IAnomalyCommandService, AnomalyCommandService>();
+        builder.Services.AddScoped<IRelayCommandService, RelayCommandService>();
+
+        // Query Services
+        builder.Services.AddScoped<IIoTMonitoringQueryService, IoTMonitoringQueryService>();
+
+        // Outbound Services (cross-BC)
+        builder.Services.AddScoped<IServiceOperationContextFacade, ServiceOperationContextFacade>();
+        builder.Services.AddScoped<IAssetsContextFacade, ExternalAssetsService>();
+        builder.Services.AddScoped<IProfilesContextFacade, ExternalProfilesService>();
+
+        // ACL
+        builder.Services.AddScoped<IProcessingContextFacade, ProcessingContextFacade>();
+    }
+}

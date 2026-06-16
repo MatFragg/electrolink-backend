@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Exceptions;
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
@@ -12,16 +13,16 @@ public class ComponentCommandService(IComponentRepository componentRepository, I
     public async Task<Component?> Handle(CreateComponentCommand command)
     {
         if (await componentRepository.ExistsByNameAsync(command.Name))
-            throw new ArgumentException($"A component with the name '{command.Name}' already exists.");
+            throw new DuplicateAssetException("Component", $"name '{command.Name}'");
 
         var component = Component.Create(command.Name, command.Description,command.IsActive); 
         await componentRepository.AddAsync(component);
         await unitOfWork.CompleteAsync();
 
-        logger.LogInformation($"[ComponentCommandService] Después de CompleteAsync. Número de eventos de dominio en el AR: {component.DomainEvents.Count}");
+        logger.LogInformation("[ComponentCommandService] Después de CompleteAsync. Número de eventos de dominio en el AR: {DomainEventCount}.", component.DomainEvents.Count);
         foreach (var domainEvent in component.DomainEvents)
         {
-            logger.LogInformation($"[ComponentCommandService] Publicando evento de dominio: {domainEvent.GetType().Name} (ID: {domainEvent.EventId})");
+            logger.LogInformation("[ComponentCommandService] Publicando evento de dominio: {EventType} (ID: {EventId}).", domainEvent.GetType().Name, domainEvent.EventId);
             await mediator.Publish(domainEvent, CancellationToken.None);
         }
         component.ClearDomainEvents(); 
@@ -32,7 +33,7 @@ public class ComponentCommandService(IComponentRepository componentRepository, I
     public async Task<Component?> Handle(UpdateComponentCommand command)
     {
         var component = await componentRepository.FindByIdAsync(command.ComponentId); 
-        if (component is null) throw new ArgumentException("Component not found.");
+        if (component is null) throw new AssetNotFoundException("Component", command.ComponentId.Value);
 
         component.UpdateInfo(command); 
         await unitOfWork.CompleteAsync();

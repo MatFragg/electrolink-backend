@@ -7,9 +7,9 @@ public interface ISubscriptionCommandService
 {
     Task<Subscription> Handle(CreateSubscriptionCommand command);
     Task<InitiateCheckoutResult> Handle(InitiateCheckoutCommand command);
-    Task<Subscription> Handle(ActivateSubscriptionCommand command);
-    Task<Subscription> Handle(ActivateEnterpriseSubscriptionPendingInstallationCommand command);
-    Task<Subscription> Handle(RecordSuccessfulRenewalCommand command);
+    Task<Subscription?> Handle(ActivateSubscriptionCommand command);
+    Task<Subscription?> Handle(ActivateEnterpriseSubscriptionPendingInstallationCommand command);
+    Task<Subscription?> Handle(RecordSuccessfulRenewalCommand command);
     Task<Subscription> Handle(StartGracePeriodCommand command);
     Task<Subscription> Handle(DegradeSubscriptionCommand command);
     Task<Subscription> Handle(CancelSubscriptionCommand command);

@@ -10,7 +10,7 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers
 public class TechnicianAssignedEventHandler(ILogger<TechnicianAssignedEventHandler> logger)
     : IEventHandler<TechnicianAssignedEvent>
 {
-    public async Task Handle(TechnicianAssignedEvent notification, CancellationToken cancellationToken)
+    public Task Handle(TechnicianAssignedEvent notification, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Technician {TechnicianId} assigned to Request {RequestId} at {Timestamp}",
@@ -18,12 +18,7 @@ public class TechnicianAssignedEventHandler(ILogger<TechnicianAssignedEventHandl
             notification.RequestId,
             notification.OccurredOn);
 
-        // TODO: Future implementation
-        // - Send notification to assigned technician
-        // - Update technician's schedule
-        // - Notify client of assignment
-
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 }
 

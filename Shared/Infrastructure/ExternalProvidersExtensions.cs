@@ -1,7 +1,11 @@
+using Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.ExternalProviders;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.ExternalProviders;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces.ASP.Configuration;
-using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.ExternalProviders;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Services;
+using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.PaymentGateway.StripeProvider;
 
 namespace Hampcoders.Electrolink.API.Shared.Infrastructure;
 
@@ -12,6 +16,7 @@ public static class ExternalProvidersExtensions
         AddPaymentProvider(services, configuration);
         AddFileStorageProvider(services, configuration);
         AddAIMatchingProvider(services, configuration);
+        AddFileStorageService(services);
         return services;
     }
 
@@ -24,9 +29,12 @@ public static class ExternalProvidersExtensions
                 services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
                 services.AddScoped<IPaymentProvider, StripePaymentProvider>();
                 break;
+            case "disabled":
+                services.AddScoped<IPaymentProvider, NullPaymentProvider>();
+                break;
             default:
                 throw new InvalidOperationException(
-                    "Unknown payment provider: '{provider}'. Supported: stripe");
+                    $"Unknown payment provider: '{provider}'. Supported: stripe, disabled");
         }
     }
 
@@ -39,9 +47,12 @@ public static class ExternalProvidersExtensions
                 services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
                 services.AddScoped<IFileStorageProvider, CloudinaryFileStorageProvider>();
                 break;
+            case "disabled":
+                services.AddScoped<IFileStorageProvider, NullFileStorageProvider>();
+                break;
             default:
                 throw new InvalidOperationException(
-                    "Unknown file storage provider: '{provider}'. Supported: cloudinary");
+                    $"Unknown file storage provider: '{provider}'. Supported: cloudinary, disabled");
         }
     }
 
@@ -61,5 +72,12 @@ public static class ExternalProvidersExtensions
                 throw new InvalidOperationException(
                     "Unknown AI matching provider: '{provider}'. Supported: openai, disabled");
         }
+
+        services.AddScoped<IMatchingService, HybridMatchingService>();
+    }
+
+    private static void AddFileStorageService(IServiceCollection services)
+    {
+        services.AddScoped<IFileStorageService, FileStorageService>();
     }
 }

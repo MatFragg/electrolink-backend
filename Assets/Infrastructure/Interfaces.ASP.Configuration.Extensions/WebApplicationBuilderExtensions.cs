@@ -22,15 +22,19 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<ITechnicianInventoryCommandService, TechnicianInventoryCommandService>();
         builder.Services.AddScoped<IComponentCommandService, ComponentCommandService>();
         builder.Services.AddScoped<IComponentTypeCommandService, ComponentTypeCommandService>();
-        builder.Services.AddScoped<IPropertyQueryService, PropertyQueryService>();
-        builder.Services.AddScoped<ITechnicianInventoryQueryService, TechnicianInventoryQueryService>();
-        builder.Services.AddScoped<IComponentQueryService, ComponentQueryService>();
-        builder.Services.AddScoped<IComponentTypeQueryService, ComponentTypeQueryService>();
+        builder.Services.AddTransient<IPropertyQueryService, PropertyQueryService>();
+        builder.Services.AddTransient<ITechnicianInventoryQueryService, TechnicianInventoryQueryService>();
+        builder.Services.AddTransient<IComponentQueryService, ComponentQueryService>();
+        builder.Services.AddTransient<IComponentTypeQueryService, ComponentTypeQueryService>();
         builder.Services.AddScoped<IPropertyPortfolioCommandService, PropertyPortfolioCommandService>();
-        builder.Services.AddScoped<IPropertyPortfolioQueryService, PropertyPortfolioQueryService>();
+        builder.Services.AddTransient<IPropertyPortfolioQueryService, PropertyPortfolioQueryService>();
         builder.Services.AddScoped<IPropertyPortfolioRepository, PropertyPortfolioRepository>();
         builder.Services.AddScoped<IAssetsContextFacade, AssetsContextFacade>();
 
         builder.Services.AddScoped<IComponentTypeValidator, ComponentTypeValidator>();
+
+        builder.Services.AddScoped<IIoTDeviceRepository, IoTDeviceRepository>();
+        builder.Services.AddScoped<IIoTDeviceCommandService, IoTDeviceCommandService>();
+        builder.Services.AddTransient<IIoTDeviceQueryService, IoTDeviceQueryService>();
     } 
 }

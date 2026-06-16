@@ -22,7 +22,7 @@ public record MatchingContext(
     string? PriorAnomalyDescription
 );
 
-public record ScoredCandidate(string TechnicianId, double Score, string Reasoning);
+// ScoredCandidate moved to Shared.Domain.Model.ValueObjects to avoid Domain → Infrastructure dependency
 
 public interface IAIMatchingProvider
 {

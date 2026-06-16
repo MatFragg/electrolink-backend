@@ -1,61 +1,51 @@
-﻿using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Planning.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Application.Internal.EventHandler;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Events;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers;
 
-/// <summary>
-/// Manejador de evento: Cuando una suscripción se activa en el BC de Subscriptions.
-/// Crea un catálogo de servicios vacío para el técnico si no existe.
-/// </summary>
-public class SubscriptionActivatedEventHandler
+public class SubscriptionActivatedEventHandler(
+    IServiceCatalogRepository catalogRepository,
+    IUnitOfWork unitOfWork,
+    ExternalProfilesService externalProfiles,
+    ILogger<SubscriptionActivatedEventHandler> logger)
+    : IEventHandler<SubscriptionActivatedEvent>
 {
-    private readonly IServiceCatalogRepository _catalogRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<SubscriptionActivatedEventHandler> _logger;
-
-    public SubscriptionActivatedEventHandler(
-        IServiceCatalogRepository catalogRepository,
-        IUnitOfWork unitOfWork,
-        ILogger<SubscriptionActivatedEventHandler> logger)
+    public async Task Handle(SubscriptionActivatedEvent @event, CancellationToken cancellationToken)
     {
-        _catalogRepository = catalogRepository ?? throw new ArgumentNullException(nameof(catalogRepository));
-        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    public async Task Handle(dynamic @event)
-    {
-        try
+        if (@event.BusinessRole != "TECHNICIAN")
         {
-            string technicianId = @event.TechnicianId;
-            string profileId = @event.ProfileId;
-
-            _logger.LogInformation($"[Planning] Handling SubscriptionActivated for Technician {technicianId}");
-
-            var existingCatalog = await _catalogRepository.FindByTechnicianIdAsync(
-                TechnicianId.From(technicianId));
-
-            if (existingCatalog != null)
-            {
-                _logger.LogInformation($"[Planning] Catalog already exists for Technician {technicianId}");
-                return;
-            }
-
-            // Crear nuevo catálogo vacío
-            var newCatalog = ServiceCatalog.Create(TechnicianId.From(technicianId));
-            await _catalogRepository.AddAsync(newCatalog);
-            await _unitOfWork.CompleteAsync();
-
-            _logger.LogInformation($"[Planning] Catalog created for Technician {technicianId}");
+            logger.LogInformation("[Planning] Ignored SubscriptionActivated for BusinessRole={Role}", @event.BusinessRole);
+            return;
         }
-        catch (Exception ex)
+
+        var technicianId = await externalProfiles.GetTechnicianIdByUserIdAsync(@event.UserId);
+
+        if (string.IsNullOrWhiteSpace(technicianId))
         {
-            _logger.LogError(ex, "[Planning] Error handling SubscriptionActivated event");
-            throw;
+            logger.LogWarning("[Planning] No technician profile found for user {UserId}", @event.UserId);
+            return;
         }
+
+        logger.LogInformation("[Planning] Handling SubscriptionActivated for Technician {TechnicianId}", technicianId);
+
+        var existingCatalog = await catalogRepository.FindByTechnicianIdAsync(
+            TechnicianId.From(technicianId));
+
+        if (existingCatalog is not null)
+        {
+            logger.LogInformation("[Planning] Catalog already exists for Technician {TechnicianId}", technicianId);
+            return;
+        }
+
+        var newCatalog = ServiceCatalog.Create(TechnicianId.From(technicianId));
+        await catalogRepository.AddAsync(newCatalog);
+        await unitOfWork.CompleteAsync();
+
+        logger.LogInformation("[Planning] Catalog created for Technician {TechnicianId}", technicianId);
     }
 }
-

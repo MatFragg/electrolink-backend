@@ -4,6 +4,7 @@ using Hampcoders.Electrolink.API.Profiles.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.Profiles.Application.Internal.QueryServices;
 using Hampcoders.Electrolink.API.Profiles.Domain.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions.Filters;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Repositories;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Services;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.ACL;
@@ -20,6 +21,6 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddScoped<IProfilesContextFacade, ProfilesContextFacade>();
         builder.Services.AddScoped<IProfileUniquenessChecker, ProfileUniquenessChecker>();
         builder.Services.AddScoped<ExternalIamService>();
-        builder.Services.AddScoped<ExternalAssetService>(); 
+        builder.Services.AddScoped<DomainExceptionFilter>();
     }
 }

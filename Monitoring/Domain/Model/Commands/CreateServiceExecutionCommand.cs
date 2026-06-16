@@ -14,7 +14,7 @@ public record CreateServiceExecutionCommand(
     PropertyId PropertyId,
     RecipeSnapshot RecipeSnapshot,
     DateTime ScheduledDateTime,
-    bool IsPriority
+    bool IsPriority,
+    IoTContextSnapshot? IotContext = null,
+    EServiceType ServiceType = EServiceType.Standard
 );
-
-

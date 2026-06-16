@@ -1,5 +1,5 @@
 ﻿using System.Text.RegularExpressions;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.Exceptions;
 
 namespace Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 

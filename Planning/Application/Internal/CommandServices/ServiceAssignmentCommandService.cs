@@ -8,7 +8,6 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
-using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.CommandServices;
@@ -21,7 +20,7 @@ public class ServiceAssignmentCommandService(
     IServiceCatalogRepository catalogRepository,
     IUnitOfWork unitOfWork,
     IMediator mediator,
-    IAIMatchingProvider aiMatchingProvider,
+    IMatchingService matchingService,
     ILogger<ServiceAssignmentCommandService> logger)
     : IServiceAssignmentCommandService
 {
@@ -29,7 +28,6 @@ public class ServiceAssignmentCommandService(
     {
         var request = await requestRepository.FindByIdAsync(RequestId.From(command.RequestId.Value)) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId.Value} not found.");
 
-        // Validación explícita antes de continuar
         if (request.Geolocation is null)
             throw new InvalidOperationException(
                 $"ServiceRequest {command.RequestId.Value} has no geolocation. " +
@@ -57,25 +55,29 @@ public class ServiceAssignmentCommandService(
             throw new NoCandidatesAvailableException("NO_CANDIDATES_AVAILABLE");
         }
 
-        var best = await SelectBestCandidateAsync(candidates, request);
+        var enrichedCandidates = await EnrichCandidatesAsync(candidates, request);
 
-        var snapshot = RecipeSnapshot.FromRecipe(best.Recipe);
+        var result = await matchingService.FindBestCandidateAsync(
+            request.RequestId, enrichedCandidates, request);
+
+        var snapshot = RecipeSnapshot.FromRecipe(result.BestCandidate.Recipe);
 
         var criteria = MatchingCriteria.Create(
             request.Geolocation,
-            best.Recipe.ComponentRequirements.Select(c => c.ComponentTypeId).ToList(),
+            result.BestCandidate.Recipe.ComponentRequirements.Select(c => c.ComponentTypeId).ToList(),
             request.IsPriority,
-            TechnicianId.From(best.TechnicianId));
+            TechnicianId.From(result.BestCandidate.TechnicianId));
 
         var assignment = ServiceAssignment.Assign(
             request.RequestId,
-            TechnicianId.From(best.TechnicianId),
+            TechnicianId.From(result.BestCandidate.TechnicianId),
             snapshot,
-            criteria);
+            criteria,
+            result.Score);
 
         request.MarkAsAssigned(
             assignment.AssignmentId,
-            TechnicianId.From(best.TechnicianId),
+            TechnicianId.From(result.BestCandidate.TechnicianId),
             snapshot);
         
         foreach (var domainEvent in request.DomainEvents)
@@ -96,149 +98,89 @@ public class ServiceAssignmentCommandService(
         await unitOfWork.CompleteAsync();
     }
 
-    /*
-     * public async Task<bool> Handle(ExecuteMatchingAlgorithmCommand command)
-    {
-        var request = await requestRepository.FindByIdAsync(
-            RequestId.From(command.RequestId.Value)) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId.Value} not found.");
-
-        var techniciansInArea = (await externalProfilesService.GetTechniciansInAreaAsync(
-            request.Geolocation!.Latitude, request.Geolocation.Longitude)).ToList();
-
-        var candidates = await FilterCandidatesAsync(techniciansInArea, request);
-
-        if (!candidates.Any())
-        {
-            var existingRetries = await GetRetryCountAsync(request.RequestId);
-            var failed = ServiceAssignment.Fail(
-                request.RequestId, "NO_CANDIDATES_AVAILABLE", existingRetries);
-
-            await assignmentRepository.AddAsync(failed);
-            await unitOfWork.CompleteAsync();
-            
-            // Retorna false para indicar que NO fue asignado
-            return false;
-        }
-
-        var best = SelectBestCandidate(candidates, request.IsPriority);
-        var technicianId = TechnicianId.From(best.TechnicianId);
-
-        var snapshot = best.Recipe;
-        var criteria = MatchingCriteria.Create(
-            request.Geolocation,
-            best.Recipe.ComponentRequirements.Select(c => c.ComponentTypeId).ToList(),
-            request.IsPriority,
-            technicianId);
-
-        var assignment = ServiceAssignment.Assign(
-            request.RequestId,
-            technicianId,
-            snapshot,
-            criteria);
-
-        // Agregado el TechnicianId asumiendo que tu entidad de dominio lo necesita persisitir
-        // Tendrás que ajustar la firma del método MarkAsAssigned en tu clase ServiceRequest.
-        request.MarkAsAssigned(assignment.AssignmentId);
-
-        await assignmentRepository.AddAsync(assignment);
-        requestRepository.Update(request);
-        await unitOfWork.CompleteAsync();
-        
-        // Retorna true porque la asignación fue exitosa
-        return true;
-    }
-     */
-    
-    // OG VERSION
-    /*private async Task<IReadOnlyList<Candidate>> FilterCandidatesAsync(
-        IReadOnlyList<(string technicianId, string profileId, string fullName, double rating)> technicians,
-        ServiceRequest request)
-    {
-        var candidates = new List<Candidate>();
-
-        // RecipeSnapshot ya está validado como no-null antes de llamar este método
-        var componentRequirements = request.RecipeSnapshot.ComponentRequirements
-            .Select(c => (c.ComponentTypeId, c.Quantity))
-            .ToList();
-
-        foreach (var tech in technicians)
-        {
-            var stockCheck = await assetsFacade.CheckAllComponentsInStockAsync(
-                tech.technicianId,
-                componentRequirements);  // reutiliza la lista, no recalcula por cada técnico
-
-            if (!stockCheck) continue;
-
-            candidates.Add(new Candidate(tech.technicianId, tech.rating, request.RecipeSnapshot));
-        }
-
-        return candidates;
-    }*/
-
     private async Task<IReadOnlyList<Candidate>> FilterCandidatesAsync(
-        IReadOnlyList<(string technicianId, string profileId, string fullName, double rating)> technicians,
+        IReadOnlyList<(string technicianId, string profileId, string fullName)> technicians,
         ServiceRequest request)
     {
-        var candidates = new List<Candidate>();
+        var technicianIds = technicians.Select(t => TechnicianId.From(t.technicianId)).ToList();
+
+        var recipes = await catalogRepository.FindActiveRecipesByCategoryAndTechnicianIdsAsync(
+            request.RequestedCategory!.Value, technicianIds);
+
+        var stockTasks = new List<Task<(string technicianId, double rating, ServiceRecipe? recipe, bool hasStock)>>();
 
         foreach (var tech in technicians)
         {
-            // Busca el recipe activo del técnico para esa categoría
-            var recipe = await catalogRepository.FindActiveRecipeByCategoryAndTechnicianAsync(request.RequestedCategory!.Value,
-                TechnicianId.From(tech.technicianId));
+            if (!recipes.TryGetValue(TechnicianId.From(tech.technicianId), out var recipe))
+            {
+                stockTasks.Add(Task.FromResult((tech.technicianId, 0.0, (ServiceRecipe?)null, false)));
+                continue;
+            }
 
-            if (recipe is null) continue;
-
-            // Verifica stock para ese recipe específico
-            var componentRequirements = recipe.ComponentRequirements
+            var requirements = recipe.ComponentRequirements
                 .Select(cr => (cr.ComponentTypeId, cr.Quantity))
                 .ToList();
 
-            var stockOk = await externalAssetsService.CheckComponentStockAsync(
-                tech.technicianId,
-                componentRequirements);
-
-            if (!stockOk) continue;
-
-            candidates.Add(new Candidate(tech.technicianId, tech.rating, recipe));
+            var technicianId = tech.technicianId;
+            stockTasks.Add(externalAssetsService.CheckComponentStockAsync(technicianId, requirements)
+                .ContinueWith(t => (technicianId, 0.0, (ServiceRecipe?)recipe, t.Result)));
         }
 
-        return candidates;
+        var results = await Task.WhenAll(stockTasks);
+
+        return results
+            .Where(r => r.recipe is not null && r.hasStock)
+            .Select(r => new Candidate(r.technicianId, r.rating, r.recipe!))
+            .ToList();
     }
 
-    private async Task<Candidate> SelectBestCandidateAsync(IReadOnlyList<Candidate> candidates, ServiceRequest request)
+    private async Task<IReadOnlyList<EnrichedCandidate>> EnrichCandidatesAsync(
+        IReadOnlyList<Candidate> candidates,
+        ServiceRequest request)
     {
-        var contextCandidates = candidates.Select(c => new TechnicianCandidate(
-            c.TechnicianId,
-            0.0, // We could calculate actual distance here if needed
-            c.Rating,
-            10, // Mock completed count
-            true, // Mock IoT cert
-            new List<string>(), // Mock specialties
-            true,
-            30 // Mock response time
-        )).ToList();
-
-        var context = new MatchingContext(
-            request.RequestedCategory?.ToString() ?? "General",
-            request.Preferences?.ProblemDescription ?? "",
-            request.IsPriority,
-            request.Geolocation!,
-            contextCandidates,
-            null
-        );
-
-        var scored = await aiMatchingProvider.ScoreTechnicianCandidatesAsync(context);
-
-        if (scored.Any())
+        var enrichmentTasks = candidates.Select(async candidate =>
         {
-            var topCandidateId = scored.OrderByDescending(s => s.Score).First().TechnicianId;
-            var topCandidate = candidates.FirstOrDefault(c => c.TechnicianId == topCandidateId);
-            if (topCandidate != null)
-                return topCandidate;
-        }
+            try
+            {
+                var details = await externalProfilesService.GetTechnicianDetailsAsync(candidate.TechnicianId);
 
-        return candidates.OrderByDescending(c => c.Rating).First();
+                var distanceKm = GeoDistanceService.CalculateDistanceKm(
+                    request.Geolocation!.Latitude,
+                    request.Geolocation.Longitude,
+                    details.serviceAreaLat,
+                    details.serviceAreaLon);
+
+                return new EnrichedCandidate(
+                    candidate.TechnicianId,
+                    candidate.Rating,
+                    candidate.Recipe,
+                    distanceKm,
+                    details.experienceYears,
+                    details.specialties.ToList(),
+                    IsIoTCertified: false,
+                    HasRequiredComponents: true,
+                    ResponseTimeMinutesAvg: 30
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to enrich candidate {TechnicianId}, using defaults", candidate.TechnicianId);
+                return new EnrichedCandidate(
+                    candidate.TechnicianId,
+                    candidate.Rating,
+                    candidate.Recipe,
+                    0.0,
+                    0,
+                    new List<string>(),
+                    IsIoTCertified: false,
+                    HasRequiredComponents: true,
+                    ResponseTimeMinutesAvg: 30
+                );
+            }
+        });
+
+        var enriched = await Task.WhenAll(enrichmentTasks);
+        return enriched.ToList();
     }
 
     private async Task<int> GetRetryCountAsync(RequestId requestId)
@@ -247,5 +189,3 @@ public class ServiceAssignmentCommandService(
         return existing?.RetryCount ?? 0;
     }
 }
-
-internal record Candidate(string TechnicianId, double Rating, ServiceRecipe Recipe);

@@ -10,7 +10,7 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers
 public class RequestCreatedEventHandler(ILogger<RequestCreatedEventHandler> logger) 
     : IEventHandler<RequestCreatedEvent>
 {
-    public async Task Handle(RequestCreatedEvent notification, CancellationToken cancellationToken)
+    public Task Handle(RequestCreatedEvent notification, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Request created: {RequestId} for Client: {HomeownerId} at {Timestamp}",
@@ -18,12 +18,7 @@ public class RequestCreatedEventHandler(ILogger<RequestCreatedEventHandler> logg
             notification.HomeownerId,
             notification.OccurredOn);
 
-        // TODO: Future implementation
-        // - Send notification to Monitoring BC via Integration Event
-        // - Trigger automatic technician assignment logic
-        // - Record analytics metrics
-
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 }
 

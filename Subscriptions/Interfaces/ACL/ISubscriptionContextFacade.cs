@@ -2,8 +2,6 @@
 
 public interface ISubscriptionContextFacade
 {
-    Task<bool> RecordServiceRequestUsageAsync(int ownerUserId);
-    
     /// <summary>
     /// Returns whether a homeowner can create a new service request.
     /// </summary>
@@ -23,7 +21,6 @@ public interface ISubscriptionContextFacade
     /// Returns whether a technician has an active Premium subscription.
     /// </summary>
     Task<bool> IsTechnicianPremiumAsync(string technicianId);
-    
     
     /// <summary>
     /// Retorna los datos de elegibilidad del propietario para crear solicitudes.

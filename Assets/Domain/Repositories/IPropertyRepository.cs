@@ -14,4 +14,9 @@ public interface IPropertyRepository : IBaseRepository<Property, PropertyId>
         string? city, 
         string? street
     );
+
+    Task<(IEnumerable<Property> Items, int TotalCount)> GetAllPaginatedAsync(int page, int pageSize);
+
+    Task<(IEnumerable<Property> Items, int TotalCount)> GetAllFilteredPaginatedAsync(
+        HomeownerId ownerId, string? city, string? street, int page, int pageSize);
 }

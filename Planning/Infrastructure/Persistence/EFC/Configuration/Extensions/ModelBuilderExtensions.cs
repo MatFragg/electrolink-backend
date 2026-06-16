@@ -315,6 +315,15 @@ public static class ModelBuilderExtensions
                 v => v == null ? null : JsonSerializer.Deserialize<MatchingCriteria>(
                     v, (JsonSerializerOptions?)null));
 
+        builder.Entity<ServiceAssignment>()
+            .Property(a => a.MatchingScore)
+            .HasColumnName("matching_score")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<MatchingScore>(
+                    v, (JsonSerializerOptions?)null));
+
         builder.Entity<ServiceAssignment>().Property(a => a.FailureReason).HasColumnName("failure_reason").HasMaxLength(100);
         builder.Entity<ServiceAssignment>().Property(a => a.RetryCount).HasColumnName("retry_count").HasDefaultValue(0).IsRequired();
         builder.Entity<ServiceAssignment>().Property(a => a.CreatedDate).HasColumnName("created_at").IsRequired();

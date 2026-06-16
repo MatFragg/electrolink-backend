@@ -13,9 +13,14 @@ public class Property : BaseAggregateRoot
     public Geolocation Geolocation { get; private set; } = null!;
     public EPropertyStatus Status { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public string? MainPhotoProviderId { get; private set; }
     
     private readonly List<PropertyPhoto> _photos = new();
     public IReadOnlyCollection<PropertyPhoto> Photos => _photos.AsReadOnly();
+
+    private readonly List<string> _installedDeviceIds = new();
+    public IReadOnlyCollection<string> InstalledDeviceIds => _installedDeviceIds.AsReadOnly();
+    public bool HasActiveIoTMonitoring { get; private set; }
 
     private Property() { }
     
@@ -34,6 +39,7 @@ public class Property : BaseAggregateRoot
             Geolocation = geolocation,
             Status = EPropertyStatus.Created,
             IsActive = true,
+            HasActiveIoTMonitoring = false,
         };
 
         property.RaiseDomainEvent(new PropertyCreatedEvent(property.Id, property.OwnerId, property.Address, property.Geolocation, DateTime.UtcNow));
@@ -71,22 +77,36 @@ public class Property : BaseAggregateRoot
     
     internal void Archive(string reason)
     {
+        if (_installedDeviceIds.Count > 0)
+            throw new InvalidOperationException(
+                "Property cannot be archived while IoT devices are assigned or installed. " +
+                "Decommission all devices first.");
+
         if (Status == EPropertyStatus.Archived) return;
         Status   = EPropertyStatus.Archived;
         IsActive = false;
         RaiseDomainEvent(new PropertyArchivedEvent(Id, OwnerId, reason, DateTime.UtcNow));
     }
     
-    internal void RecordMaintenance(AssignmentId assignmentId, string technicianId, string workSummary, DateTime completedAt)
+    internal void RecordMaintenance(AssignmentId assignmentId, TechnicianId technicianId, string workSummary, DateTime completedAt)
     {
         RaiseDomainEvent(new PropertyMaintenanceRecordedEvent(
             Id, assignmentId, technicianId, workSummary, completedAt, DateTime.UtcNow));
     }
 
-    internal void AddPhoto(string photoUrl)
+    internal void AddPhoto(string publicUrl, string providerId)
     {
-        if (string.IsNullOrWhiteSpace(photoUrl)) return;
-        _photos.Add(new PropertyPhoto(photoUrl));
+        if (string.IsNullOrWhiteSpace(publicUrl) || string.IsNullOrWhiteSpace(providerId)) return;
+        _photos.Add(PropertyPhoto.Create(publicUrl, providerId));
+    }
+
+    internal void SetMainPhoto(string providerId)
+    {
+        var photo = _photos.FirstOrDefault(p => p.ProviderId == providerId)
+            ?? throw new KeyNotFoundException($"Photo with provider ID {providerId} not found.");
+
+        MainPhotoProviderId = providerId;
+        RaiseDomainEvent(new PropertyMainPhotoUpdatedEvent(Id, providerId, photo.PublicUrl, DateTime.UtcNow));
     }
 
     internal void MarkAsInPortfolio()
@@ -99,5 +119,20 @@ public class Property : BaseAggregateRoot
     {
         if (Status == EPropertyStatus.Created) return;
         Status = EPropertyStatus.Created;
+    }
+
+    internal void AddInstalledDevice(IoTDeviceId deviceId)
+    {
+        if (_installedDeviceIds.Contains(deviceId.Value))
+            return;
+
+        _installedDeviceIds.Add(deviceId.Value);
+        HasActiveIoTMonitoring = true;
+    }
+
+    internal void RemoveInstalledDevice(IoTDeviceId deviceId)
+    {
+        _installedDeviceIds.Remove(deviceId.Value);
+        HasActiveIoTMonitoring = _installedDeviceIds.Count > 0;
     }
 }

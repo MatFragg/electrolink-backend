@@ -6,6 +6,7 @@ using Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services;
 
@@ -17,7 +18,7 @@ namespace Hampcoders.Electrolink.API.IAM.Infrastructure.Tokens.JWT.Services;
  *     This class is used to generate and validate tokens
  * </remarks>
  */
-public class TokenService(IOptions<TokenSettings> tokenSettings) : ITokenService
+public class TokenService(IOptions<TokenSettings> tokenSettings, ILogger<TokenService> logger) : ITokenService
 {
     private readonly TokenSettings _tokenSettings = tokenSettings.Value;
 
@@ -95,9 +96,9 @@ public class TokenService(IOptions<TokenSettings> tokenSettings) : ITokenService
             var userId = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.NameIdentifier).Value;
             return userId;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
+            logger.LogWarning(ex, "Token validation failed");
             return null;
         }
     }

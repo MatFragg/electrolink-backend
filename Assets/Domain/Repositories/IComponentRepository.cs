@@ -10,4 +10,5 @@ public interface IComponentRepository :  IBaseRepository<Component, ComponentId>
     Task<bool> ExistsByNameAsync(string name); 
     Task<IEnumerable<Component>> FindByIdsAsync(IEnumerable<ComponentId> ids);
 
+    Task<(IEnumerable<Component> Items, int TotalCount)> GetAllPaginatedAsync(int page, int pageSize);
 }

@@ -1,6 +1,7 @@
 using Hampcoders.Electrolink.API.IAM.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.IAM.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.IAM.Domain.Repositories;
 using Hampcoders.Electrolink.API.IAM.Domain.Services;
@@ -37,12 +38,12 @@ public class UserCommandService(
      */
     public async Task<(User user, string token)> Handle(SignInCommand command)
     {
-        var user = await userRepository.FindByEmailAsync(command.Email) ?? throw new Exception("Invalid username or password");
+        var user = await userRepository.FindByEmailAsync(command.Email) ?? throw new InvalidCredentialsException("Invalid username or password");
 
-        if (!hashingService.VerifyPassword(command.Password, user.PasswordHash))
+        if (!hashingService.VerifyPassword(command.Password, user.PasswordHash.Value))
         {
-            logger.LogWarning($"[IAM BC] Intento de inicio de sesión fallido para {command.Email}: contraseña inválida.");
-            throw new Exception("Invalid username or password");
+            logger.LogWarning("[IAM BC] Intento de inicio de sesión fallido para {Email}: contraseña inválida.", command.Email);
+            throw new InvalidCredentialsException("Invalid username or password");
         }
         var profileClaims = await externalProfilesService.GetProfileClaimsAsync(user.Id.Value);
 
@@ -50,8 +51,7 @@ public class UserCommandService(
 
         user.RecordSignIn();
 
-        logger.LogInformation(
-            $"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después del inicio de sesión.");
+        logger.LogInformation("[IAM BC] Publicando {EventCount} evento(s) de dominio después del inicio de sesión.", user.DomainEvents.Count);
         foreach (var domainEvent in user.DomainEvents)
         {
             await mediator.Publish(domainEvent, CancellationToken.None);
@@ -59,7 +59,7 @@ public class UserCommandService(
 
         user.ClearDomainEvents();
 
-        logger.LogInformation($"[IAM BC] Usuario {command.Email} inició sesión exitosamente.");
+        logger.LogInformation("[IAM BC] Usuario {Email} inició sesión exitosamente.", command.Email);
         return (user, token);
     }
 
@@ -79,10 +79,10 @@ public class UserCommandService(
             throw new ArgumentException("Password and confirmation do not match.");
         
         if (await userRepository.ExistsByEmail(command.Email))
-            throw new InvalidOperationException($"Email '{command.Email}' is already taken.");
+            throw new EmailAlreadyInUseException(Email.From(command.Email));
         
-        var hashedPassword = hashingService.HashPassword(command.Password);
-        var user = User.Create(Email.From(command.Email), hashedPassword);
+        var hash = HashedPassword.FromHash(hashingService.HashPassword(command.Password));
+        var user = User.Create(Email.From(command.Email), hash);
         
         await userRepository.AddAsync(user);
         await unitOfWork.CompleteAsync();
@@ -102,24 +102,30 @@ public class UserCommandService(
         var user = await userRepository.FindByIdAsync(UserId.From(command.UserId));
         if (user == null) throw new ArgumentException("User not found.");
 
-        var newHashedPassword = hashingService.HashPassword(command.NewPassword);
-        user.UpdatePasswordHash(newHashedPassword);
+        if (!hashingService.VerifyPassword(command.CurrentPassword, user.PasswordHash.Value))
+        {
+            logger.LogWarning("Invalid current password for user {UserId}", command.UserId);
+            throw new InvalidCredentialsException("Current password is incorrect.");
+        }
+
+        var newHash = HashedPassword.FromHash(hashingService.HashPassword(command.NewPassword));
+        user.UpdatePasswordHash(newHash);
         await unitOfWork.CompleteAsync();
 
-        logger.LogInformation($"[IAM BC] Publicando {user.DomainEvents.Count} evento(s) de dominio después de actualizar contraseña.");
+        logger.LogInformation("[IAM BC] Publicando {EventCount} evento(s) de dominio después de actualizar contraseña.", user.DomainEvents.Count);
         foreach (var domainEvent in user.DomainEvents)
         {
             await mediator.Publish(domainEvent, CancellationToken.None);
         }
         user.ClearDomainEvents();
 
-        logger.LogInformation($"[IAM BC] Contraseña del usuario {command.UserId} actualizada.");
+        logger.LogInformation("[IAM BC] Contraseña del usuario {UserId} actualizada.", command.UserId);
         return true;
     }
 
     public async Task<string> Handle(RefreshClaimsCommand command)
     {
-        var user = await userRepository.FindByIdAsync(command.UserId) ?? throw new Exception("User not found");
+        var user = await userRepository.FindByIdAsync(command.UserId) ?? throw new UserNotFoundException("User not found");
 
         var profileClaims = await externalProfilesService.GetProfileClaimsAsync(user.Id.Value);
         return tokenService.GenerateToken(user, profileClaims);

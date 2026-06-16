@@ -25,7 +25,7 @@ public partial class Profile : BaseAggregateRoot
     public PersonalData? PersonalData { get; private set; }
     
     // ── Profile Picture ──
-    public string? ProfilePictureUrl { get; private set; }
+    public ProfilePhoto? Photo { get; private set; }
 
     // ── Sub-entities according to role ──
     public Technician? Technician { get; private set; }
@@ -54,14 +54,14 @@ public partial class Profile : BaseAggregateRoot
         return profile;
     }
 
-    public void CompleteAsTechnician(
+    public async Task CompleteAsTechnician(
         PersonalData personalData,
         TechnicianData technicianData,
         IProfileUniquenessChecker uniquenessChecker
         )
     {
         EnsureStatus(EProfileStatus.Incomplete);
-        uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
+        await uniquenessChecker.EnsureDniIsUniqueAsync(personalData.Dni, ProfileId);
 
         PersonalData = personalData;
         BusinessRole = EBusinessRole.Technician;
@@ -76,13 +76,13 @@ public partial class Profile : BaseAggregateRoot
             DateTime.UtcNow));
     }
 
-    public void CompleteAsHomeowner(
+    public async Task CompleteAsHomeowner(
         PersonalData personalData,
         HomeownerData homeownerData,
         IProfileUniquenessChecker uniquenessChecker)
     {
         EnsureStatus(EProfileStatus.Incomplete);
-        uniquenessChecker.EnsureDniIsUnique(personalData.Dni, ProfileId);
+        await uniquenessChecker.EnsureDniIsUniqueAsync(personalData.Dni, ProfileId);
 
         PersonalData = personalData;
         BusinessRole = EBusinessRole.HomeOwner;
@@ -97,17 +97,35 @@ public partial class Profile : BaseAggregateRoot
             DateTime.UtcNow));
     }
     
-    public void UpdateProfilePicture(string photoUrl)
+    public void UpdateProfilePhoto(ProfilePhoto newPhoto)
     {
-        ProfilePictureUrl = photoUrl;
-        // RaiseDomainEvent(new ProfilePictureUpdatedEvent(ProfileId, photoUrl)); // Optional
+        if (newPhoto is null)
+            throw new ArgumentNullException(nameof(newPhoto));
+
+        Photo = newPhoto;
+        RaiseDomainEvent(new ProfilePhotoUpdatedEvent(ProfileId, newPhoto.PublicUrl, newPhoto.ProviderId));
+    }
+
+    public string? RemoveProfilePhoto()
+    {
+        if (Photo is null)
+            return null;
+
+        var oldProviderId = Photo.ProviderId;
+        Photo = null;
+        RaiseDomainEvent(new ProfilePhotoRemovedEvent(ProfileId, oldProviderId));
+        return oldProviderId;
     }
 
     public void UpdatePersonalData(string? firstName, string? lastName, PhoneNumber? phone, Address? address)
     {
         EnsureStatus(EProfileStatus.Active);
         PersonalData = PersonalData!.Update(firstName, lastName, phone, address);
-        RaiseDomainEvent(new ProfilePersonalDataUpdatedEvent(ProfileId, PersonalData));
+        RaiseDomainEvent(new ProfilePersonalDataUpdatedEvent(
+            ProfileId,
+            firstName,
+            lastName,
+            phone?.Value));
 
     }
 

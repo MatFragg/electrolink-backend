@@ -25,4 +25,12 @@ public class ComponentRepository(AppDbContext context) : BaseRepository<Componen
             .Where(c => idsList.Contains(c.Id))
             .ToListAsync();
     }
+
+    public async Task<(IEnumerable<Component> Items, int TotalCount)> GetAllPaginatedAsync(int page, int pageSize)
+    {
+        var query = Context.Set<Component>();
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (items, total);
+    }
 }

@@ -26,20 +26,20 @@ public interface IProfilesContextFacade
     /// <summary>
     /// Gets profile full name by profile ID.
     /// </summary>
-    /// <returns>Full name or empty string if not found</returns>
-    Task<string> GetProfileFullNameAsync(string profileId);
+    /// <returns>Full name or null if not found</returns>
+    Task<string?> GetProfileFullNameAsync(string profileId);
 
     /// <summary>
     /// Gets profile phone by profile ID.
     /// </summary>
-    /// <returns>Phone or empty string if not found</returns>
-    Task<string> GetProfilePhoneAsync(string profileId);
+    /// <returns>Phone or null if not found</returns>
+    Task<string?> GetProfilePhoneAsync(string profileId);
 
     /// <summary>
     /// Gets profile role by profile ID.
     /// </summary>
-    /// <returns>Role as string ("HomeOwner" or "Technician") or empty if not found</returns>
-    Task<string> GetProfileRoleAsync(string profileId);
+    /// <returns>Role as string ("HomeOwner" or "Technician") or null if not found</returns>
+    Task<string?> GetProfileRoleAsync(string profileId);
 
     /// <summary>
     /// Checks if a profile exists for a given profile ID.
@@ -52,16 +52,16 @@ public interface IProfilesContextFacade
     Task<bool> IsHomeownerActiveAsync(string homeownerId);
 
     /// <summary>
-    /// Checks if a homeowner has at least one registered property.
-    /// </summary>
-    Task<bool> HomeownerHasPropertiesAsync(string homeownerId);
-
-    /// <summary>
     /// Gets all technicians whose service area contains the given coordinates.
     /// Returns a list of tuples with (technicianId, profileId, fullName, rating).
     /// Specialties are excluded to keep primitives — query separately if needed.
     /// </summary>
-    Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> GetTechniciansInAreaAsync(double latitude, double longitude);
+    Task<IEnumerable<(string technicianId, string profileId, string fullName)>> GetTechniciansInAreaAsync(double latitude, double longitude);
+    
+    /// <summary>
+    /// Gets detailed technician information including service area coordinates, experience, and specialties.
+    /// </summary>
+    Task<(string technicianId, double serviceAreaLat, double serviceAreaLon, int experienceYears, IEnumerable<string> specialties)> GetTechnicianDetailsAsync(string technicianId);
     
     /// <summary>
     /// Gets specialties for a given technician.

@@ -5,7 +5,6 @@ using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Assets.Interfaces.REST.Transform;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -17,18 +16,18 @@ namespace Hampcoders.Electrolink.API.Assets.Interfaces.REST;
 [SwaggerTag("Properties Controller Endpoints")]
 public class PropertiesController(
     IPropertyCommandService commandService,
-    IPropertyQueryService   queryService,
-    IFileStorageProvider fileStorageProvider) : ControllerBase
+    IPropertyQueryService   queryService) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PropertyResource>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<PropertyResource>>> GetAll(
         [FromRoute] string homeownerId,
         [FromQuery] string? city, [FromQuery] string? district,
-        [FromQuery] string? region, [FromQuery] string? street)
+        [FromQuery] string? region, [FromQuery] string? street,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var results = await queryService.Handle(
-            new GetAllPropertiesByOwnerIdQuery(HomeownerId.From(homeownerId), city, street));
+            new GetAllPropertiesByOwnerIdQuery(HomeownerId.From(homeownerId), city, street, page, pageSize));
         return Ok(results.Select(PropertyResourceFromEntityAssembler.ToResourceFromEntity));
     }
 
@@ -145,35 +144,79 @@ public class PropertiesController(
         }
     }
 
-    /// <summary>Agrega una foto a una propiedad</summary>
+    /// <summary>Obtiene una URL firmada para subir una foto directamente a Cloudinary</summary>
+    [HttpGet("{propertyId}/photos/upload-url")]
+    [ProducesResponseType(typeof(PropertyPhotoUploadUrlResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PropertyPhotoUploadUrlResource>> GetPhotoUploadUrl(
+        [FromRoute] string homeownerId, [FromRoute] string propertyId)
+    {
+        try
+        {
+            var command = GetPropertyPhotoUploadUrlCommandFromResourceAssembler.ToCommand(homeownerId, propertyId);
+            var signedData = await commandService.Handle(command);
+
+            return Ok(new PropertyPhotoUploadUrlResource(
+                signedData.Url,
+                signedData.Signature,
+                signedData.Timestamp,
+                signedData.ApiKey));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Registra una foto después de que el cliente la subió directamente a Cloudinary</summary>
     [HttpPost("{propertyId}/photos")]
     [ProducesResponseType(typeof(PropertyResource), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AddPhoto([FromRoute] string homeownerId, [FromRoute] string propertyId, IFormFile file)
+    public async Task<ActionResult<PropertyResource>> RegisterPhoto(
+        [FromRoute] string homeownerId,
+        [FromRoute] string propertyId,
+        [FromBody] RegisterPropertyPhotoResource resource)
     {
         try
         {
-            if (file == null || file.Length == 0)
-                return BadRequest(new { message = "File is empty." });
+            var command = RegisterPropertyPhotoCommandFromResourceAssembler.ToCommand(homeownerId, propertyId, resource);
+            var property = await commandService.Handle(command);
 
-            var property = await queryService.Handle(new GetPropertyByIdQuery(PropertyId.From(propertyId), HomeownerId.From(homeownerId)));
-            if (property is null) return NotFound(new { message = $"Property {propertyId} not found." });
-
-            using var stream = file.OpenReadStream();
-            var fileName = $"{propertyId}-{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            
-            var result = await fileStorageProvider.UploadAsync(stream, fileName, "properties/photos");
-            
-            var command = new AddPhotoToPropertyCommand(PropertyId.From(propertyId), result.PublicUrl);
-            var updatedProperty = await commandService.Handle(command);
-
-            if (updatedProperty is null) return NotFound();
-            return Ok(PropertyResourceFromEntityAssembler.ToResourceFromEntity(updatedProperty));
+            if (property is null) return NotFound();
+            return Ok(PropertyResourceFromEntityAssembler.ToResourceFromEntity(property));
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Establece una foto existente como la foto principal de la propiedad</summary>
+    [HttpPost("{propertyId}/main-photo")]
+    [ProducesResponseType(typeof(PropertyResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PropertyResource>> SetMainPhoto(
+        [FromRoute] string homeownerId,
+        [FromRoute] string propertyId,
+        [FromBody] SetPropertyMainPhotoResource resource)
+    {
+        try
+        {
+            var command = SetPropertyMainPhotoCommandFromResourceAssembler.ToCommand(homeownerId, propertyId, resource);
+            var property = await commandService.Handle(command);
+
+            if (property is null) return NotFound();
+            return Ok(PropertyResourceFromEntityAssembler.ToResourceFromEntity(property));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 }

@@ -3,7 +3,7 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
-using MediatR;
+using Hampcoders.Electrolink.API.Shared.Application.Internal.EventHandler;
 
 namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers;
 
@@ -17,35 +17,36 @@ public class ServiceAutomaticallyAssignedEventHandler(
     IServiceRequestCommandService requestCommandService,
     ExternalMonitoringService serviceOperationFacade,
     ILogger<ServiceAutomaticallyAssignedEventHandler> logger)
-    : INotificationHandler<ServiceAutomaticallyAssignedEvent>
+    : IEventHandler<ServiceAutomaticallyAssignedEvent>
 {
     public async Task Handle(
-        ServiceAutomaticallyAssignedEvent notification,
+        ServiceAutomaticallyAssignedEvent @event,
         CancellationToken cancellationToken)
     {
-        var request = await serviceDesignQueryService.Handle(new GetServiceRequestByIdQuery(notification.RequestId));
+        var request = await serviceDesignQueryService.Handle(new GetServiceRequestByIdQuery(@event.RequestId));
         
         if (request is null)
         {
-            logger.LogError("[Planning BC] Original ServiceRequest {RequestId} not found. Cannot trigger SOM execution.", notification.RequestId.Value);
+            logger.LogError("[Planning BC] Original ServiceRequest {RequestId} not found. Cannot trigger SOM execution.", @event.RequestId.Value);
             return;
         }
 
         try
         {
             await serviceOperationFacade.CreateServiceExecutionAsync(
-                notification.AssignmentId.Value,
-                notification.RequestId.Value,
-                notification.TechnicianId.Value,
+                @event.AssignmentId.Value,
+                @event.RequestId.Value,
+                @event.TechnicianId.Value,
                 request.HomeownerId.Value,
                 request.PropertyId.Value,
-                notification.RecipeSnapshot,
-                notification.ScheduledAt,
-                notification.IsPriority);
+                @event.RecipeSnapshot,
+                @event.ScheduledAt,
+                @event.IsPriority);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to create ServiceExecution");
+            logger.LogError(ex, "Failed to create ServiceExecution for Assignment {AssignmentId}",
+                @event.AssignmentId.Value);
         }
     }
 }

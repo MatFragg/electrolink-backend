@@ -25,10 +25,7 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter
         var allowAnonymous = context.ActionDescriptor.EndpointMetadata.OfType<AllowAnonymousAttribute>().Any();
 
         if (allowAnonymous)
-        {
-            Console.WriteLine(" Skipping authorization");
             return;
-        }
 
         // verify if a user is signed in by checking if HttpContext.User is set
         var user = (User?)context.HttpContext.Items["User"];

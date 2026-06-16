@@ -17,7 +17,8 @@ public static class ServiceAssignmentResourceFromEntityAssembler
             entity.Status.ToString(),
             entity.FailureReason,
             entity.RetryCount,
-            entity.CreatedDate?.UtcDateTime ?? DateTime.MinValue
+            entity.CreatedDate?.UtcDateTime ?? DateTime.MinValue,
+            entity.MatchingScore != null ? MatchingScoreResourceAssembler.ToResource(entity.MatchingScore) : null
         );
     }
     private static RecipeSnapshotResource ToResourceFromSnapshot(RecipeSnapshot? snapshot)

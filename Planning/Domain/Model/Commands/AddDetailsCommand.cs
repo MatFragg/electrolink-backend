@@ -3,14 +3,13 @@
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
 public record AddDetailsCommand(
-    string RequestId,
+    RequestId RequestId,
     string ProblemDescription,
     decimal ConsumptionKwh,
     decimal AmountPaid,
     string BillingPeriod,
     string ReceiptNumber,
     IReadOnlyList<DateOnly> PreferredDates,
-    string TimePreference,
+    ETimePreference TimePreference,
     bool IsPriority
 );
-

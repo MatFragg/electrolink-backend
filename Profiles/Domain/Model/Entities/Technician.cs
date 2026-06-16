@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -7,14 +6,13 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 
 public class Technician
 {
-  [Key] public TechnicianId TechnicianId { get; private set; } = null!;
+  public TechnicianId TechnicianId { get; private set; } = null!;
   public ProfileId ProfileId { get; private set; } = null!;
 
   public IReadOnlyList<ESpecialty> Specialties => _specialtyEntities.Select(e => e.Specialty).ToList().AsReadOnly();
   public int ExperienceYears { get; private set; }
   public ServiceArea ServiceArea { get; private set; } = null!;
 
-  [MaxLength(255)]
   public string AboutMe { get; private set; } = string.Empty;
 
   private List<TechnicianSpecialty> _specialtyEntities = new();

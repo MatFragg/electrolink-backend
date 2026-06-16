@@ -12,7 +12,6 @@ public record CancelServiceExecutionCommand(
     ECancelledBy CancelledBy,
     string Reason,
     string? Notes,
-    bool RequestReassignment
+    bool RequestReassignment,
+    CancellationRequestId? CancellationRequestId = null
 );
-
-

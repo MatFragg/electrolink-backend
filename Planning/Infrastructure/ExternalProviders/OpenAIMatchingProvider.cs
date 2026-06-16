@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.ExternalProviders;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;

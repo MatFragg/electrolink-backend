@@ -13,7 +13,7 @@ public class MyProfileResourceFromEntityAssembler
             UserId:       entity.UserId.Value,
             Status:       entity.Status.ToString(),
             BusinessRole: entity.BusinessRole?.ToString(),
-            ProfilePictureUrl: entity.ProfilePictureUrl,
+            ProfilePictureUrl: entity.Photo?.PublicUrl,
             FirstName:    entity.PersonalData?.FirstName,
             LastName:     entity.PersonalData?.LastName,
             PhoneNumber:  entity.PersonalData?.PhoneNumber.Value,

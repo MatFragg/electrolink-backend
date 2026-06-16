@@ -1,4 +1,4 @@
-﻿using Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
+﻿using Hampcoders.Electrolink.API.Profiles.Domain.Model.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Resources;
 
 namespace Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Transform;

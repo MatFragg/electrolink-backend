@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
@@ -10,9 +11,20 @@ public static class ModelBuilderExtensions
 {
     public static void ApplyAssetsConfiguration(this ModelBuilder builder)
     {
-        /*
-         * Technician Inventory
-         */
+        ConfigureTechnicianInventory(builder);
+        ConfigureComponentStock(builder);
+        ConfigureComponentReservation(builder);
+        ConfigureReservationItem(builder);
+        ConfigureComponentType(builder);
+        ConfigureComponent(builder);
+        ConfigurePropertyPortfolio(builder);
+        ConfigurePortfolioEntry(builder);
+        ConfigureProperty(builder);
+        ConfigureIoTDevice(builder);
+    }
+
+    private static void ConfigureTechnicianInventory(ModelBuilder builder)
+    {
         builder.Entity<TechnicianInventory>().HasKey(ti => ti.Id);
         builder.Entity<TechnicianInventory>()
             .Property(ti => ti.Id)
@@ -44,10 +56,10 @@ public static class ModelBuilderExtensions
             .WithOne()
             .HasForeignKey("TechnicianInventoryId")
             .IsRequired();
+    }
 
-        /*
-         * Component Stock
-         */
+    private static void ConfigureComponentStock(ModelBuilder builder)
+    {
         builder.Entity<ComponentStock>().HasKey(cs => cs.Id);
         builder.Entity<ComponentStock>()
             .Property(cs => cs.Id)
@@ -67,16 +79,16 @@ public static class ModelBuilderExtensions
             .HasConversion(id => id.Value, value => ComponentId.From(value))
             .HasColumnName("ComponentId")
             .IsRequired();
-        
+
         builder.Entity<ComponentStock>()
             .Property(cs => cs.ComponentTypeId)
             .HasConversion(id => id.Value, value => ComponentTypeId.From(value))
             .HasColumnName("ComponentTypeId")
             .IsRequired();
+    }
 
-        /*
-         * Component Reservation
-         */
+    private static void ConfigureComponentReservation(ModelBuilder builder)
+    {
         builder.Entity<ComponentReservation>().HasKey(cr => cr.Id);
         builder.Entity<ComponentReservation>()
             .Property(cr => cr.Id)
@@ -102,10 +114,10 @@ public static class ModelBuilderExtensions
             .WithOne()
             .HasForeignKey("ReservationId")
             .IsRequired();
+    }
 
-        /*
-         * Reservation Item
-         */
+    private static void ConfigureReservationItem(ModelBuilder builder)
+    {
         builder.Entity<ReservationItem>().HasKey(ri => ri.Id);
         builder.Entity<ReservationItem>()
             .Property(ri => ri.Id)
@@ -125,16 +137,16 @@ public static class ModelBuilderExtensions
             .HasConversion(id => id.Value, value => ComponentId.From(value))
             .HasColumnName("ComponentId")
             .IsRequired();
-        
+
         builder.Entity<ReservationItem>()
             .Property(cs => cs.ComponentTypeId)
             .HasConversion(id => id.Value, value => ComponentTypeId.From(value))
             .HasColumnName("ComponentTypeId")
             .IsRequired();
-        
-        /*
-         * Component Type
-         */
+    }
+
+    private static void ConfigureComponentType(ModelBuilder builder)
+    {
         builder.Entity<ComponentType>().HasKey(ct => ct.Id);
         builder.Entity<ComponentType>()
             .Property(ct => ct.Id)
@@ -144,10 +156,10 @@ public static class ModelBuilderExtensions
             .ValueGeneratedNever();
 
         builder.Entity<ComponentType>().Property(ct => ct.Name).IsRequired();
+    }
 
-        /*
-         * Component
-         */
+    private static void ConfigureComponent(ModelBuilder builder)
+    {
         builder.Entity<Component>().HasKey(c => c.Id);
         builder.Entity<Component>()
             .Property(c => c.Id)
@@ -156,12 +168,12 @@ public static class ModelBuilderExtensions
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Entity<Component>().HasIndex(c => c.Name);
+        builder.Entity<Component>().HasIndex(c => c.Name).IsUnique();
         builder.Entity<Component>().HasIndex(c => c.IsActive);
+    }
 
-        /*
-         * Property Portfolio
-         */
+    private static void ConfigurePropertyPortfolio(ModelBuilder builder)
+    {
         builder.Entity<PropertyPortfolio>().HasKey(pp => pp.Id);
         builder.Entity<PropertyPortfolio>()
             .Property(pp => pp.Id)
@@ -187,10 +199,10 @@ public static class ModelBuilderExtensions
             .WithOne()
             .HasForeignKey("PortfolioId")
             .IsRequired();
+    }
 
-        /*
-         * Portfolio Entry
-         */
+    private static void ConfigurePortfolioEntry(ModelBuilder builder)
+    {
         builder.Entity<PortfolioEntry>().HasKey(pe => pe.Id);
         builder.Entity<PortfolioEntry>()
             .Property(pe => pe.Id)
@@ -215,10 +227,10 @@ public static class ModelBuilderExtensions
             .Property(pe => pe.OccupancyStatus)
             .HasConversion<string>()
             .IsRequired();
+    }
 
-        /*
-         * Property
-         */
+    private static void ConfigureProperty(ModelBuilder builder)
+    {
         builder.Entity<Property>().HasKey(prop => prop.Id);
         builder.Entity<Property>()
             .Property(p => p.Id)
@@ -238,7 +250,7 @@ public static class ModelBuilderExtensions
         builder.Entity<Property>().OwnsOne(p => p.Address, addr =>
         {
             addr.WithOwner().HasForeignKey("Id");
-    
+
             addr.Property(s => s.Street).HasColumnName("Street");
             addr.Property(s => s.Number).HasColumnName("Number");
             addr.Property(s => s.District).HasColumnName("District");
@@ -250,7 +262,7 @@ public static class ModelBuilderExtensions
         builder.Entity<Property>().OwnsOne(p => p.Geolocation, geo =>
         {
             geo.WithOwner().HasForeignKey("Id");
-    
+
             geo.Property(g => g.Latitude).HasColumnName("Latitude");
             geo.Property(g => g.Longitude).HasColumnName("Longitude");
             geo.Property(g => g.Accuracy).HasColumnName("Accuracy");
@@ -267,12 +279,128 @@ public static class ModelBuilderExtensions
             .IsRequired();
 
         builder.Entity<Property>()
+            .Property(p => p.MainPhotoProviderId)
+            .HasColumnName("MainPhotoProviderId")
+            .HasMaxLength(255);
+
+        builder.Entity<Property>()
             .OwnsMany(p => p.Photos, photo =>
             {
                 photo.WithOwner().HasForeignKey("PropertyId");
                 photo.ToTable("property_photos");
-                photo.Property(p => p.PhotoUrl).HasColumnName("photo_url").IsRequired();
-                photo.HasKey("PropertyId", "PhotoUrl"); // Composite key or configure correctly
+                photo.Property(p => p.PublicUrl).HasColumnName("public_url").IsRequired();
+                photo.Property(p => p.ProviderId).HasColumnName("provider_id").IsRequired();
+                photo.Property(p => p.UploadedAt).HasColumnName("uploaded_at").IsRequired();
+                photo.HasKey("PropertyId", "ProviderId");
             });
+
+        builder.Entity<Property>()
+            .Property(p => p.InstalledDeviceIds)
+            .HasConversion(
+                list => JsonSerializer.Serialize(list, (JsonSerializerOptions?)null),
+                json => JsonSerializer.Deserialize<List<string>>(json, (JsonSerializerOptions?)null)!)
+            .HasColumnName("installed_device_ids")
+            .HasColumnType("text");
+
+        builder.Entity<Property>()
+            .Property(p => p.HasActiveIoTMonitoring)
+            .HasColumnName("has_active_iot_monitoring")
+            .IsRequired();
+    }
+
+    private static void ConfigureIoTDevice(ModelBuilder builder)
+    {
+        builder.Entity<IoTDevice>().HasKey(d => d.Id);
+        builder.Entity<IoTDevice>()
+            .Property(d => d.Id)
+            .HasConversion(id => id.Value, v => IoTDeviceId.From(v))
+            .HasColumnName("id")
+            .HasMaxLength(60)
+            .IsRequired()
+            .ValueGeneratedNever();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.SerialNumber)
+            .HasConversion(s => s.Value, v => SerialNumber.From(v))
+            .HasColumnName("serial_number")
+            .HasMaxLength(100)
+            .IsRequired();
+        builder.Entity<IoTDevice>().HasIndex(d => d.SerialNumber).IsUnique();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.ApiKeyHash)
+            .HasConversion(h => h.Value, v => ApiKeyHash.From(v))
+            .HasColumnName("api_key_hash")
+            .HasMaxLength(255)
+            .IsRequired();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.FirmwareVersion)
+            .HasColumnName("firmware_version")
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.Status)
+            .HasConversion<string>()
+            .HasColumnName("status")
+            .HasMaxLength(30)
+            .IsRequired();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.AssignedPropertyId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                v => v == null ? null : PropertyId.From(v))
+            .HasColumnName("assigned_property_id")
+            .HasMaxLength(60);
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.InstallationRequestId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                v => v == null ? null : InstallationRequestId.From(v))
+            .HasColumnName("installation_request_id")
+            .HasMaxLength(60);
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.InstalledByTechnicianId)
+            .HasConversion(
+                id => id == null ? null : id.Value,
+                v => v == null ? null : TechnicianId.From(v))
+            .HasColumnName("installed_by_technician_id")
+            .HasMaxLength(60);
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.InstalledAt)
+            .HasColumnName("installed_at");
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.ConnectionStatus)
+            .HasConversion<string>()
+            .HasColumnName("connection_status")
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.LastReadingAt)
+            .HasColumnName("last_reading_at");
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.MaintenanceReason)
+            .HasColumnName("maintenance_reason")
+            .HasMaxLength(500);
+
+        builder.Entity<IoTDevice>()
+            .Property(d => d.ExpectedReturnDate)
+            .HasColumnName("expected_return_date");
+
+        builder.Entity<IoTDevice>()
+            .HasIndex(d => d.Status)
+            .HasDatabaseName("idx_arm_iot_devices_status");
+
+        builder.Entity<IoTDevice>()
+            .HasIndex(d => d.AssignedPropertyId)
+            .HasDatabaseName("idx_arm_iot_devices_property");
     }
 }

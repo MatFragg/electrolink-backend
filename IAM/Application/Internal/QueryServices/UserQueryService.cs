@@ -37,7 +37,7 @@ public class UserQueryService(IUserRepository userRepository) : IUserQueryServic
      */
     public async Task<IEnumerable<User>> Handle(GetAllUsersQuery query)
     {
-        return await userRepository.ListAsync();
+        return await userRepository.ListAsync(query.Page, query.PageSize);
     }
 
     /**

@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure;
 
 namespace Hampcoders.Electrolink.API.Shared.Infrastructure.ExternalProviders;

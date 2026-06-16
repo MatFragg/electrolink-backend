@@ -1,5 +1,7 @@
 namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 
+using System.ComponentModel.DataAnnotations;
+
 /// <summary>
 /// Resource for creating a new subscription.
 /// </summary>
@@ -12,12 +14,12 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
 /// <param name="InitialStatus">The initial status of the subscription (e.g., "Active", "Trial").</param>
 /// <param name="TrialEndsAt">Optional trial end date.</param>
 public record CreateSubscriptionResource(
-    string UserId,
+    [property: Required] string UserId,
     Guid PlanId,
     DateTime StartDate,
     DateTime EndDate,
-    string StripeCustomerId,
-    string StripeSubscriptionId,
-    string InitialStatus,
+    [property: Required] string StripeCustomerId,
+    [property: Required] string StripeSubscriptionId,
+    [property: Required] string InitialStatus,
     DateTime? TrialEndsAt = null
 );

@@ -23,7 +23,7 @@ public class ComponentReservation
     {
         return new ComponentReservation
         {
-            Id = ComponentReservationId.NewComponentReservationId(),
+            Id = ComponentReservationId.NewId(),
             TechnicianInventoryId = inventoryId,
             AssignmentId   = assignmentId,
             ExpiresAt   = expiresAt,

@@ -1,9 +1,8 @@
-﻿using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
-using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
+﻿using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 
-public class PaymentRecord : BaseAggregateRoot
+public class PaymentRecord
 {
     public PaymentRecordId PaymentRecordId { get; private set; }
     public SubscriptionId SubscriptionId { get; private set; }

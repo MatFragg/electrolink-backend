@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 
 
@@ -8,6 +9,8 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Processing.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Processing.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Assets.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.IAM.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
@@ -16,7 +19,9 @@ using Hampcoders.Electrolink.API.Planning.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Persistence.EFC.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Processing.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Entities;
+using Hampcoders.Electrolink.API.Analytics.Infrastructure.Persistence.EFC.Configurations.Extensions;
 
 namespace Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
 
@@ -27,10 +32,12 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<Property> Properties { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
+    public DbSet<OrphanedFileDeletion> OrphanedFileDeletions { get; set; }
     public DbSet<TechnicianInventory> TechnicianInventories { get; set; }
     public DbSet<Component> Components { get; set; }
     public DbSet<ComponentType> ComponentTypes { get; set; }
     public DbSet<ComponentStock> ComponentStocks { get; set; }
+    public DbSet<IoTDevice> IoTDevices { get; set; }
     
     public DbSet<Profile> Profiles { get; set; }
     
@@ -45,25 +52,32 @@ public class AppDbContext(DbContextOptions options) : DbContext(options)
     // Monitoring Bounded Context
     public DbSet<ServiceExecution> ServiceExecutions { get; set; }
     
-    protected override void OnConfiguring(DbContextOptionsBuilder builder)
+    // Processing Bounded Context (IoT Monitoring)
+    public DbSet<DeviceReadingStream> DeviceReadingStreams { get; set; }
+    public DbSet<AnomalyRecord> AnomalyRecords { get; set; }
+    public DbSet<RelayControlCommand> RelayControlCommands { get; set; }
+    public DbSet<Reading> Readings { get; set; }
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        builder.AddCreatedUpdatedInterceptor();
-        base.OnConfiguring(builder);
+        optionsBuilder.AddCreatedUpdatedInterceptor();
+        base.OnConfiguring(optionsBuilder);
     }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
-        builder.HasPostgresExtension("postgis");
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.HasPostgresExtension("postgis");
 
-        builder.ApplyIamConfiguration();
-        builder.ApplyProfilesConfiguration();
-        builder.ApplyAssetsConfiguration();
-        builder.ApplyServiceDesignAndPlanningConfiguration();
-        builder.ApplyMonitoringConfiguration();
-        builder.ApplySubscriptionsConfiguration();
-        builder.UseSnakeCaseNamingConvention();
+        modelBuilder.ApplyIamConfiguration();
+        modelBuilder.ApplyProfilesConfiguration();
+        modelBuilder.ApplyAssetsConfiguration();
+        modelBuilder.ApplyServiceDesignAndPlanningConfiguration();
+        modelBuilder.ApplyMonitoringConfiguration();
+        modelBuilder.ApplySubscriptionsConfiguration();
+        modelBuilder.ApplyAnalyticsConfiguration();
+        modelBuilder.ApplyProcessingConfiguration();
+        modelBuilder.ApplyConfiguration(new OrphanedFileDeletionConfiguration());
+        modelBuilder.UseSnakeCaseNamingConvention();
     }
-    
-    
 }

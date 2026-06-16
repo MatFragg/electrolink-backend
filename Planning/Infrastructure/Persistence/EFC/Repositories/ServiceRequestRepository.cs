@@ -19,11 +19,20 @@ public class ServiceRequestRepository(AppDbContext context) : BaseRepository<Ser
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<ServiceRequest>> FindPendingAssignmentAsync()
-        => await Context.Set<ServiceRequest>()
+    public async Task<IEnumerable<ServiceRequest>> FindPendingAssignmentAsync(int? page = null, int? pageSize = null)
+    {
+        var query = Context.Set<ServiceRequest>()
             .Where(r => r.Status == ERequestStatus.PendingAssignment)
             .OrderByDescending(r => r.IsPriority)
-            .ThenBy(r => r.CreatedDate)
-            .ToListAsync();
+            .ThenBy(r => r.CreatedDate);
+
+        if (page.HasValue && pageSize.HasValue)
+        {
+            var skip = (page.Value - 1) * pageSize.Value;
+            query = (IOrderedQueryable<ServiceRequest>)query.Skip(skip).Take(pageSize.Value);
+        }
+
+        return await query.ToListAsync();
+    }
 }
 

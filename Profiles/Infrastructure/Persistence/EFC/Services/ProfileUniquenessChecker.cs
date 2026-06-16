@@ -4,15 +4,16 @@ using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Infrastructure.Persistence.EFC.Configuration;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.EFC.Services;
 
 public class ProfileUniquenessChecker(AppDbContext context) : IProfileUniquenessChecker
 {
-    public void EnsureDniIsUnique(Dni dni, ProfileId excludedProfileId)
+    public async Task EnsureDniIsUniqueAsync(Dni dni, ProfileId excludedProfileId)
     {
-        var exists = context.Set<Profile>()
-            .Any(p => p.PersonalData != null
+        var exists = await context.Set<Profile>()
+            .AnyAsync(p => p.PersonalData != null
                       && p.PersonalData.Dni.Value == dni.Value
                       && p.ProfileId != excludedProfileId);
 

@@ -66,7 +66,8 @@ public class AuthenticationController(IUserCommandService userCommandService) : 
         Summary = "Sign-up",
         Description = "Sign up a new user",
         OperationId = "SignUp")]
-    [SwaggerResponse(StatusCodes.Status200OK, "The user was created successfully")]
+    [SwaggerResponse(StatusCodes.Status201Created, "The user was created successfully", typeof(AuthenticatedUserResource))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid data or email already taken")]
     public async Task<IActionResult> SignUp([FromBody] SignUpResource signUpResource)
     {
         try {
@@ -74,7 +75,7 @@ public class AuthenticationController(IUserCommandService userCommandService) : 
             var authenticatedUser = await userCommandService.Handle(signUpCommand);
             var resource = AuthenticatedUserResourceFromEntityAssembler.ToResourceFromEntity(authenticatedUser.user,
                 authenticatedUser.token);
-            return Ok(resource);
+            return CreatedAtAction(nameof(SignIn), resource);
         } catch (Exception ex)
         {
             return BadRequest(new

@@ -13,15 +13,39 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.QueryServices
 /// Implementación de IServiceDesignQueryService.
 /// Centraliza las consultas relacionadas con diseño de servicios, elegibilidad y matching.
 /// </summary>
-public class ServiceDesignQueryService(IServiceCatalogRepository catalogRepository, IServiceRequestRepository requestRepository,
-IServiceAssignmentRepository assignmentRepository, ExternalProfilesService externalProfileService, ExternalSubscriptionsService externalSubscriptionsService, ExternalAssetsService externalAssetsService, ILogger<ServiceDesignQueryService> _logger) : IServiceDesignQueryService
+public class ServiceDesignQueryService : IServiceDesignQueryService
 {
+    private readonly IServiceCatalogRepository _catalogRepository;
+    private readonly IServiceRequestRepository _requestRepository;
+    private readonly IServiceAssignmentRepository _assignmentRepository;
+    private readonly ExternalProfilesService _externalProfileService;
+    private readonly ExternalSubscriptionsService _externalSubscriptionsService;
+    private readonly ExternalAssetsService _externalAssetsService;
+    private readonly ILogger<ServiceDesignQueryService> _logger;
+
+    public ServiceDesignQueryService(
+        IServiceCatalogRepository catalogRepository,
+        IServiceRequestRepository requestRepository,
+        IServiceAssignmentRepository assignmentRepository,
+        ExternalProfilesService externalProfileService,
+        ExternalSubscriptionsService externalSubscriptionsService,
+        ExternalAssetsService externalAssetsService,
+        ILogger<ServiceDesignQueryService> logger)
+    {
+        _catalogRepository = catalogRepository;
+        _requestRepository = requestRepository;
+        _assignmentRepository = assignmentRepository;
+        _externalProfileService = externalProfileService;
+        _externalSubscriptionsService = externalSubscriptionsService;
+        _externalAssetsService = externalAssetsService;
+        _logger = logger;
+    }
     public async Task<ServiceCatalog?> Handle(GetServiceCatalogQuery query) 
-        => await catalogRepository.FindByTechnicianIdAsync(query.TechnicianId);
+        => await _catalogRepository.FindByTechnicianIdAsync(query.TechnicianId);
     
     public async Task<ServiceRecipe?> Handle(GetServiceRecipeDetailsQuery query)
     {
-        var catalog = await catalogRepository.FindByTechnicianIdAsync(
+            var catalog = await _catalogRepository.FindByTechnicianIdAsync(
             query.TechnicianId);
 
         if (catalog is null) return null;
@@ -34,13 +58,12 @@ IServiceAssignmentRepository assignmentRepository, ExternalProfilesService exter
     
     public async Task<RequestEligibility> Handle(GetRequestEligibilityQuery query)
     {
-        var isActive = await externalProfileService.IsHomeownerActiveAsync(query.HomeownerId.Value);
-        var hasProperties = await externalProfileService.HasPropertiesAsync(query.HomeownerId.Value);
+        var isActive = await _externalProfileService.IsHomeownerActiveAsync(query.HomeownerId.Value);
 
-        if (!isActive || !hasProperties)
+        if (!isActive)
             return new RequestEligibility(false, null, null, false, "PROFILE_INCOMPLETE");
 
-        var eligibility = await externalSubscriptionsService.GetRemainingRequestsAsync(query.HomeownerId.Value);
+        var eligibility = await _externalSubscriptionsService.GetRemainingRequestsAsync(query.HomeownerId.Value);
 
         return new RequestEligibility(
             eligibility.canCreate,
@@ -50,145 +73,21 @@ IServiceAssignmentRepository assignmentRepository, ExternalProfilesService exter
             eligibility.canCreate ? null : "MONTHLY_LIMIT_REACHED");
     }
     
-    // OLD VERSION
-    /*public async Task<IEnumerable<AvailableService>> Handle(GetAvailableServicesQuery query)
-    {
-        var request = await requestRepository.FindByIdAsync(query.RequestId);
-        if (request is null || request.Geolocation is null) return [];
-
-        var technicians = await externalProfileService.GetTechniciansInAreaAsync(
-            request.Geolocation.Latitude, request.Geolocation.Longitude);
-
-        var result = new List<AvailableService>();
-
-        foreach (var tech in technicians)
-        {
-            var catalog = await catalogRepository.FindByTechnicianIdAsync(
-                TechnicianId.From(tech.technicianId));
-
-            if (catalog is null || catalog.Status != ECatalogStatus.Active) continue;
-
-            foreach (var recipe in catalog.Recipes.Where(r => r.IsActive))
-            {
-                var stockCheck = await externalAssetsService.TechnicianHasStockForRecipeAsync(
-                    tech.technicianId,
-                    recipe.ComponentRequirements.Select(c => (c.ComponentTypeId, c.Quantity)).ToList());
-
-                if (!stockCheck) continue;
-
-                result.Add(new AvailableService(
-                    recipe.Id.Value,
-                    tech.technicianId,
-                    tech.fullName,
-                    tech.rating,
-                    recipe.ServiceName,
-                    recipe.ServiceDescription,
-                    recipe.Pricing.TotalPrice.Amount,
-                    recipe.EstimatedDuration.TotalMinutes,
-                    stockCheck));
-            }
-        }
-
-        return result;
-    }
-    */
-    
-    /*
-     public async Task<IEnumerable<AvailableService>> Handle(GetAvailableServicesQuery query)
-    {
-        _logger.LogInformation("1. Iniciando búsqueda de servicios para RequestId: {RequestId}", query.RequestId.Value);
-
-        var request = await requestRepository.FindByIdAsync(query.RequestId);
-        if (request is null)
-        {
-            _logger.LogWarning("-> Request {RequestId} no encontrado.", query.RequestId.Value);
-            return [];
-        }
-
-        if (request.Geolocation is null)
-        {
-            _logger.LogWarning("-> Request {RequestId} no tiene geolocalización.", query.RequestId.Value);
-            return [];
-        }
-
-        var technicians = (await externalProfileService.GetTechniciansInAreaAsync(
-            request.Geolocation.Latitude, request.Geolocation.Longitude)).ToList();
-
-        _logger.LogInformation("2. Se encontraron {Count} técnicos en el área.", technicians.Count);
-
-        var result = new List<AvailableService>();
-
-        foreach (var tech in technicians)
-        {
-            _logger.LogInformation("-> Evaluando técnico: {TechnicianId} ({Name})", tech.technicianId, tech.fullName);
-
-            var catalog = await catalogRepository.FindByTechnicianIdAsync(TechnicianId.From(tech.technicianId));
-
-            if (catalog is null)
-            {
-                _logger.LogInformation("   - Descartado: No tiene catálogo creado.");
-                continue;
-            }
-
-            if (catalog.Status != ECatalogStatus.Active)
-            {
-                _logger.LogInformation("   - Descartado: Su catálogo está en estado {Status}.", catalog.Status);
-                continue;
-            }
-
-            var activeRecipes = catalog.Recipes.Where(r => r.IsActive).ToList();
-            _logger.LogInformation("   - El catálogo tiene {Count} recetas activas.", activeRecipes.Count);
-
-            foreach (var recipe in activeRecipes)
-            {
-                var componentRequirements = recipe.ComponentRequirements.Select(c => (c.ComponentTypeId, c.Quantity)).ToList();
-                
-                var stockCheck = await externalAssetsService.TechnicianHasStockForRecipeAsync(
-                    tech.technicianId, componentRequirements);
-
-                if (!stockCheck)
-                {
-                    _logger.LogInformation("      x Receta '{ServiceName}' descartada: El técnico NO tiene el stock exacto en su inventario.", recipe.ServiceName);
-                    continue;
-                }
-
-                _logger.LogInformation("✓ Receta '{ServiceName}' ACEPTADA. Hay stock.", recipe.ServiceName);
-
-                result.Add(new AvailableService(
-                    recipe.Id.Value,
-                    tech.technicianId,
-                    tech.fullName,
-                    tech.rating,
-                    recipe.ServiceName,
-                    recipe.ServiceDescription,
-                    recipe.Pricing.TotalPrice.Amount,
-                    recipe.EstimatedDuration.TotalMinutes,
-                    stockCheck));
-            }
-        }
-
-        _logger.LogInformation("3. Búsqueda completada para Request {RequestId}. Total servicios disponibles: {Count}.", query.RequestId.Value, result.Count);
-
-        return result;
-    }
-    */
-    
     public async Task<IEnumerable<AvailableService>> Handle(GetAvailableServicesQuery query) {
-        var request = await requestRepository.FindByIdAsync(query.RequestId);
+        var request = await _requestRepository.FindByIdAsync(query.RequestId);
         if (request is null || request.Geolocation is null) return [];
 
-        var technicians = (await externalProfileService.GetTechniciansInAreaAsync(
+        var technicians = (await _externalProfileService.GetTechniciansInAreaAsync(
             request.Geolocation.Latitude, request.Geolocation.Longitude)).ToList();
 
-        // categoria -> lista de (precio, duracion) por tecnico que puede hacerla
-        var categoryData = new Dictionary<EServiceCategory, List<(decimal price, int duration)>>();
+        var technicianIds = technicians.Select(t => TechnicianId.From(t.technicianId)).ToList();
+        var catalogs = await _catalogRepository.FindCatalogsByTechnicianIdsAsync(technicianIds);
 
-        foreach (var tech in technicians)
+        var stockTasks = new List<Task<(EServiceCategory Category, decimal Price, int Duration, bool HasStock)>>();
+
+        foreach (var catalog in catalogs.Values)
         {
-            var catalog = await catalogRepository.FindByTechnicianIdAsync(
-                TechnicianId.From(tech.technicianId));
-
-            if (catalog is null || catalog.Status != ECatalogStatus.Active) continue;
+            if (catalog.Status != ECatalogStatus.Active) continue;
 
             foreach (var recipe in catalog.Recipes.Where(r => r.IsActive))
             {
@@ -196,17 +95,25 @@ IServiceAssignmentRepository assignmentRepository, ExternalProfilesService exter
                     .Select(c => (c.ComponentTypeId, c.Quantity))
                     .ToList();
 
-                var hasStock = await externalAssetsService.TechnicianHasStockForRecipeAsync(
-                    tech.technicianId, requirements);
-
-                if (!hasStock) continue;
-
-                if (!categoryData.ContainsKey(recipe.ServiceCategory))
-                    categoryData[recipe.ServiceCategory] = new List<(decimal, int)>();
-
-                categoryData[recipe.ServiceCategory].Add(
-                    (recipe.Pricing.TotalPrice.Amount, recipe.EstimatedDuration.TotalMinutes));
+                var techId = recipe.TechnicianId.Value;
+                stockTasks.Add(_externalAssetsService
+                    .TechnicianHasStockForRecipeAsync(techId, requirements)
+                    .ContinueWith(t => (recipe.ServiceCategory,
+                        recipe.Pricing.TotalPrice.Amount,
+                        recipe.EstimatedDuration.TotalMinutes,
+                        t.Result)));
             }
+        }
+
+        var stockResults = await Task.WhenAll(stockTasks);
+
+        var categoryData = new Dictionary<EServiceCategory, List<(decimal price, int duration)>>();
+        foreach (var result in stockResults)
+        {
+            if (!result.HasStock) continue;
+            if (!categoryData.ContainsKey(result.Category))
+                categoryData[result.Category] = new List<(decimal, int)>();
+            categoryData[result.Category].Add((result.Price, result.Duration));
         }
 
         return categoryData.Select(kvp => new AvailableService(
@@ -231,7 +138,7 @@ private static string GetCategoryDisplayName(EServiceCategory category) => categ
 
     public async Task<ServiceRequest?> Handle(GetServiceRequestSummaryQuery query)
     {
-        var request = await requestRepository.FindByIdAsync(query.RequestId);
+        var request = await _requestRepository.FindByIdAsync(query.RequestId);
 
         if (request is null || request.HomeownerId != query.HomeownerId)
             return null;
@@ -241,7 +148,7 @@ private static string GetCategoryDisplayName(EServiceCategory category) => categ
 
     public async Task<MatchingQueue> Handle(GetMatchingQueueQuery query)
     {
-        var pending = await requestRepository.FindPendingAssignmentAsync();
+        var pending = await _requestRepository.FindPendingAssignmentAsync(query.Page, query.PageSize);
 
         var sorted = pending.OrderByDescending(r => r.IsPriority)
             .ThenBy(r => r.CreatedDate)
@@ -259,7 +166,7 @@ private static string GetCategoryDisplayName(EServiceCategory category) => categ
     }
 
     public async Task<ServiceRequest?> Handle(GetServiceRequestByIdQuery query) 
-        => await requestRepository.FindByIdAsync(query.RequestId);
+        => await _requestRepository.FindByIdAsync(query.RequestId);
 }
 
 

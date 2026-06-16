@@ -106,6 +106,11 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
 
         builder.HasIndex(s => s.Status)
             .HasDatabaseName("ix_sp_subscriptions_status");
+
+        builder.HasMany<PaymentRecord>()
+            .WithOne()
+            .HasForeignKey(p => p.SubscriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

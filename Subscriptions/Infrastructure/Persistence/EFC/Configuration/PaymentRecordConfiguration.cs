@@ -49,8 +49,7 @@ public class PaymentRecordConfiguration : IEntityTypeConfiguration<PaymentRecord
 
         builder.OwnsOne(p => p.Amount, money =>
         {
-            money.WithOwner().HasForeignKey("id"); // 🔥 CLAVE
-
+            money.WithOwner().HasForeignKey("id");
             money.Property(m => m.Amount)
                 .HasColumnName("amount")
                 .IsRequired();

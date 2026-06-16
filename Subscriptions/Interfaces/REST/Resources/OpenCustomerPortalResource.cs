@@ -1,4 +1,6 @@
-﻿namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record OpenCustomerPortalResource(string ReturnUrl);
+namespace Hampcoders.Electrolink.API.Subscriptions.Interfaces.REST.Resources;
+
+public record OpenCustomerPortalResource([property: Required, Url] string ReturnUrl);
 

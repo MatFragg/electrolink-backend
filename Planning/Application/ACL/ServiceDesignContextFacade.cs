@@ -25,58 +25,63 @@ public class ServiceDesignContextFacade(
     public async Task<bool> CatalogExistsForTechnicianAsync(string technicianId)
         => await catalogRepository.ExistsByTechnicianIdAsync(TechnicianId.From(technicianId));
 
-    public async Task<bool> RecipeIsActiveAsync(string recipeId, string technicianId)
+    public async Task<RecipeDetailDto?> GetRecipeDetailAsync(string recipeId, string technicianId)
     {
         var detail = await queryService.Handle(
             new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        if (detail is null) return null;
+
+        return new RecipeDetailDto(
+            detail.IsActive,
+            detail.ServiceName,
+            detail.Pricing.TotalPrice.Amount,
+            detail.EstimatedDuration.TotalMinutes,
+            detail.WarrantyPeriod.Months,
+            detail.ServiceCategory.ToString(),
+            detail.ComponentRequirements.Select(c => (c.ComponentTypeId, c.Quantity)).ToList());
+    }
+
+    public async Task<bool> RecipeIsActiveAsync(string recipeId, string technicianId)
+    {
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
         return detail?.IsActive ?? false;
     }
 
     public async Task<string?> GetRecipeNameAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
         return detail?.ServiceName;
     }
 
     public async Task<decimal?> GetRecipeTotalPriceAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
-        return detail?.Pricing.TotalPrice.Amount;
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
+        return detail?.TotalPrice;
     }
 
     public async Task<int?> GetRecipeEstimatedDurationMinutesAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
-        return detail?.TimesRequested;
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
+        return detail?.EstimatedDurationMinutes;
     }
 
     public async Task<int?> GetRecipeWarrantyMonthsAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
-        return detail?.WarrantyPeriod.Months;
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
+        return detail?.WarrantyMonths;
     }
 
     public async Task<string?> GetRecipeServiceCategoryAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
-        return detail?.ServiceCategory.ToString();
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
+        return detail?.ServiceCategory;
     }
 
     public async Task<IReadOnlyList<(string componentTypeId, int quantity)>>
         GetRecipeComponentRequirementsAsync(string recipeId, string technicianId)
     {
-        var detail = await queryService.Handle(
-            new GetServiceRecipeDetailsQuery(RecipeId.From(recipeId), TechnicianId.From(technicianId)));
-        if (detail is null) return [];
-
-        return detail.ComponentRequirements
-            .Select(c => (c.ComponentTypeId, c.Quantity))
-            .ToList();
+        var detail = await GetRecipeDetailAsync(recipeId, technicianId);
+        return detail?.ComponentRequirements ?? [];
     }
 
     public async Task ReactivateServiceRequestAsync(string requestId, string homeownerId, string reason)

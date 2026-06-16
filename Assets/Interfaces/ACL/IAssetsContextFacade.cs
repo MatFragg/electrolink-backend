@@ -99,4 +99,30 @@ public interface IAssetsContextFacade
     /// Called by Service Operation BC after ServiceCompleted.
     /// </summary>
     Task<bool> RecordMaintenanceForPropertyAsync(string propertyId, string serviceId, string technicianId, string workSummary, DateTime completedAt);
+
+    // ── IoT ── 🆕 ─────────────────────────────────────────
+
+    /// <summary>
+    /// Asigna el primer dispositivo IoT disponible (IN_STOCK) a la propiedad indicada.
+    /// Invocado por el handler de IoTInstallationServiceScheduled.
+    /// </summary>
+    Task<string?> AssignAvailableDeviceToPropertyAsync(string propertyId, string installationRequestId);
+
+    /// <summary>
+    /// Retorna la cantidad de dispositivos activos (INSTALLED + MAINTENANCE) para facturación.
+    /// Invocado por Subscriptions BC al inicio de cada ciclo.
+    /// </summary>
+    Task<int> GetActiveDeviceCountForBillingAsync(string ownerId);
+
+    /// <summary>
+    /// Verifica si la propiedad tiene al menos un dispositivo IoT INSTALLED.
+    /// Invocado por Service Design BC para contextualizar solicitudes.
+    /// </summary>
+    Task<bool> PropertyHasInstalledDeviceAsync(string propertyId);
+
+    /// <summary>
+    /// Retorna el ID del dispositivo IoT asociado al número de serie, o null si no existe.
+    /// Invocado por Monitoring BC para identificar dispositivos durante operaciones.
+    /// </summary>
+    Task<string?> GetDeviceIdBySerialNumberAsync(string serialNumber);
 }

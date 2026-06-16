@@ -33,12 +33,26 @@ public class ServiceExecutionRepository(AppDbContext context)
 
     public async Task<IEnumerable<ServiceExecution>> FindActiveServiceExecutionAsync()
         => await Context.Set<ServiceExecution>()
-            .Where(se => se.Status == EExecutionStatus.Scheduled || se.Status == EExecutionStatus.InProgress)
+            .Where(se => se.Status == EExecutionStatus.Notified
+                      || se.Status == EExecutionStatus.EnRoute
+                      || se.Status == EExecutionStatus.Arrived
+                      || se.Status == EExecutionStatus.InProgress)
             .Include(se => se.WorkPhotos)
             .Include(se => se.ComponentSubstitutions)
             .ToListAsync();
 
-    public async Task<bool> ExistsByAssignmentIdAsync(AssignmentId assignmentId) 
+    public async Task<ServiceExecution?> FindActiveByHomeownerIdAsync(HomeownerId homeownerId)
+        => await Context.Set<ServiceExecution>()
+            .Where(se => se.HomeownerId == homeownerId
+                      && (se.Status == EExecutionStatus.Notified
+                       || se.Status == EExecutionStatus.EnRoute
+                       || se.Status == EExecutionStatus.Arrived
+                       || se.Status == EExecutionStatus.InProgress))
+            .Include(se => se.WorkPhotos)
+            .Include(se => se.ComponentSubstitutions)
+            .FirstOrDefaultAsync();
+
+    public async Task<bool> ExistsByAssignmentIdAsync(AssignmentId assignmentId)
         => await Context.Set<ServiceExecution>()
             .AnyAsync(se => se.AssignmentId == assignmentId);
 }

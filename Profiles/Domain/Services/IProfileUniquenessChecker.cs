@@ -5,5 +5,5 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
 
 public interface IProfileUniquenessChecker
 {
-    void EnsureDniIsUnique(Dni dni, ProfileId excludedProfileId);
+    Task EnsureDniIsUniqueAsync(Dni dni, ProfileId excludedProfileId);
 }

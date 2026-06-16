@@ -12,24 +12,33 @@ public class SubscriptionRepository(AppDbContext context)
     : BaseRepository<Subscription, SubscriptionId>(context), ISubscriptionRepository
 {
     public async Task<Subscription?> FindByUserIdAsync(string userId)
-        => await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.UserId.Value == userId);
+    {
+        var id = UserId.From(userId);
+        return await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.UserId == id);
+    }
 
     public async Task<Subscription> FindByUserIdOrFailAsync(string userId)
         => await FindByUserIdAsync(userId)
            ?? throw new ArgumentException($"No subscription found for user {userId}.");
 
     public async Task<Subscription?> FindByStripeCustomerIdAsync(string stripeCustomerId)
-        => await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.StripeCustomerId.Value == stripeCustomerId);
+    {
+        var id = StripeCustomerId.From(stripeCustomerId);
+        return await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.StripeCustomerId == id);
+    }
 
     public async Task<Subscription> FindByStripeCustomerIdOrFailAsync(string stripeCustomerId)
         => await FindByStripeCustomerIdAsync(stripeCustomerId)
            ?? throw new ArgumentException($"No subscription found for Stripe customer {stripeCustomerId}.");
 
     public async Task<Subscription?> FindByStripeSubscriptionIdAsync(string stripeSubscriptionId)
-        => await Context.Set<Subscription>()
-            .FirstOrDefaultAsync(s => s.StripeSubscriptionId != null && s.StripeSubscriptionId.Value == stripeSubscriptionId);
+    {
+        var id = StripeSubscriptionId.From(stripeSubscriptionId);
+        return await Context.Set<Subscription>()
+            .FirstOrDefaultAsync(s => s.StripeSubscriptionId == id);
+    }
 
     public async Task<Subscription> FindByStripeSubscriptionIdOrFailAsync(string stripeSubscriptionId)
         => await FindByStripeSubscriptionIdAsync(stripeSubscriptionId)
@@ -38,13 +47,31 @@ public class SubscriptionRepository(AppDbContext context)
     public async Task<bool> ExistsByUserIdAsync(UserId userId)
         => await Context.Set<Subscription>().AnyAsync(s => s.UserId == userId);
 
-    public async Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf)
+    public async Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf, int limit = 100, int offset = 0)
         => await Context.Set<Subscription>()
-            .Where(s => s.Status.Value == ESubscriptionStatus.GracePeriod && s.GracePeriodEndsAt != null && s.GracePeriodEndsAt <= asOf)
+            .Where(s => s.Status == SubscriptionStatus.GracePeriod && s.GracePeriodEndsAt != null && s.GracePeriodEndsAt <= asOf)
+            .OrderBy(s => s.GracePeriodEndsAt)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync();
 
-    public async Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync()
+    public async Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync(int limit = 100, int offset = 0)
         => await Context.Set<Subscription>()
-            .Where(s => s.PlanType.Value == EPlanType.Basic && s.BusinessRole.Value == EBusinessRole.Homeowner)
+            .Where(s => s.PlanType == PlanType.Basic && s.BusinessRole == BusinessRole.Homeowner)
+            .OrderBy(s => s.SubscriptionId)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync();
+
+    public async Task<IEnumerable<PaymentRecord>> FindPaymentHistoryAsync(string subscriptionId, int page = 1, int pageSize = 20)
+    {
+        var id = SubscriptionId.From(subscriptionId);
+        return await Context.Set<PaymentRecord>()
+            .Where(p => p.SubscriptionId == id)
+            .OrderByDescending(p => p.ProcessedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }

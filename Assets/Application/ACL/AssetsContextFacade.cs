@@ -17,7 +17,10 @@ public class AssetsContextFacade(
     IComponentTypeQueryService       componentTypeQueryService,
     IComponentTypeRepository           componentTypeRepository,
     IPropertyPortfolioQueryService     portfolioQueryService,
-    IPropertyPortfolioCommandService   portfolioCommandService) : IAssetsContextFacade
+    IPropertyPortfolioCommandService   portfolioCommandService,
+    IIoTDeviceCommandService           deviceCommandService,
+    IIoTDeviceQueryService             deviceQueryService,
+    IIoTDeviceRepository               deviceRepository) : IAssetsContextFacade
 {
     // ── Inventory ─────────────────────────────────────────
 
@@ -124,9 +127,11 @@ public class AssetsContextFacade(
         return result is not null;
     }
 
-    public Task<bool> ReleaseComponentReservationAsync(string technicianId, string serviceId, string reason)
+    public async Task<bool> ReleaseComponentReservationAsync(string technicianId, string serviceId, string reason)
     {
-        throw new NotImplementedException();
+        var result = await inventoryCommandService.Handle(
+            new ReleaseReservationCommand(TechnicianId.From(technicianId), AssignmentId.From(serviceId), reason));
+        return result;
     }
 
     public async Task ReleaseReservationAsync(string technicianId, string serviceId, string reason)
@@ -174,17 +179,39 @@ public class AssetsContextFacade(
         return portfolio is not null && portfolio.Entries.Any();
     }
 
-    public Task<bool> RecordMaintenanceForPropertyAsync(string propertyId, string serviceId, string technicianId, string workSummary,
+    public async Task<bool> RecordMaintenanceForPropertyAsync(string propertyId, string serviceId, string technicianId, string workSummary,
         DateTime completedAt)
     {
-        throw new NotImplementedException();
+        var result = await propertyCommandService.Handle(new RecordMaintenanceForPropertyCommand(
+            PropertyId.From(propertyId), AssignmentId.From(serviceId), TechnicianId.From(technicianId), workSummary, completedAt));
+        return result is not null;
     }
 
-    // ── Maintenance ───────────────────────────────────────
+    // ── IoT 🆕 ─────────────────────────────────────────────
 
-    public async Task RecordMaintenanceAsync(
-        string propertyId, string serviceId, string technicianId,
-        string workSummary, DateTime completedAt)
-        => await propertyCommandService.Handle(new RecordMaintenanceForPropertyCommand(
-            PropertyId.From(propertyId), AssignmentId.From(serviceId), TechnicianId.From(technicianId), workSummary, completedAt));
+    public async Task<string?> AssignAvailableDeviceToPropertyAsync(string propertyId, string installationRequestId)
+    {
+        var device = await deviceRepository.FindFirstInStockAsync();
+        if (device is null) return null;
+
+        await deviceCommandService.Handle(new AssignDeviceToPropertyCommand(
+            device.Id.Value, propertyId, installationRequestId));
+
+        return device.Id.Value;
+    }
+
+    public Task<int> GetActiveDeviceCountForBillingAsync(string ownerId)
+        => deviceQueryService.Handle(new GetActiveDeviceCountByOwnerIdQuery(ownerId));
+
+    public async Task<bool> PropertyHasInstalledDeviceAsync(string propertyId)
+    {
+        var devices = await deviceQueryService.Handle(new GetIoTDevicesByPropertyIdQuery(propertyId));
+        return devices.Any(d => d.Status == EDeviceStatus.Installed);
+    }
+
+    public async Task<string?> GetDeviceIdBySerialNumberAsync(string serialNumber)
+    {
+        var device = await deviceQueryService.Handle(new GetIoTDeviceBySerialNumberQuery(serialNumber));
+        return device?.Id.Value;
+    }
 }

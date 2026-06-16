@@ -1,14 +1,24 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Exceptions;
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
 using Hampcoders.Electrolink.API.Assets.Domain.Services;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces;
 
 namespace Hampcoders.Electrolink.API.Assets.Application.Internal.CommandServices;
 
-public class PropertyCommandService(IPropertyRepository propertyRepository, IUnitOfWork unitOfWork, IMediator mediator) : IPropertyCommandService
+public class PropertyCommandService(
+    IPropertyRepository propertyRepository,
+    IUnitOfWork unitOfWork,
+    IMediator mediator,
+    IFileStorageService fileStorageService,
+    IOrphanedFileRepository orphanedFileRepository) : IPropertyCommandService
 {
+    private const string PropertyPhotoFolder = "electrolink/assets/properties";
     public async Task<Property?> Handle(CreatePropertyCommand command)
     {
         var property = Property.Create(command.HomeownerId, command.Address, command.Geolocation);
@@ -27,18 +37,67 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     public async Task<Property?> Handle(AddPhotoToPropertyCommand command)
     {
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
-        if (property is null) throw new ArgumentException("Property not found.");
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
-        property.AddPhoto(command.PhotoUrl);
+        property.AddPhoto(command.PhotoUrl, "legacy-provider");
 
         await unitOfWork.CompleteAsync();
+        return property;
+    }
+
+    public async Task<SignedUploadData> Handle(GetPropertyPhotoUploadUrlCommand command)
+    {
+        var property = await propertyRepository.FindByIdAndOwnerIdAsync(command.PropertyId, command.HomeownerId);
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
+
+        return await fileStorageService.GetSignedUploadUrlForPropertyPhotoAsync(command.PropertyId.Value);
+    }
+
+    public async Task<Property?> Handle(RegisterPropertyPhotoCommand command)
+    {
+        var property = await propertyRepository.FindByIdAndOwnerIdAsync(command.PropertyId, command.HomeownerId);
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
+
+        try
+        {
+            property.AddPhoto(command.PublicUrl, command.ProviderId);
+
+            await unitOfWork.CompleteAsync();
+            foreach (var domainEvent in property.DomainEvents)
+                await mediator.Publish(domainEvent, CancellationToken.None);
+            property.ClearDomainEvents();
+
+            return property;
+        }
+        catch
+        {
+            var folder = $"{PropertyPhotoFolder}/{command.PropertyId.Value}";
+            await orphanedFileRepository.AddAsync(
+                OrphanedFileDeletion.Create(command.ProviderId, folder, "Property photo registration failed"));
+            await unitOfWork.CompleteAsync();
+            throw;
+        }
+    }
+
+    public async Task<Property?> Handle(SetPropertyMainPhotoCommand command)
+    {
+        var property = await propertyRepository.FindByIdAndOwnerIdAsync(command.PropertyId, command.HomeownerId);
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
+
+        property.SetMainPhoto(command.ProviderId);
+
+        await unitOfWork.CompleteAsync();
+        foreach (var domainEvent in property.DomainEvents)
+            await mediator.Publish(domainEvent, CancellationToken.None);
+        property.ClearDomainEvents();
+
         return property;
     }
 
     public async Task<Property?> Handle(UpdatePropertyAddressCommand command)
     {
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
-        if (property is null) throw new ArgumentException("Property not found.");
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
         property.UpdateAddress(command.NewAddress);
         await unitOfWork.CompleteAsync();
@@ -54,7 +113,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     public async Task<Property?> Handle(UpdatePropertyGeolocationCommand command)
     {
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
-        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
         property.UpdateGeolocation(command.NewGeolocation);
         await unitOfWork.CompleteAsync();
@@ -87,7 +146,7 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     public async Task<Property?> Handle(ArchivePropertyCommand command)
     {
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
-        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
         property.Archive(command.Reason);
         await unitOfWork.CompleteAsync();
@@ -146,9 +205,9 @@ public class PropertyCommandService(IPropertyRepository propertyRepository, IUni
     public async Task<Property?> Handle(RecordMaintenanceForPropertyCommand command)
     {
         var property = await propertyRepository.FindByIdAsync(command.PropertyId);
-        if (property is null) throw new KeyNotFoundException($"Property {command.PropertyId.Value} not found.");
+        if (property is null) throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
-        property.RecordMaintenance(command.AssignmentId, command.TechnicianId.Value, command.WorkSummary, command.CompletedAt);
+        property.RecordMaintenance(command.AssignmentId, command.TechnicianId, command.WorkSummary, command.CompletedAt);
         await unitOfWork.CompleteAsync();
 
         foreach (var domainEvent in property.DomainEvents)

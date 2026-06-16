@@ -22,6 +22,8 @@ public static class ModelBuilderExtensions
     private static readonly ValueConverter<TechnicianId, string> TechnicianIdConverter =
         new(id => id.Value, raw => TechnicianId.From(raw));
 
+    private const string ProfileIdFk = "profile_id";
+
     public static void ApplyProfilesConfiguration(this ModelBuilder builder)
     {
         builder.Entity<Profile>(b =>
@@ -29,7 +31,7 @@ public static class ModelBuilderExtensions
             b.HasKey(p => p.ProfileId);
             b.Property(p => p.ProfileId)
                 .HasConversion(ProfileIdConverter)
-                .HasColumnName("profile_id")   // <-- nombre explícito en la PK
+                .HasColumnName(ProfileIdFk)   // <-- nombre explícito en la PK
                 .IsRequired();
 
             b.Property(p => p.UserId)
@@ -46,21 +48,29 @@ public static class ModelBuilderExtensions
                 .HasConversion<string>()
                 .HasColumnName("business_role");
 
-            b.Property(p => p.ProfilePictureUrl)
-                .HasColumnName("profile_picture_url")
-                .HasMaxLength(500)
-                .IsRequired(false);
+            b.OwnsOne(p => p.Photo, ph =>
+            {
+                ph.WithOwner().HasForeignKey(ProfileIdFk);
+                ph.Property(ph2 => ph2.PublicUrl)
+                    .HasColumnName("photo_public_url")
+                    .HasMaxLength(500);
+                ph.Property(ph2 => ph2.ProviderId)
+                    .HasColumnName("photo_provider_id")
+                    .HasMaxLength(500);
+                ph.Property(ph2 => ph2.UploadedAt)
+                    .HasColumnName("photo_uploaded_at");
+            });
 
             b.OwnsOne(p => p.PersonalData, n =>
             {
-                n.WithOwner().HasForeignKey("profile_id"); 
+                n.WithOwner().HasForeignKey(ProfileIdFk); 
 
                 n.Property(pd => pd.FirstName).HasColumnName("first_name").IsRequired();
                 n.Property(pd => pd.LastName).HasColumnName("last_name").IsRequired();
 
                 n.OwnsOne(pd => pd.PhoneNumber, pn =>
                 {
-                    pn.WithOwner().HasForeignKey("profile_id");
+                    pn.WithOwner().HasForeignKey(ProfileIdFk);
                     pn.Property(v => v.Value)
                         .HasColumnName("phone_number")
                         .IsRequired();
@@ -68,7 +78,7 @@ public static class ModelBuilderExtensions
 
                 n.OwnsOne(pd => pd.Dni, d =>
                 {
-                    d.WithOwner().HasForeignKey("profile_id");
+                    d.WithOwner().HasForeignKey(ProfileIdFk);
                     d.Property(v => v.Value)
                         .HasColumnName("dni")
                         .IsRequired();
@@ -76,7 +86,7 @@ public static class ModelBuilderExtensions
 
                 n.OwnsOne(pd => pd.DateOfBirth, db =>
                 {
-                    db.WithOwner().HasForeignKey("profile_id");
+                    db.WithOwner().HasForeignKey(ProfileIdFk);
                     db.Property(v => v.Value)
                         .HasColumnName("date_of_birth")
                         .IsRequired();
@@ -84,7 +94,7 @@ public static class ModelBuilderExtensions
 
                 n.OwnsOne(pd => pd.Address, a =>
                 {
-                    a.WithOwner().HasForeignKey("profile_id");
+                    a.WithOwner().HasForeignKey(ProfileIdFk);
                     a.Property(s => s.Street);
                     a.Property(s => s.Number);
                     a.Property(s => s.District);
@@ -121,13 +131,17 @@ public static class ModelBuilderExtensions
 
             b.OwnsOne(ho => ho.CommunicationPreferences, cp =>
             {
+                cp.WithOwner().HasForeignKey("HomeownerId");
                 cp.Property(c => c.SmsNotifications);
                 cp.Property(c => c.EmailNotifications);
                 cp.Property(c => c.PushNotifications);
                 cp.Property(c => c.PreferredContactTime).HasConversion<string>();
             });
 
-            b.OwnsOne(ho => ho.EmergencyContact);
+            b.OwnsOne(ho => ho.EmergencyContact, ec =>
+            {
+                ec.WithOwner().HasForeignKey("HomeownerId");
+            });
         });
 
         // ── Technician ────────────────────────────────────────────────────
@@ -147,6 +161,7 @@ public static class ModelBuilderExtensions
             
             b.OwnsOne(t => t.ServiceArea, sa =>
             {
+                sa.WithOwner().HasForeignKey("TechnicianId");
                 sa.Property(v => v.CenterLatitude)
                     .HasColumnName("service_area_lat")
                     .HasColumnType("decimal(9,6)")

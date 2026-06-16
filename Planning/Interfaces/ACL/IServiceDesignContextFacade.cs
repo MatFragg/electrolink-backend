@@ -1,5 +1,14 @@
 ﻿namespace Hampcoders.Electrolink.API.Planning.Interfaces.ACL;
 
+public record RecipeDetailDto(
+    bool? IsActive,
+    string? ServiceName,
+    decimal? TotalPrice,
+    int? EstimatedDurationMinutes,
+    int? WarrantyMonths,
+    string? ServiceCategory,
+    IReadOnlyList<(string componentTypeId, int quantity)>? ComponentRequirements);
+
 /// <summary>
 /// Interfaz de Anti-Corruption Layer (ACL).
 /// Define las capacidades del Planning BC que otros Bounded Contexts pueden usar.
@@ -8,6 +17,7 @@
 public interface IServiceDesignContextFacade
 {
     Task<bool> CatalogExistsForTechnicianAsync(string technicianId);
+    Task<RecipeDetailDto?> GetRecipeDetailAsync(string recipeId, string technicianId);
     Task<bool> RecipeIsActiveAsync(string recipeId, string technicianId);
     Task<string?> GetRecipeNameAsync(string recipeId, string technicianId);
     Task<decimal?> GetRecipeTotalPriceAsync(string recipeId, string technicianId);

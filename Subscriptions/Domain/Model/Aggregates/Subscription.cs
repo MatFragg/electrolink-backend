@@ -35,7 +35,24 @@ public class Subscription : BaseAggregateRoot
 
     public UsageCounters? UsageCounters { get; private set; }
 
+    private readonly List<PaymentRecord> _paymentRecords = [];
+    public IReadOnlyCollection<PaymentRecord> PaymentRecords => _paymentRecords.AsReadOnly();
+
     private Subscription() { }
+
+    internal void AddPaymentRecord(PaymentRecord record)
+    {
+        _paymentRecords.Add(record);
+    }
+
+    public bool HasPaymentWithInvoice(string stripeInvoiceId)
+        => _paymentRecords.Any(p => p.StripeInvoiceId.Value == stripeInvoiceId);
+
+    public PaymentRecord? FindLastSuccessfulPayment()
+        => _paymentRecords
+            .Where(p => p.Status == PaymentStatus.Succeeded)
+            .OrderByDescending(p => p.ProcessedAt)
+            .FirstOrDefault();
 
     // ── Factory Method: Initialize ────────────────────────
     /// <summary>
@@ -249,7 +266,7 @@ public class Subscription : BaseAggregateRoot
             UserId.Value,
             BusinessRole.ToString(),
             PlanType.ToString(),
-            BillingPeriod!.PeriodEnd,
+            BillingPeriod?.PeriodEnd ?? throw new InvalidOperationException("BillingPeriod is required for a Premium subscription."),
             cancellationReason,
             scheduledAt));
     }
@@ -262,8 +279,10 @@ public class Subscription : BaseAggregateRoot
     /// </summary>
     public void IncrementRequestCounter()
     {
-        if (PlanType.IsPremium || BusinessRole.Value != EBusinessRole.Homeowner)
-            return;  // Not applicable
+        if (!PlanType.IsBasic)
+            throw new InvalidOperationException("Cannot increment request counter for a non-Basic subscription.");
+        if (BusinessRole.Value != EBusinessRole.Homeowner)
+            throw new InvalidOperationException("Cannot increment request counter for a non-Homeowner subscription.");
 
         if (UsageCounters is null)
             throw new InvalidOperationException("UsageCounters not initialized for this subscription.");
@@ -341,7 +360,7 @@ public class Subscription : BaseAggregateRoot
     /// Enterprise activation policy: if installation doesn't occur in 30 days.
     /// Cancels subscription and marks as CANCELLED_REFUNDED.
     /// </summary>
-    public void CancelWithRefund(string reason)
+    public void CancelWithRefund(string refundId, string reason)
     {
         if (PlanType != PlanType.Enterprise)
             throw new InvalidOperationException("Only Enterprise subscriptions can be cancelled with refund.");
@@ -352,7 +371,7 @@ public class Subscription : BaseAggregateRoot
         RaiseDomainEvent(new EnterpriseSubscriptionCancelledRefundedEvent(
             SubscriptionId.Value,
             UserId.Value,
-            string.Empty, // RefundId will be set by the command service
+            refundId,
             reason,
             DateTime.UtcNow));
     }

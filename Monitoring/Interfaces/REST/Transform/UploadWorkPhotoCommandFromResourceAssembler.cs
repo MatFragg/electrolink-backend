@@ -14,9 +14,12 @@ public static class UploadWorkPhotoCommandFromResourceAssembler
             TechnicianId.From(technicianId),
             Enum.Parse<EPhotoType>(resource.PhotoType, true),
             resource.PhotoUrl,
+            resource.ProviderId,
+            resource.ThumbnailUrl,
+            resource.SizeBytes,
+            resource.Format,
             resource.TakenAt,
             resource.Notes
         );
     }
 }
-

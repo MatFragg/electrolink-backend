@@ -24,23 +24,33 @@ public class UsersController(IUserQueryService userQueryService, IUserCommandSer
         Description = "Get a user by its id",
         OperationId = "GetUserById")]
     [SwaggerResponse(StatusCodes.Status200OK, "The user was found", typeof(UserResource))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authorized to view this user")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "User not found")]
     public async Task<IActionResult> GetUserById(string id)
     {
+        var authenticatedUser = HttpContext.Items["User"] as User;
+        if (authenticatedUser == null || authenticatedUser.Id.Value != id)
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                message = "You are not authorized to view this user."
+            });
+
         var getUserByIdQuery = new GetUserByIdQuery(id);
         var user = await userQueryService.Handle(getUserByIdQuery);
-        var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user!);
+        if (user == null) return NotFound(new { message = "User not found" });
+        var userResource = UserResourceFromEntityAssembler.ToResourceFromEntity(user);
         return Ok(userResource);
     }
 
     [HttpGet]
     [SwaggerOperation(
         Summary = "Get all users",
-        Description = "Get all users",
+        Description = "Get all users with pagination",
         OperationId = "GetAllUsers")]
     [SwaggerResponse(StatusCodes.Status200OK, "The users were found", typeof(IEnumerable<UserResource>))]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var getAllUsersQuery = new GetAllUsersQuery();
+        var getAllUsersQuery = new GetAllUsersQuery(page, pageSize);
         var users = await userQueryService.Handle(getAllUsersQuery);
         var userResources = users.Select(UserResourceFromEntityAssembler.ToResourceFromEntity);
         return Ok(userResources);

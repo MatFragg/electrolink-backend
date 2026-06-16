@@ -1,6 +1,6 @@
-using Hampcoders.Electrolink.API.Profiles.Application.Internal.ReadModels;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Profiles.Domain.Model.ReadModels;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
 
@@ -14,6 +14,6 @@ public interface IProfileQueryService
   Task<Profile?>Handle(GetMyProfileQuery query);
   Task<ProfileStatusReadModel?>Handle(GetProfileStatusQuery query);
   Task<bool>Handle(IsHomeownerActiveQuery query);
-  Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> Handle(GetTechniciansInAreaQuery query);
+  Task<IEnumerable<(string technicianId, string profileId, string fullName)>> Handle(GetTechniciansInAreaQuery query);
   Task<(string ProfileId, string ProfileStatus, string? BusinessRole, string? RoleSubjectId)?> Handle(GetProfileClaimsQuery query);
 }

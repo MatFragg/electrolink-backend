@@ -9,7 +9,7 @@ public static class SubscriptionStatusAlertResourceFromEntityAssembler
         => new(
             Status: subscription.Status.ToString(),
             PlanType: subscription.PlanType.ToString(),
-            GracePeriodEndsAt: subscription.GracePeriodEndsAt!.Value.ToString("O"),
+            GracePeriodEndsAt: subscription.GracePeriodEndsAt?.ToString("O") ?? "N/A",
             Message: $"Tu pago falló. Actualiza tu método de pago antes del " +
                                 $"{subscription.GracePeriodEndsAt.Value:dd 'de' MMMM} para mantener tu plan Premium.",
             CustomerPortalUrl: portalUrl);

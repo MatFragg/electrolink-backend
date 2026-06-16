@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
@@ -7,7 +6,6 @@ namespace Hampcoders.Electrolink.API.Profiles.Domain.Model.Entities;
 
 public class HomeOwner
 {
-  [Key] 
   public HomeownerId HomeownerId { get; private set; }
   public ProfileId ProfileId { get; private set; }
   public EContactTime PreferredContactTime { get; private set; }

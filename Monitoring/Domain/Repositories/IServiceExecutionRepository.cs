@@ -35,5 +35,10 @@ public interface IServiceExecutionRepository : IBaseRepository<ServiceExecution,
     /// Checks if a service execution exists for a given assignment.
     /// </summary>
     Task<bool> ExistsByAssignmentIdAsync(AssignmentId assignmentId);
+
+    /// <summary>
+    /// Retrieves the active service execution for a specific homeowner.
+    /// </summary>
+    Task<ServiceExecution?> FindActiveByHomeownerIdAsync(HomeownerId homeownerId);
 }
 

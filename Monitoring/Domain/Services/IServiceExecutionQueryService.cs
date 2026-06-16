@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Queries;
@@ -16,11 +16,11 @@ public interface IServiceExecutionQueryService
     /// <summary>Handles GetAssignedServicesByTechnicianQuery</summary>
     Task<IEnumerable<ServiceExecution>> Handle(GetAssignedServicesByTechnicianQuery query);
 
-    /// <summary>Handles GetActiveServiceByHomeownerQuery</summary>
-    Task<ServiceExecution?> Handle(GetActiveServiceByHomeownerQuery query);
+    /// <summary>Handles GetActiveServiceByClientQuery</summary>
+    Task<ServiceExecution?> Handle(GetActiveServiceByClientQuery query);
 
-    /// <summary>Handles GetServiceHistoryByHomeownerQuery</summary>
-    Task<IEnumerable<ServiceExecution>> Handle(GetServiceHistoryByHomeownerQuery query);
+    /// <summary>Handles GetServiceHistoryByClientQuery</summary>
+    Task<IEnumerable<ServiceExecution>> Handle(GetServiceHistoryByClientQuery query);
 
     /// <summary>Handles GetServiceHistoryByTechnicianQuery</summary>
     Task<IEnumerable<ServiceExecution>> Handle(GetServiceHistoryByTechnicianQuery query);
@@ -31,4 +31,3 @@ public interface IServiceExecutionQueryService
     /// <summary>Handles GetNoShowAlertQuery</summary>
     Task<IEnumerable<ServiceExecution>> Handle(GetNoShowAlertQuery query);
 }
-

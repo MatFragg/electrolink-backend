@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.Events;
 using Hampcoders.Electrolink.API.IAM.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Shared.Domain.Model.Aggregates;
@@ -19,15 +18,11 @@ public class User : BaseAggregateRoot
 {
     public UserId Id { get; private set; }
     public Email Email { get; private set; }
-
-    [JsonIgnore] public string PasswordHash { get; private set; }
+    public HashedPassword PasswordHash { get; private set; }
     private User() { }
     
-    public static User Create(Email email, string passwordHash)
+    public static User Create(Email email, HashedPassword passwordHash)
     {
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new ArgumentException("Password hash cannot be empty or null.", nameof(passwordHash));
-
         var user = new User
         {
             Id = UserId.NewUserId(),
@@ -47,14 +42,10 @@ public class User : BaseAggregateRoot
      * <param name="newPasswordHash">The new password hash</param>
      * <returns>The updated user</returns>
      */
-    public void UpdatePasswordHash(string newPasswordHash)
+    public void UpdatePasswordHash(HashedPassword newPasswordHash)
     {
-        if (string.IsNullOrWhiteSpace(newPasswordHash))
-            throw new ArgumentException("Password hash cannot be empty or null.", nameof(newPasswordHash));
-
         PasswordHash = newPasswordHash;
 
-        // Registra el evento de dominio
         RaiseDomainEvent(new UserPasswordChangedEvent(Id.Value, DateTime.UtcNow));
     }
 

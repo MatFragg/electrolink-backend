@@ -8,6 +8,7 @@ public record ServiceAssignmentResource(
     string Status,
     string? FailureReason,
     int RetryCount,
-    DateTime AssignedAt
+    DateTime AssignedAt,
+    MatchingScoreResource? MatchingDetails
 );
 

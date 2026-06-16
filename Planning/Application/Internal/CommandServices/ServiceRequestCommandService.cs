@@ -27,7 +27,6 @@ public class ServiceRequestCommandService(
     public async Task<RequestId?> Handle(InitiateServiceRequestCommand command)
     {
         await externalProfilesService.EnsureHomeownerIsActiveAsync(command.HomeownerId.ToString());
-        await externalProfilesService.EnsureHasPropertiesAsync(command.HomeownerId.ToString());
 
         var eligibility = await subscriptionFacade.GetRequestEligibilityAsync(command.HomeownerId.Value);
 
@@ -45,7 +44,7 @@ public class ServiceRequestCommandService(
         return request.RequestId;
     }
 
-    public async Task<ServiceRequest?> Handle(SelectPropertyForRequestCommand command)
+    public async Task Handle(SelectPropertyForRequestCommand command)
     {
         var request = await requestRepository.FindByIdAsync(command.RequestId) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId} not found.");
 
@@ -61,7 +60,6 @@ public class ServiceRequestCommandService(
 
         requestRepository.Update(request);
         await unitOfWork.CompleteAsync();
-        return request;
     }
     
     // For simplicity, we assume that the recipe details are static at the time of selection. In a real-world scenario, we might want to capture more dynamic details or handle cases where the recipe changes after selection. In addition, this command does not handle the assignment automatically, as that would typically be part of a separate workflow step after the recipe and technician is selected and the request is confirmed.
@@ -90,7 +88,7 @@ public class ServiceRequestCommandService(
         return request;
     }*/
 
-    public async Task<ServiceRequest?> Handle(SelectServiceRecipeCommand command)
+    public async Task Handle(SelectServiceRecipeCommand command)
     {
         var request = await requestRepository.FindByIdAsync(command.RequestId)
                       ?? throw new InvalidOperationException($"ServiceRequest {command.RequestId} not found.");
@@ -101,8 +99,6 @@ public class ServiceRequestCommandService(
 
         requestRepository.Update(request);
         await unitOfWork.CompleteAsync();
-
-        return request;
     }
 
     public async Task Handle(MarkServiceRequestAsAssignedCommand command)
@@ -149,7 +145,7 @@ public class ServiceRequestCommandService(
         await unitOfWork.CompleteAsync();
     }
 
-    public async Task<ServiceRequest?> Handle(AddServiceDetailsCommand command)
+    public async Task Handle(AddServiceDetailsCommand command)
     {
         var request = await requestRepository.FindByIdAsync(command.RequestId) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId} not found.");
 
@@ -173,11 +169,9 @@ public class ServiceRequestCommandService(
 
         requestRepository.Update(request);
         await unitOfWork.CompleteAsync();
-
-        return request;
     }
 
-    public async Task<ServiceRequest?> Handle(ConfirmServiceRequestCommand command)
+    public async Task Handle(ConfirmServiceRequestCommand command)
     {
         var request = await requestRepository.FindByIdAsync(command.RequestId) ?? throw new InvalidOperationException($"ServiceRequest with ID {command.RequestId} not found.");
 
@@ -194,8 +188,6 @@ public class ServiceRequestCommandService(
 
         await assignmentCommandService.Handle(
             new ExecuteMatchingAlgorithmCommand(request.RequestId));
-        
-        return request;
     }
 
     public async Task<bool> Handle(CancelServiceRequestCommand command)

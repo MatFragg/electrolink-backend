@@ -63,4 +63,5 @@ public static class ClaimsPrincipalExtensions
             throw new UnauthorizedAccessException("Current user is not a HomeOwner.");
         return user.GetRoleSubjectId();
     }
+
 }

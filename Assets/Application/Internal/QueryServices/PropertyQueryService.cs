@@ -30,12 +30,9 @@ public class PropertyQueryService(IPropertyRepository propertyRepository) : IPro
     /// </summary>
     public async Task<IEnumerable<Property>> Handle(GetAllPropertiesByOwnerIdQuery query)
     {
-        // Llama al método de búsqueda flexible y unificado del repositorio.
-        return await propertyRepository.GetAllFilteredAsync(
-            query.HomeownerId,
-            query.City,
-            query.Street
-        );
+        var (items, _) = await propertyRepository.GetAllFilteredPaginatedAsync(
+            query.HomeownerId, query.City, query.Street, query.Page, query.PageSize);
+        return items;
     }
     
     public async Task<Address?> Handle(GetPropertyAddressQuery query)

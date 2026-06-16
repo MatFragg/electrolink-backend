@@ -1,5 +1,5 @@
 using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
-using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
 
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 
@@ -7,8 +7,8 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Commands;
 /// Command to update an existing service request
 /// </summary>
 public record UpdateRequestCommand(
-    Guid RequestId,
+    RequestId RequestId,
     DateOnly? ScheduledDate,
-    Guid? TechnicianId,
+    TechnicianId? TechnicianId,
     string? ProblemDescription
 );

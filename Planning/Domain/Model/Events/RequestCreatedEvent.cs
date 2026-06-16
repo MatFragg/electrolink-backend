@@ -6,11 +6,11 @@ using PropertyId = Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects.P
 namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 
 public record RequestCreatedEvent(
-    string RequestId,
-    string HomeownerId,
+    RequestId RequestId,
+    HomeownerId HomeownerId,
     PropertyId PropertyId,
-    string SelectedRecipeId,
-    string SelectedTechnicianId,
+    RecipeId SelectedRecipeId,
+    TechnicianId SelectedTechnicianId,
     bool IsPriority,
     List<DateTime> PreferredDates,
     ETimePreference TimePreference,

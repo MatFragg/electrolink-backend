@@ -31,4 +31,14 @@ public interface IUserRepository : IBaseRepository<User, UserId>
      * <returns>True if the user exists, false otherwise</returns>
      */
     Task<bool> ExistsByEmail(string email);
+
+    /**
+     * <summary>
+     *     List users with pagination
+     * </summary>
+     * <param name="page">The page number (1-based)</param>
+     * <param name="pageSize">The number of items per page</param>
+     * <returns>A paginated list of users</returns>
+     */
+    Task<IEnumerable<User>> ListAsync(int page, int pageSize);
 }

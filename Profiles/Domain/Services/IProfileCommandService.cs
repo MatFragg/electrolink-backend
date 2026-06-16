@@ -1,5 +1,6 @@
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 
 namespace Hampcoders.Electrolink.API.Profiles.Domain.Services;
 
@@ -17,6 +18,9 @@ public interface IProfileCommandService
     Task<Profile> Handle(UpdateTechnicianDataCommand command);
     Task<Profile> Handle(UpdateCommunicationPreferencesCommand command);
     Task<Profile> Handle(UploadProfilePictureCommand command);
+    Task<SignedUploadData> Handle(GetProfilePhotoUploadUrlCommand command);
+    Task<Profile> Handle(UpdateProfilePhotoCommand command);
+    Task Handle(RemoveProfilePhotoCommand command);
     Task Handle(DeactivateProfileCommand command);
     Task Handle(ReactivateProfileCommand command);
 }

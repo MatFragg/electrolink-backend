@@ -10,7 +10,7 @@ namespace Hampcoders.Electrolink.API.Planning.Application.Internal.EventHandlers
 public class RequestCancelledEventHandler(ILogger<RequestCancelledEventHandler> logger)
     : IEventHandler<RequestCancelledEvent>
 {
-    public async Task Handle(RequestCancelledEvent notification, CancellationToken cancellationToken)
+    public Task Handle(RequestCancelledEvent notification, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Request {RequestId} cancelled. Reason: {Reason} at {Timestamp}",
@@ -18,13 +18,7 @@ public class RequestCancelledEventHandler(ILogger<RequestCancelledEventHandler> 
             notification.CancellationReason,
             notification.OccurredOn);
 
-        // TODO: Future implementation
-        // - Free up technician's schedule
-        // - Send cancellation notifications
-        // - Process cancellation penalties if applicable
-        // - Update subscription usage counter
-
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 }
 

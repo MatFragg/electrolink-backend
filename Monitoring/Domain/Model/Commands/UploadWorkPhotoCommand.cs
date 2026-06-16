@@ -11,8 +11,10 @@ public record UploadWorkPhotoCommand(
     TechnicianId TechnicianId,
     EPhotoType PhotoType,
     string PhotoUrl,
+    string ProviderId,
+    string? ThumbnailUrl,
+    long SizeBytes,
+    string Format,
     DateTime TakenAt,
     string? Notes
 );
-
-

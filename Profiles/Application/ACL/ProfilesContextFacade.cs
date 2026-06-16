@@ -42,27 +42,26 @@ public class ProfilesContextFacade(
         return profile is not null && profile.BusinessRole == EBusinessRole.Technician;
     }
     
-    public async Task<string> GetProfileFullNameAsync(string profileId)
-    {
-        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId)) ?? throw new Exception($"No profile found for ID {profileId}");
-        
-        if (profile.PersonalData is null)
-            return string.Empty;
-        
-        return profile?.PersonalData.FullName ?? string.Empty;
-    }
-    
-    public async Task<string> GetProfilePhoneAsync(string profileId)
+    public async Task<string?> GetProfileFullNameAsync(string profileId)
     {
         var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
-        // TODO: Add Phone property to Profile aggregate if it doesn't exist
-        return string.Empty; // or profile?.Phone ?? string.Empty;
+        
+        if (profile?.PersonalData is null)
+            return null;
+        
+        return profile.PersonalData.FullName;
     }
     
-    public async Task<string> GetProfileRoleAsync(string profileId)
+    public async Task<string?> GetProfilePhoneAsync(string profileId)
     {
         var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
-        return profile?.BusinessRole.ToString() ?? string.Empty;
+        return profile?.PersonalData?.PhoneNumber.Value;
+    }
+    
+    public async Task<string?> GetProfileRoleAsync(string profileId)
+    {
+        var profile = await profileRepository.FindByIdAsync(ProfileId.From(profileId));
+        return profile?.BusinessRole.ToString();
     }
 
     public async Task<bool> ProfileExistsAsync(string profileId)
@@ -76,23 +75,28 @@ public class ProfilesContextFacade(
         return await profileRepository.IsHomeownerActiveAsync(HomeownerId.From(homeownerId));
     }
 
-    public async Task<bool> HomeownerHasPropertiesAsync(string homeownerId)
-    {
-        // Esta validación pertenece a Assets BC, no a Profiles BC.
-        // Profiles no conoce propiedades — delega al puerto de salida hacia Assets.
-        // Por ahora retorna true como placeholder hasta tener Assets ACL conectado.
-        return await Task.FromResult(true);
-    }
-
-    public async Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> GetTechniciansInAreaAsync(double latitude, double longitude)
+    public async Task<IEnumerable<(string technicianId, string profileId, string fullName)>> GetTechniciansInAreaAsync(double latitude, double longitude)
         => await profileQueryService.Handle(new GetTechniciansInAreaQuery(latitude, longitude));
+
+    public async Task<(string technicianId, double serviceAreaLat, double serviceAreaLon, int experienceYears, IEnumerable<string> specialties)> GetTechnicianDetailsAsync(string technicianId)
+    {
+        var profile = await profileRepository.FindByTechnicianIdAsync(TechnicianId.From(technicianId));
+
+        if (profile?.Technician is null)
+            throw new InvalidOperationException($"Technician with ID {technicianId} not found.");
+
+        return (
+            technicianId,
+            profile.Technician.ServiceArea.CenterLatitude,
+            profile.Technician.ServiceArea.CenterLongitude,
+            profile.Technician.ExperienceYears,
+            profile.Technician.Specialties.Select(s => s.ToString())
+        );
+    }
 
     public async Task<IEnumerable<string>> GetTechnicianSpecialtiesAsync(string technicianId)
     {
-        var profiles = await profileRepository.FindByRoleAsync(EBusinessRole.Technician);
-    
-        var profile = profiles.FirstOrDefault(p => 
-            p.Technician?.TechnicianId.Value == technicianId);
+        var profile = await profileRepository.FindByTechnicianIdAsync(TechnicianId.From(technicianId));
 
         if (profile?.Technician is null)
             return [];

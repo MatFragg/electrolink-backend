@@ -21,7 +21,7 @@ public class ProfileRepository(AppDbContext context)
       .ToListAsync();
   }
 
-  public async Task<IEnumerable<(string technicianId, string profileId, string fullName, double rating)>> 
+  public async Task<IEnumerable<(string technicianId, string profileId, string fullName)>> 
     FindTechniciansInAreaAsync(double lat, double lon)
   {
     var point = new Point(lon, lat) { SRID = 4326 };
@@ -42,8 +42,7 @@ public class ProfileRepository(AppDbContext context)
     var results = data.Select(p => (
       technicianId: p.TechnicianId,
       profileId: p.ProfileId,
-      fullName: p.FullName,
-      rating: 0.0
+      fullName: p.FullName
     )).ToList();
 
     return results;
@@ -86,6 +85,13 @@ public class ProfileRepository(AppDbContext context)
   {
     return await Context.Set<Profile>()
       .AnyAsync(p => p.Homeowner != null && p.Homeowner.HomeownerId == homeownerId);
+  }
+
+  public async Task<Profile?> FindByTechnicianIdAsync(TechnicianId technicianId)
+  {
+    return await Context.Set<Profile>()
+      .Include(p => p.Technician)
+      .FirstOrDefaultAsync(p => p.Technician != null && p.Technician.TechnicianId == technicianId);
   }
 
   public async Task<Profile?> FindByUserIdAsync(UserId userId)

@@ -36,25 +36,46 @@ public class ServiceExecutionConfiguration : IEntityTypeConfiguration<ServiceExe
         builder.Property(x => x.PropertyId)
             .HasConversion(id => id.Value, value => PropertyId.From(value))
             .IsRequired();
-        
-        builder.Property(x => x.HomeownerEvaluationId)
-            .HasConversion(id => id!.Value, value => EvaluationId.From(value))
-            .IsRequired(false);
 
-        builder.Property(x => x.TechnicianEvaluationId)
-            .HasConversion(id => id!.Value, value => EvaluationId.From(value))
-            .IsRequired(false);
-        
-        builder.Property(x => x.CancellationRequestId)
-            .HasConversion(id => id!.Value, value => CancellationRequestId.From(value))
-            .IsRequired(false);
-        
         builder.Property(x => x.RecipeSnapshot)
             .HasConversion(
                 recipe => JsonSerializer.Serialize(recipe, (JsonSerializerOptions?)null),
                 json => JsonSerializer.Deserialize<RecipeSnapshot>(json, (JsonSerializerOptions?)null)!
             )
             .IsRequired();
+
+        builder.Property(x => x.ServiceType)
+            .HasConversion<string>()
+            .IsRequired();
+
+        builder.OwnsOne(x => x.IotContext, iot =>
+        {
+            iot.WithOwner().HasForeignKey("Id");
+            iot.Property(i => i.DeviceId)
+                .HasConversion(id => id.Value, v => DeviceId.From(v))
+                .IsRequired(false);
+            iot.Property(i => i.RelayState)
+                .HasConversion<string>();
+            iot.Property(i => i.Timestamp);
+        });
+
+        builder.OwnsMany(x => x.RelayActionRecords, ra =>
+        {
+            ra.ToTable("RelayActionRecords");
+            ra.WithOwner().HasForeignKey("ExecutionId");
+            ra.HasKey(x => x.Id);
+            ra.HasIndex("ExecutionId");
+            ra.Property(x => x.Id)
+                .HasConversion(id => id.Value, v => RelayActionId.From(v))
+                .IsRequired();
+            ra.Property(x => x.DeviceId)
+                .HasConversion(id => id.Value, v => DeviceId.From(v))
+                .IsRequired();
+            ra.Property(x => x.Status).HasConversion<string>().IsRequired();
+            ra.Property(x => x.IssuedAt).IsRequired();
+            ra.Property(x => x.ExecutedAt);
+            ra.Property(x => x.FailureReason).HasMaxLength(500);
+        });
 
         builder.Property(x => x.Status)
             .HasConversion<string>()
@@ -73,6 +94,10 @@ public class ServiceExecutionConfiguration : IEntityTypeConfiguration<ServiceExe
             wp.Property(p => p.ExecutionId).HasConversion(id => id.Value, v => ServiceExecutionId.From(v)).IsRequired();
             wp.Property(p => p.PhotoType).HasConversion<string>().IsRequired();
             wp.Property(p => p.PhotoUrl).IsRequired();
+            wp.Property(p => p.ProviderId).HasMaxLength(500).IsRequired();
+            wp.Property(p => p.ThumbnailUrl).HasMaxLength(500);
+            wp.Property(p => p.SizeBytes).IsRequired();
+            wp.Property(p => p.Format).HasMaxLength(10).IsRequired();
             wp.Property(p => p.TakenAt).IsRequired();
             wp.Property(p => p.Notes);
         });
@@ -103,7 +128,7 @@ public class ServiceExecutionConfiguration : IEntityTypeConfiguration<ServiceExe
                 .IsRequired();
             ev.Property(e => e.ReviewerId).IsRequired();
             ev.Property(e => e.ReviewedId).IsRequired();
-            ev.Property(e => e.ReviewerRole).IsRequired();
+            ev.Property(e => e.ReviewerRole).HasMaxLength(50).IsRequired();
             ev.Property(e => e.Rating).IsRequired();
             ev.Property(e => e.Comment);
             ev.Property(e => e.CategoriesJson).IsRequired();

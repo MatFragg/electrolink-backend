@@ -6,8 +6,7 @@ using Hampcoders.Electrolink.API.Subscriptions.Domain.Services;
 namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.QueryServices;
 
 public class SubscriptionQueryService(
-    ISubscriptionRepository subscriptionRepository,
-    IPaymentRecordRepository paymentRecordRepository) : ISubscriptionQueryService
+    ISubscriptionRepository subscriptionRepository) : ISubscriptionQueryService
 {
     public async Task<Subscription> Handle(GetMySubscriptionQuery query)
         => await subscriptionRepository.FindByUserIdOrFailAsync(query.UserId);
@@ -38,7 +37,8 @@ public class SubscriptionQueryService(
     public async Task<IEnumerable<PaymentRecord>> Handle(GetPaymentHistoryQuery query)
     {
         var subscription = await subscriptionRepository.FindByUserIdOrFailAsync(query.UserId);
-        return await paymentRecordRepository.FindBySubscriptionIdAsync(subscription.SubscriptionId.Value);
+        return await subscriptionRepository.FindPaymentHistoryAsync(
+            subscription.SubscriptionId.Value, query.Page, query.PageSize);
     }
 
     public async Task<Subscription?> Handle(GetSubscriptionStatusAlertQuery query)

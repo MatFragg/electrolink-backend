@@ -16,23 +16,6 @@ public class PropertyRepository(AppDbContext context) : BaseRepository<Property,
             .ToListAsync();
     }
     
-    public async Task<IEnumerable<Property>> FindByCityAsync(string city)
-    {
-        // Implementar la lógica para buscar propiedades por ciudad
-        // Por ejemplo:
-        return await Context.Properties
-            .Where(p => p.Address.City.Contains(city))
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Property>> FindByStreetAsync(string street)
-    {
-        // Implementar la lógica para buscar propiedades por calle
-        return await Context.Properties
-            .Where(p => p.Address.Street.Contains(street))
-            .ToListAsync();
-    }
-
     public async Task<Property?> FindByIdAndOwnerIdAsync(PropertyId propertyId, HomeownerId ownerId)
     {
         return await Context.Set<Property>()
@@ -54,5 +37,29 @@ public class PropertyRepository(AppDbContext context) : BaseRepository<Property,
         }
         
         return await query.ToListAsync();
+    }
+
+    public async Task<(IEnumerable<Property> Items, int TotalCount)> GetAllPaginatedAsync(int page, int pageSize)
+    {
+        var query = Context.Set<Property>();
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (items, total);
+    }
+
+    public async Task<(IEnumerable<Property> Items, int TotalCount)> GetAllFilteredPaginatedAsync(
+        HomeownerId ownerId, string? city, string? street, int page, int pageSize)
+    {
+        var query = Context.Set<Property>().Where(p => p.OwnerId == ownerId);
+
+        if (!string.IsNullOrWhiteSpace(city))
+            query = query.Where(p => p.Address.City.Contains(city));
+
+        if (!string.IsNullOrWhiteSpace(street))
+            query = query.Where(p => p.Address.Street.Contains(street));
+
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (items, total);
     }
 }

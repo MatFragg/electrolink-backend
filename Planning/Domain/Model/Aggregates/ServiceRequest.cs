@@ -21,7 +21,7 @@ public class ServiceRequest : BaseAggregateRoot
     public AssignmentId? AssignmentId { get; private set; }
     public RequestPreferences? Preferences { get; private set; }
     public bool IsPriority { get; private set; }
-
+    public bool RequiresIoTCertifiedTechnician { get; private set; }
     private ServiceRequest() { }
 
     // ── Factory ───────────────────────────────────────────

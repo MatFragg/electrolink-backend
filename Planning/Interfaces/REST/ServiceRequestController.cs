@@ -32,7 +32,7 @@ public class ServiceRequestController(
 
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status402PaymentRequired)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Initiate()
     {
         try
@@ -43,7 +43,7 @@ public class ServiceRequestController(
         }
         catch (RequestLimitReachedException ex)
         {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { message = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
         }
     }
 
@@ -119,8 +119,8 @@ public class ServiceRequestController(
     }
 
     [HttpPost("{requestId}/confirm")]
-    [ProducesResponseType(typeof(ServiceRequestSummaryResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status402PaymentRequired)]
+    [ProducesResponseType(typeof(ServiceRequestSummaryResource), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Confirm([FromRoute] string requestId)
     {
         try
@@ -132,11 +132,11 @@ public class ServiceRequestController(
                 new GetServiceRequestSummaryQuery(RequestId.From(requestId), HomeownerId.From(homeownerId)));
 
             if (request is null) return NotFound(new { message = "Request not found" });
-            return Ok(ServiceRequestSummaryResourceFromEntityAssembler.ToResource(request));
+            return AcceptedAtAction(nameof(GetSummary), new { requestId }, ServiceRequestSummaryResourceFromEntityAssembler.ToResource(request));
         }
         catch (RequestLimitReachedException ex)
         {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { message = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
         }
     }
 

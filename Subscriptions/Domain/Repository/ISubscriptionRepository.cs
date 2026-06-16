@@ -37,6 +37,7 @@ public interface ISubscriptionRepository : IBaseRepository<Subscription, Subscri
     Task<Subscription> FindByStripeSubscriptionIdOrFailAsync(string stripeSubscriptionId);
 
     Task<bool> ExistsByUserIdAsync(UserId userId);
-    Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf);
-    Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync();
+    Task<IEnumerable<Subscription>> FindAllInGracePeriodExpiredAsync(DateTime asOf, int limit = 100, int offset = 0);
+    Task<IEnumerable<Subscription>> FindAllBasicHomeownersAsync(int limit = 100, int offset = 0);
+    Task<IEnumerable<PaymentRecord>> FindPaymentHistoryAsync(string subscriptionId, int page = 1, int pageSize = 20);
 }

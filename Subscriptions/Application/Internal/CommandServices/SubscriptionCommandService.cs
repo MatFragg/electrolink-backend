@@ -14,9 +14,9 @@ namespace Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandS
 
 public class SubscriptionCommandService(
     ISubscriptionRepository subscriptionRepository,
-    IPaymentRecordRepository paymentRecordRepository,
     IPaymentProvider paymentProvider,
     ExternalIamService externalIamService,
+    ExternalProfileService externalProfileService,
     SubscriptionPlanPriceResolver priceResolver,
     IOptions<SubscriptionSettings> settings,
     IUnitOfWork unitOfWork,
@@ -29,7 +29,8 @@ public class SubscriptionCommandService(
 
         var businessRole = BusinessRole.From(command.BusinessRole);
         var email = await externalIamService.GetUserEmailAsync(command.UserId.Value);
-        var name = email.Split('@')[0];
+        var name = await externalProfileService.FetchProfileFullName(command.UserId.Value)
+                   ?? email.Split('@')[0];
 
         var externalCustomerId = await paymentProvider.CreateCustomerAsync(
             email, name, new Dictionary<string, string> { ["userId"] = command.UserId.Value }.AsReadOnly());
@@ -79,12 +80,12 @@ public class SubscriptionCommandService(
         return new InitiateCheckoutResult(result.CheckoutUrl, result.SessionId);
     }
 
-    public async Task<Subscription> Handle(ActivateSubscriptionCommand command)
+    public async Task<Subscription?> Handle(ActivateSubscriptionCommand command)
     {
-        if (await paymentRecordRepository.ExistsByStripeInvoiceIdAsync(command.StripeInvoiceId))
-            return await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
-
         var subscription = await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
+
+        if (subscription.HasPaymentWithInvoice(command.StripeInvoiceId))
+            return null;
 
         subscription.Activate(
             StripeSubscriptionId.From(command.StripeSubscriptionId),
@@ -98,20 +99,20 @@ public class SubscriptionCommandService(
             PaymentStatus.Succeeded,
             DateTime.UtcNow);
 
+        subscription.AddPaymentRecord(paymentRecord);
         subscriptionRepository.Update(subscription);
-        await paymentRecordRepository.AddAsync(paymentRecord);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
         return subscription;
     }
 
-    public async Task<Subscription> Handle(ActivateEnterpriseSubscriptionPendingInstallationCommand command)
+    public async Task<Subscription?> Handle(ActivateEnterpriseSubscriptionPendingInstallationCommand command)
     {
-        if (await paymentRecordRepository.ExistsByStripeInvoiceIdAsync(command.StripeInvoiceId))
-            return await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
-
         var subscription = await subscriptionRepository.FindByStripeCustomerIdOrFailAsync(command.StripeCustomerId);
+
+        if (subscription.HasPaymentWithInvoice(command.StripeInvoiceId))
+            return null;
 
         subscription.ActivateEnterprisePendingInstallation(
             StripeSubscriptionId.From(command.StripeSubscriptionId),
@@ -124,20 +125,20 @@ public class SubscriptionCommandService(
             PaymentStatus.Succeeded,
             DateTime.UtcNow);
 
+        subscription.AddPaymentRecord(paymentRecord);
         subscriptionRepository.Update(subscription);
-        await paymentRecordRepository.AddAsync(paymentRecord);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
         return subscription;
     }
 
-    public async Task<Subscription> Handle(RecordSuccessfulRenewalCommand command)
+    public async Task<Subscription?> Handle(RecordSuccessfulRenewalCommand command)
     {
-        if (await paymentRecordRepository.ExistsByStripeInvoiceIdAsync(command.StripeInvoiceId))
-            return await subscriptionRepository.FindByStripeSubscriptionIdOrFailAsync(command.StripeSubscriptionId);
-
         var subscription = await subscriptionRepository.FindByStripeSubscriptionIdOrFailAsync(command.StripeSubscriptionId);
+
+        if (subscription.HasPaymentWithInvoice(command.StripeInvoiceId))
+            return null;
 
         subscription.RecordRenewal(
             BillingPeriod.Of(command.NewPeriodStart, command.NewPeriodEnd),
@@ -150,8 +151,8 @@ public class SubscriptionCommandService(
             PaymentStatus.Succeeded,
             DateTime.UtcNow);
 
+        subscription.AddPaymentRecord(paymentRecord);
         subscriptionRepository.Update(subscription);
-        await paymentRecordRepository.AddAsync(paymentRecord);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
@@ -173,8 +174,8 @@ public class SubscriptionCommandService(
             PaymentStatus.Failed,
             command.FailedAt);
 
+        subscription.AddPaymentRecord(paymentRecord);
         subscriptionRepository.Update(subscription);
-        await paymentRecordRepository.AddAsync(paymentRecord);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
@@ -218,9 +219,12 @@ public class SubscriptionCommandService(
     {
         var subscription = await subscriptionRepository.FindByUserIdOrFailAsync(command.UserId);
 
-        subscription.IncrementRequestCounter();
+        if (subscription.PlanType.IsBasic && subscription.BusinessRole.Value == EBusinessRole.Homeowner)
+        {
+            subscription.IncrementRequestCounter();
+            subscriptionRepository.Update(subscription);
+        }
 
-        subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();
         await PublishAndClearAsync(subscription);
 
@@ -274,7 +278,7 @@ public class SubscriptionCommandService(
         var subscription = await subscriptionRepository.FindByIdAsync(subscriptionId)
             ?? throw new KeyNotFoundException($"Subscription {command.SubscriptionId} not found.");
 
-        var lastPayment = await paymentRecordRepository.FindLastSuccessfulBySubscriptionIdAsync(subscriptionId);
+        var lastPayment = subscription.FindLastSuccessfulPayment();
         if (lastPayment is null || lastPayment.StripePaymentIntentId is null)
             throw new InvalidOperationException("No successful payment record found for this subscription.");
 
@@ -283,7 +287,7 @@ public class SubscriptionCommandService(
             command.RefundAmount,
             "requested_by_customer");
 
-        subscription.CancelWithRefund(command.Reason);
+        subscription.CancelWithRefund(refundResult.RefundId, command.Reason);
 
         subscriptionRepository.Update(subscription);
         await unitOfWork.CompleteAsync();

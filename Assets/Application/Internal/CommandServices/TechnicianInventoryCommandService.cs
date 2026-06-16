@@ -1,3 +1,4 @@
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Exceptions;
 using MediatR;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
@@ -18,7 +19,7 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(CreateTechnicianInventoryCommand command)
     {
         if (await inventoryRepository.FindByTechnicianIdAsync(command.TechnicianId) is not null)
-            throw new InvalidOperationException("An inventory for this technician already exists.");
+            throw new DuplicateAssetException("TechnicianInventory", $"technician '{command.TechnicianId}'");
 
         var inventory = TechnicianInventory.Create(command.TechnicianId);
         await inventoryRepository.AddAsync(inventory);
@@ -35,10 +36,10 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(AddStockToInventoryCommand command)
     {
         var component = await componentRepository.FindByIdAsync(command.ComponentId);
-        if (component is null) throw new ArgumentException($"Component with id {command.ComponentId} not found in catalog.");
+        if (component is null) throw new AssetNotFoundException("Component", command.ComponentId.Value);
         
         var componentType = await componentTypeRepository.FindByIdAsync(command.ComponentTypeId);
-        if (componentType is null) throw new ArgumentException($"Component type with id {command.ComponentTypeId} not found in catalog.");
+        if (componentType is null) throw new AssetNotFoundException("ComponentType", command.ComponentTypeId.Value);
     
         var inventory = await GetInventoryOrThrowAsync(command.TechnicianId);
 
@@ -126,7 +127,7 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(IncreaseStockCommand command)
     {
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(command.TechnicianId);
-        if (inventory is null) throw new ArgumentException("Technician inventory not found.");
+        if (inventory is null) throw new AssetNotFoundException("TechnicianInventory", command.TechnicianId.Value);
 
         inventory.IncreaseStock(command.ComponentId, command.AmountToAdd);
         await unitOfWork.CompleteAsync();
@@ -143,7 +144,7 @@ public class TechnicianInventoryCommandService(
     public async Task<TechnicianInventory?> Handle(DecreaseStockCommand command)
     {
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(command.TechnicianId);
-        if (inventory is null) throw new ArgumentException("Technician inventory not found.");
+        if (inventory is null) throw new AssetNotFoundException("TechnicianInventory", command.TechnicianId.Value);
 
         inventory.DecreaseStock(command.ComponentId, command.AmountToDecrease);
         await unitOfWork.CompleteAsync();
@@ -163,7 +164,6 @@ public class TechnicianInventoryCommandService(
 
         if (inventory is null)
         {
-            // Console.WriteLine($"Error: Inventario no encontrado para el técnico con ID {command.TechnicianId}");
             return null; // El inventario no existe
         }
        
@@ -186,6 +186,6 @@ public class TechnicianInventoryCommandService(
     private async Task<TechnicianInventory> GetInventoryOrThrowAsync(TechnicianId technicianId)
     {
         var inventory = await inventoryRepository.FindByTechnicianIdAsync(technicianId);
-        return inventory ?? throw new KeyNotFoundException($"Inventory for technician {technicianId} not found.");
+        return inventory ?? throw new AssetNotFoundException("TechnicianInventory", technicianId.Value);
     }
 }

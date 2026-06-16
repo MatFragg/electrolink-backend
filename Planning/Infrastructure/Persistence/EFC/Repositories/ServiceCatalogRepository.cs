@@ -16,10 +16,12 @@ public class ServiceCatalogRepository(AppDbContext context)  : BaseRepository<Se
             .Include(c => c.Recipes)
             .ThenInclude(r => r.ComponentRequirements)
             .FirstOrDefaultAsync(c => c.TechnicianId == technicianId);
-    public Task<ServiceCatalog?> FindByCatalogIdAsync(CatalogId catalogId)
-    {
-        throw new NotImplementedException();
-    }
+
+    public async Task<ServiceCatalog?> FindByCatalogIdAsync(CatalogId catalogId)
+        => await Context.Set<ServiceCatalog>()
+            .AsNoTracking()
+            .Include(c => c.Recipes.Where(r => r.IsActive))
+            .FirstOrDefaultAsync(c => c.CatalogId == catalogId);
 
     public Task<bool> ExistsByTechnicianIdAsync(TechnicianId technicianId)
     {
@@ -43,6 +45,29 @@ public class ServiceCatalogRepository(AppDbContext context)  : BaseRepository<Se
         => await Context.Set<ServiceCatalog>()
             .Include(c => c.Recipes)
             .ToListAsync();
+
+    public async Task<Dictionary<TechnicianId, ServiceRecipe>> FindActiveRecipesByCategoryAndTechnicianIdsAsync(
+        EServiceCategory serviceCategory, IEnumerable<TechnicianId> technicianIds)
+    {
+        var ids = technicianIds.Select(id => id.Value).ToList();
+        var recipes = await Context.ServiceCatalogs
+            .Where(c => ids.Contains(c.TechnicianId.Value) && c.Status == ECatalogStatus.Active)
+            .SelectMany(c => c.Recipes)
+            .Where(r => r.ServiceCategory == serviceCategory && r.IsActive)
+            .ToListAsync();
+
+        return recipes.ToDictionary(r => r.TechnicianId);
+    }
+
+    public async Task<Dictionary<TechnicianId, ServiceCatalog>> FindCatalogsByTechnicianIdsAsync(
+        IEnumerable<TechnicianId> technicianIds)
+    {
+        var ids = technicianIds.Select(id => id.Value).ToList();
+        var catalogs = await Context.Set<ServiceCatalog>()
+            .Include(c => c.Recipes)
+            .Where(c => ids.Contains(c.TechnicianId.Value))
+            .ToListAsync();
+
+        return catalogs.ToDictionary(c => c.TechnicianId, c => c);
+    }
 }
-
-

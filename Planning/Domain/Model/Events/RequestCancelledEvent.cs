@@ -6,7 +6,7 @@ namespace Hampcoders.Electrolink.API.Planning.Domain.Model.Events;
 
 public record RequestCancelledEvent(
     RequestId RequestId,
-    string ClientId,
+    string HomeownerId,
     TechnicianId? TechnicianId,
     string CancellationReason,
     DateTime OccurredOn

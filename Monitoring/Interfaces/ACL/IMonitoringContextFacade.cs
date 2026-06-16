@@ -33,7 +33,7 @@ public interface IMonitoringContextFacade
     /// <param name="assignmentId"></param>
     /// <param name="requestId"></param>
     /// <param name="technicianId"></param>
-    /// <param name="homeownerId"></param>
+    /// <param name="clientId"></param>
     /// <param name="propertyId"></param>
     /// <param name="recipeSnapshot"></param>
     /// <param name="scheduledAt"></param>
@@ -48,4 +48,14 @@ public interface IMonitoringContextFacade
         RecipeSnapshot recipeSnapshot,
         DateTime scheduledAt,
         bool isPriority);
+
+    /// <summary>
+    /// Records a circuit toggle result from IoT Monitoring BC (internal, no auth).
+    /// </summary>
+    Task RecordCircuitToggleAsync(
+        string executionId,
+        string deviceId,
+        string targetState,
+        string actionStatus,
+        string? failureReason);
 }

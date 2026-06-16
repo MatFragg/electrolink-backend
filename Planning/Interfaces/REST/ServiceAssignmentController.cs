@@ -1,9 +1,13 @@
 ﻿using System.Net.Mime;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Planning.Domain.Model.Queries;
+using Hampcoders.Electrolink.API.Planning.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Planning.Domain.Repositories;
 using Hampcoders.Electrolink.API.Planning.Domain.Services;
 using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Planning.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -16,15 +20,18 @@ public class ServiceAssignmentController : ControllerBase
 {
     private readonly IServiceAssignmentCommandService _commandService;
     private readonly IServiceDesignQueryService _queryService;
+    private readonly IServiceAssignmentRepository _assignmentRepository;
     private readonly ILogger<ServiceAssignmentController> _logger;
  
     public ServiceAssignmentController(
         IServiceAssignmentCommandService      commandService,
         IServiceDesignQueryService            queryService,
+        IServiceAssignmentRepository          assignmentRepository,
         ILogger<ServiceAssignmentController>  logger)
     {
         _commandService = commandService;
         _queryService   = queryService;
+        _assignmentRepository = assignmentRepository;
         _logger         = logger;
     }
  
@@ -130,6 +137,25 @@ public class ServiceAssignmentController : ControllerBase
  
             return UnprocessableEntity(failedResult);
         }
+    }
+
+    /// <summary>
+    /// Returns detailed matching information for a specific assignment, including the AI reasoning
+    /// and scoring method used. This endpoint is intended for administrative audit and tracing purposes.
+    /// </summary>
+    [HttpGet("{assignmentId}/matching-details")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(MatchingScoreResource), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MatchingScoreResource>> GetMatchingDetails(string assignmentId)
+    {
+        var assignment = await _assignmentRepository.FindByIdAsync(AssignmentId.From(assignmentId));
+
+        if (assignment is null || assignment.MatchingScore is null)
+            return NotFound(new { message = "Assignment not found or no matching details available." });
+
+        var resource = MatchingScoreResourceAssembler.ToResource(assignment.MatchingScore);
+        return Ok(resource);
     }
 }
  

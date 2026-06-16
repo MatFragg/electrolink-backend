@@ -1,39 +1,24 @@
 using System.Net.Mime;
-using System.Security.Claims;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Commands;
-using Hampcoders.Electrolink.API.Profiles.Domain.Model.Exceptions;
 using Hampcoders.Electrolink.API.Profiles.Domain.Model.Queries;
 using Hampcoders.Electrolink.API.Profiles.Domain.Services;
+using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions.Filters;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Resources;
 using Hampcoders.Electrolink.API.Profiles.Interfaces.REST.Transform;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Hampcoders.Electrolink.API.Profiles.Interfaces.REST;
 
-[ApiController]
 [Route("api/v1/[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
+[ServiceFilter(typeof(DomainExceptionFilter))]
 [SwaggerTag("Profile endpoints")]
 public class ProfilesController(
     IProfileCommandService commandService,
-    IProfileQueryService queryService) : ControllerBase
+    IProfileQueryService queryService) : BaseProfileController(commandService, queryService)
 {
-    // ── Helpers ──────────────────────────────────────────────────────────
-    private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-    /// <summary>
-    /// Resuelve el ProfileId del usuario autenticado usando su UserId del JWT.
-    /// Internamente llama a GetMyProfileQuery. Retorna null si el perfil no existe.
-    /// </summary>
-    private async Task<string?> GetProfileIdAsync()
-    {
-        var profile = await queryService.Handle(new GetMyProfileQuery(UserId));
-        return profile?.ProfileId.Value;
-    }
-
-    // ── EXISTENTES ────────────────────────────────────────────────────────
-
     // GET api/v1/profiles/me
     [HttpGet("me")]
     [SwaggerOperation(Summary = "Get my profile", OperationId = "GetMyProfile")]
@@ -41,7 +26,7 @@ public class ProfilesController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyProfile()
     {
-        var profile = await queryService.Handle(new GetMyProfileQuery(UserId));
+        var profile = await QueryService.Handle(new GetMyProfileQuery(UserId));
         if (profile is null) return NotFound(new { message = "Profile not found." });
         return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
@@ -49,57 +34,30 @@ public class ProfilesController(
     // POST api/v1/profiles/me/complete/technician
     [HttpPost("me/complete/technician")]
     [SwaggerOperation(Summary = "Complete profile as technician", OperationId = "CompleteAsTechnician")]
-    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status201Created)]
     public async Task<IActionResult> CompleteAsTechnician(
         [FromBody] CompleteProfileAsTechnicianResource resource)
     {
-        try
-        {
-            var command = CompleteProfileAsTechnicianCommandFromResourceAssembler
-                .ToCommandFromResource(resource, UserId);
-            var profile = await commandService.Handle(command);
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (InvalidPhoneNumberException ex)           { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidDniException ex)                   { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidDateOfBirthException ex)           { return BadRequest(new { message = ex.Message }); }
-        catch (UnderageUserException ex)                 { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidServiceAreaException ex)            { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidBusinessRoleException ex)           { return BadRequest(new { message = ex.Message }); }
-        catch (AtLeastOneSpecialtyRequiredException ex)   { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)          { return Conflict(new { message = ex.Message }); }
-        catch (DniAlreadyInUseException ex)               { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                      { return NotFound(new { message = ex.Message }); }
+        var command = CompleteProfileAsTechnicianCommandFromResourceAssembler
+            .ToCommandFromResource(resource, UserId);
+        var profile = await CommandService.Handle(command);
+        return StatusCode(StatusCodes.Status201Created,
+            MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
-
-    // ── ANTES COMENTADO ───────────────────────────────────────────────────
 
     // POST api/v1/profiles/me/complete/homeowner
     [HttpPost("me/complete/homeowner")]
     [SwaggerOperation(Summary = "Complete profile as homeowner", OperationId = "CompleteAsHomeowner")]
-    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status201Created)]
     public async Task<IActionResult> CompleteAsHomeowner(
         [FromBody] CompleteProfileAsHomeownerResource resource)
     {
-        try
-        {
-            var command = CompleteProfileAsHomeownerCommandFromResourceAssembler
-                .ToCommandFromResource(resource, UserId);
-            var profile = await commandService.Handle(command);
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (InvalidProfileStatusException ex)                  { return Conflict(new { message = ex.Message }); }
-        catch (DniAlreadyInUseException ex)                       { return Conflict(new { message = ex.Message }); }
-        catch (AtLeastOneNotificationChannelRequiredException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (ArgumentException ex)                              { return NotFound(new { message = ex.Message }); }
+        var command = CompleteProfileAsHomeownerCommandFromResourceAssembler
+            .ToCommandFromResource(resource, UserId);
+        var profile = await CommandService.Handle(command);
+        return StatusCode(StatusCodes.Status201Created,
+            MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
-
-    // ── NUEVOS ────────────────────────────────────────────────────────────
 
     // GET api/v1/profiles/me/status
     [HttpGet("me/status")]
@@ -108,7 +66,7 @@ public class ProfilesController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfileStatus()
     {
-        var readModel = await queryService.Handle(new GetProfileStatusQuery(UserId));
+        var readModel = await QueryService.Handle(new GetProfileStatusQuery(UserId));
         if (readModel is null) return NotFound(new { message = "Profile not found." });
         return Ok(ProfileStatusResourceFromReadModelAssembler.ToResourceFromReadModel(readModel));
     }
@@ -117,158 +75,144 @@ public class ProfilesController(
     [HttpPatch("me/personal-data")]
     [SwaggerOperation(Summary = "Update personal data", OperationId = "UpdatePersonalData")]
     [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdatePersonalData(
         [FromBody] UpdatePersonalDataResource resource)
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            var command = UpdatePersonalDataCommandFromResourceAssembler
-                .ToCommandFromResource(resource, profileId, UserId);
-            var profile = await commandService.Handle(command);
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (UnauthorizedProfileAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)      { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                  { return NotFound(new { message = ex.Message }); }
+        var command = UpdatePersonalDataCommandFromResourceAssembler
+            .ToCommandFromResource(resource, profileId, UserId);
+        var profile = await CommandService.Handle(command);
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
 
     // POST api/v1/profiles/me/picture
     [HttpPost("me/picture")]
     [SwaggerOperation(Summary = "Upload profile picture", OperationId = "UploadProfilePicture")]
     [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadProfilePicture(IFormFile file)
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            var command = new UploadProfilePictureCommand(profileId, file);
-            var profile = await commandService.Handle(command);
-            
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        using var stream = file.OpenReadStream();
+        var fileName = $"{profileId}-{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var command = new UploadProfilePictureCommand(profileId, UserId, stream, fileName);
+        var profile = await CommandService.Handle(command);
+
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
 
     // PATCH api/v1/profiles/me/technician
     [HttpPatch("me/technician")]
     [SwaggerOperation(Summary = "Update technician data", OperationId = "UpdateTechnicianData")]
     [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateTechnicianData(
         [FromBody] UpdateTechnicianDataRequest resource)
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            var command = UpdateTechnicianDataCommandFromResourceAssembler
-                .ToCommandFromResource(resource, profileId, UserId);
-            var profile = await commandService.Handle(command);
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (UnauthorizedProfileAccessException ex)   { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
-        catch (InvalidBusinessRoleException ex)         { return BadRequest(new { message = ex.Message }); }
-        catch (AtLeastOneSpecialtyRequiredException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)        { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                    { return NotFound(new { message = ex.Message }); }
+        var command = UpdateTechnicianDataCommandFromResourceAssembler
+            .ToCommandFromResource(resource, profileId, UserId);
+        var profile = await CommandService.Handle(command);
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
 
     // PATCH api/v1/profiles/me/homeowner
     [HttpPatch("me/homeowner")]
     [SwaggerOperation(Summary = "Update homeowner preferences", OperationId = "UpdateHomeownerPreferences")]
     [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateHomeownerPreferences(
         [FromBody] UpdateHomeownerPreferencesResource resource)
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            var command = UpdateHomeownerPreferencesCommandFromResourceAssembler
-                .ToCommandFromResource(resource, profileId, UserId);
-            var profile = await commandService.Handle(command);
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
-        }
-        catch (UnauthorizedProfileAccessException ex)             { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
-        catch (InvalidBusinessRoleException ex)                   { return BadRequest(new { message = ex.Message }); }
-        catch (AtLeastOneNotificationChannelRequiredException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)                  { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                              { return NotFound(new { message = ex.Message }); }
+        var command = UpdateHomeownerPreferencesCommandFromResourceAssembler
+            .ToCommandFromResource(resource, profileId, UserId);
+        var profile = await CommandService.Handle(command);
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
     }
 
-    // DELETE api/v1/profiles/me
-    [HttpDelete("me")]
+    // POST api/v1/profiles/me/deactivate
+    [HttpPost("me/deactivate")]
     [SwaggerOperation(Summary = "Deactivate profile", OperationId = "DeactivateProfile")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeactivateProfile(
         [FromBody] DeactivateProfileResource resource)
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            await commandService.Handle(new DeactivateProfileCommand(
-                ProfileId: profileId,
-                UserId:    UserId,
-                Reason:    resource.Reason,
-                Notes:     resource.Notes));
-            return NoContent();
-        }
-        catch (UnauthorizedProfileAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)      { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                  { return NotFound(new { message = ex.Message }); }
+        await CommandService.Handle(new DeactivateProfileCommand(
+            ProfileId: profileId,
+            UserId:    UserId,
+            Reason:    resource.Reason,
+            Notes:     resource.Notes));
+        return NoContent();
     }
 
     // POST api/v1/profiles/me/reactivate
     [HttpPost("me/reactivate")]
     [SwaggerOperation(Summary = "Reactivate profile", OperationId = "ReactivateProfile")]
     [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ReactivateProfile()
     {
-        try
-        {
-            var profileId = await GetProfileIdAsync();
-            if (profileId is null) return NotFound(new { message = "Profile not found." });
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
 
-            await commandService.Handle(new ReactivateProfileCommand(
-                ProfileId: profileId,
-                UserId:    UserId));
+        await CommandService.Handle(new ReactivateProfileCommand(
+            ProfileId: profileId,
+            UserId:    UserId));
 
-            var profile = await queryService.Handle(new GetMyProfileQuery(UserId));
-            return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile!));
-        }
-        catch (UnauthorizedProfileAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }
-        catch (InvalidProfileStatusException ex)      { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex)                  { return NotFound(new { message = ex.Message }); }
+        var profile = await QueryService.Handle(new GetMyProfileQuery(UserId));
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile!));
+    }
+
+    // POST api/v1/profiles/me/photo/upload-url
+    [HttpPost("me/photo/upload-url")]
+    [SwaggerOperation(Summary = "Get signed upload URL for profile photo", OperationId = "GetProfilePhotoUploadUrl")]
+    [ProducesResponseType(typeof(SignedUploadUrlResource), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfilePhotoUploadUrl()
+    {
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
+
+        var signedData = await CommandService.Handle(new GetProfilePhotoUploadUrlCommand(profileId, UserId));
+        return Ok(new SignedUploadUrlResource(
+            signedData.Url,
+            signedData.Signature,
+            signedData.Timestamp));
+    }
+
+    // PUT api/v1/profiles/me/photo
+    [HttpPut("me/photo")]
+    [SwaggerOperation(Summary = "Update profile photo after direct upload", OperationId = "UpdateProfilePhoto")]
+    [ProducesResponseType(typeof(MyProfileResource), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateProfilePhoto(
+        [FromBody] UpdateProfilePhotoResource resource)
+    {
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
+
+        var command = UpdateProfilePhotoCommandFromResourceAssembler
+            .ToCommandFromResource(profileId, UserId, resource);
+        var profile = await CommandService.Handle(command);
+        return Ok(MyProfileResourceFromEntityAssembler.ToResourceFromEntity(profile));
+    }
+
+    // DELETE api/v1/profiles/me/photo
+    [HttpDelete("me/photo")]
+    [SwaggerOperation(Summary = "Remove profile photo", OperationId = "RemoveProfilePhoto")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveProfilePhoto()
+    {
+        var profileId = await GetProfileIdAsync();
+        if (profileId is null) return NotFound(new { message = "Profile not found." });
+
+        await CommandService.Handle(new RemoveProfilePhotoCommand(profileId, UserId));
+        return NoContent();
     }
 }

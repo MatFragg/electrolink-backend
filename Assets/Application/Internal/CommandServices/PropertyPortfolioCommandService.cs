@@ -1,4 +1,5 @@
-﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
+﻿using Hampcoders.Electrolink.API.Assets.Domain.Model.Exceptions;
+using Hampcoders.Electrolink.API.Assets.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Assets.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Assets.Domain.Repositories;
@@ -22,7 +23,7 @@ public class PropertyPortfolioCommandService(
 
         // Idempotencia: si ya existe, no crear uno nuevo
         if (await portfolioRepository.FindByOwnerIdAsync(command.HomeownerId) is not null)
-            throw new InvalidOperationException($"Portfolio already exists for owner {command.HomeownerId}.");
+            throw new DuplicateAssetException("PropertyPortfolio", $"owner '{command.HomeownerId}'");
 
         var portfolio = PropertyPortfolio.Create(command.HomeownerId);
 
@@ -39,11 +40,11 @@ public class PropertyPortfolioCommandService(
     public async Task<PropertyPortfolio?> Handle(AddPropertyToPortfolioCommand command)
     {
         var portfolio = await portfolioRepository.FindByOwnerIdWithEntriesAsync(command.HomeownerId)
-            ?? throw new KeyNotFoundException($"Portfolio for owner {command.HomeownerId} not found.");
+            ?? throw new AssetNotFoundException("PropertyPortfolio", $"owner '{command.HomeownerId}'");
 
         // Validación de ownership: la propiedad debe pertenecer al mismo owner
         var property = await propertyRepository.FindByIdAsync(command.PropertyId)
-            ?? throw new KeyNotFoundException($"Property {command.PropertyId} not found.");
+            ?? throw new AssetNotFoundException("Property", command.PropertyId.Value);
 
         if (property.OwnerId != command.HomeownerId)
             throw new UnauthorizedAccessException(
@@ -69,7 +70,7 @@ public class PropertyPortfolioCommandService(
     public async Task<bool> Handle(RemovePropertyFromPortfolioCommand command)
     {
         var portfolio = await portfolioRepository.FindByOwnerIdWithEntriesAsync(command.HomeownerId)
-            ?? throw new KeyNotFoundException($"Portfolio for owner {command.HomeownerId} not found.");
+            ?? throw new AssetNotFoundException("PropertyPortfolio", $"owner '{command.HomeownerId}'");
 
         portfolio.RemoveProperty(command.PropertyId, command.Reason);
         

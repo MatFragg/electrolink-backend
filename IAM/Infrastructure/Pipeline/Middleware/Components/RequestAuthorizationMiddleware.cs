@@ -22,14 +22,6 @@ public class RequestAuthorizationMiddleware(RequestDelegate next)
             return;
         }
 
-        var path = context.Request.Path.Value?.ToLower();
-        var method = context.Request.Method.ToUpper();
-        if (path == "/api/v1/profiles" && method == "POST")
-        {
-            await next(context);
-            return;
-        }
-
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
         if (string.IsNullOrEmpty(token))

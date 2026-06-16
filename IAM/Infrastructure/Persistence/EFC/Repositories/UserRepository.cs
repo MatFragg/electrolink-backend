@@ -39,6 +39,14 @@ public class UserRepository(AppDbContext context) : BaseRepository<User, UserId>
      */
     public async Task<bool> ExistsByEmail(string email)
     {
-        return await Context.Set<User>().AnyAsync(u => u.Email.Value == email);
+        return await Context.Set<User>().AsNoTracking().AnyAsync(u => u.Email.Value == email);
+    }
+
+    public async Task<IEnumerable<User>> ListAsync(int page, int pageSize)
+    {
+        return await Context.Set<User>()
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 }

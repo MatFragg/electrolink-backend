@@ -1,24 +1,32 @@
+using Hampcoders.Electrolink.API.Monitoring.Application.Internal.OutboundServices;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Aggregates;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Commands;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Model.ValueObjects;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Repositories;
 using Hampcoders.Electrolink.API.Monitoring.Domain.Services;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.Entities;
 using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using Hampcoders.Electrolink.API.Shared.Infrastructure;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Interfaces;
 using MediatR;
 
 namespace Hampcoders.Electrolink.API.Monitoring.Application.Internal.CommandServices;
 
 public class ServiceExecutionCommandService(
     IServiceExecutionRepository repository,
+    IFileStorageService fileStorageService,
+    IOrphanedFileRepository orphanedFileRepository,
+    IExternalIoTService externalIoTService,
     IUnitOfWork unitOfWork,
     IMediator mediator,
     ILogger<ServiceExecutionCommandService> logger)
     : IServiceExecutionCommandService
 {
+
     public async Task<ServiceExecution> Handle(CreateServiceExecutionCommand command)
     {
-        logger.LogInformation("[SOM BC] Creating ServiceExecution for assignment {AssignmentId}", command.AssignmentId);
+        logger.LogInformation("[Monitoring BC] Creating ServiceExecution for assignment {AssignmentId}", command.AssignmentId);
 
         var existing = await repository.FindByAssignmentIdAsync(command.AssignmentId);
         if (existing is not null)
@@ -53,12 +61,58 @@ public class ServiceExecutionCommandService(
         if (!Enum.TryParse<EPhotoType>(command.PhotoType.ToString(), true, out var photoType))
             throw new ArgumentException($"Invalid photo type: {command.PhotoType}");
 
-        execution.UploadPhoto(photoType, command.PhotoUrl, command.TakenAt, command.Notes);
+        execution.UploadPhoto(
+            photoType,
+            command.PhotoUrl,
+            command.ProviderId,
+            command.ThumbnailUrl,
+            command.SizeBytes,
+            command.Format,
+            command.TakenAt,
+            command.Notes);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);
 
         return execution;
+    }
+
+    public async Task<ServiceExecution> Handle(RegisterWorkPhotoCommand command)
+    {
+        var execution = await GetOrThrowAsync(command.ExecutionId);
+
+        try
+        {
+            execution.UploadPhoto(
+                command.PhotoType,
+                command.PublicUrl,
+                command.ProviderId,
+                command.ThumbnailUrl,
+                command.SizeBytes,
+                command.Format,
+                command.TakenAt,
+                command.Notes);
+
+            await unitOfWork.CompleteAsync();
+            await PublishAndClearEventsAsync(execution);
+
+            return execution;
+        }
+        catch
+        {
+            var folder = $"electrolink/operation/{execution.Id.Value}/{command.PhotoType}";
+            await orphanedFileRepository.AddAsync(
+                OrphanedFileDeletion.Create(command.ProviderId, folder, "Work photo registration failed"));
+            await unitOfWork.CompleteAsync();
+            throw;
+        }
+    }
+
+    public async Task<SignedUploadData> Handle(GetWorkPhotoUploadUrlCommand command)
+    {
+        var execution = await GetOrThrowAsync(command.ExecutionId);
+
+        return await fileStorageService.GetSignedUploadUrlForWorkPhotoAsync(execution.Id.Value, command.PhotoType.ToString());
     }
 
     public async Task<ServiceExecution> Handle(RecordComponentsUsedCommand command)
@@ -106,7 +160,7 @@ public class ServiceExecutionCommandService(
         await PublishAndClearEventsAsync(execution);
 
         logger.LogInformation(
-            "[SOM BC] Service {AssignmentId} completed by technician {TechnicianId}",
+            "[Monitoring BC] Service {AssignmentId} completed by technician {TechnicianId}",
             execution.AssignmentId.Value, command.TechnicianId);
 
         return execution;
@@ -122,7 +176,9 @@ public class ServiceExecutionCommandService(
         if (!Enum.TryParse<ECancellationReason>(command.Reason, true, out var reason))
             throw new ArgumentException($"Invalid cancellation reason: {command.Reason}");
 
-        execution.Cancel(command.ActorId, cancelledBy, reason, command.Notes, command.RequestReassignment);
+        execution.Cancel(
+            command.CancellationRequestId,
+            command.ActorId, cancelledBy, reason, command.Notes, command.RequestReassignment);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);
@@ -142,13 +198,46 @@ public class ServiceExecutionCommandService(
         return execution;
     }
 
-    public async Task<ServiceExecution> Handle(SubmitHomeownerReviewCommand command)
+    public async Task<ServiceExecution> Handle(SubmitClientReviewCommand command)
     {
         var execution = await GetOrThrowAsync(command.ExecutionId);
 
-        execution.SubmitHomeownerReview(
+        execution.SubmitClientReview(
             command.ReviewerId, command.Rating,
             command.Comment, command.Categories.ToDictionary(k => k.Key.ToString(), v => v.Value), command.SubmittedAt);
+
+        await unitOfWork.CompleteAsync();
+        await PublishAndClearEventsAsync(execution);
+
+        return execution;
+    }
+
+    public async Task<ServiceExecution> Handle(RemotelyToggleCircuitCommand command)
+    {
+        var execution = await GetOrThrowAsync(command.ExecutionId);
+
+        execution.RemotelyToggleCircuit(command.TechnicianId, command.TargetState, command.ActorId);
+
+        await unitOfWork.CompleteAsync();
+        await PublishAndClearEventsAsync(execution);
+
+        if (execution.IotContext is not null)
+        {
+            await externalIoTService.IssueRelayCommandAsync(
+                execution.Id.Value,
+                execution.IotContext.DeviceId.Value,
+                command.TargetState.ToString(),
+                command.ActorId);
+        }
+
+        return execution;
+    }
+
+    public async Task<ServiceExecution> Handle(RecordCircuitToggleCommand command)
+    {
+        var execution = await GetOrThrowAsync(command.ExecutionId);
+
+        execution.RecordCircuitToggle(command.DeviceId, command.TargetState, command.ActionStatus, command.FailureReason);
 
         await unitOfWork.CompleteAsync();
         await PublishAndClearEventsAsync(execution);

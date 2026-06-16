@@ -12,6 +12,7 @@ public class ServiceAssignment : BaseAggregateRoot
     public TechnicianId? TechnicianId { get; private set; }
     public RecipeSnapshot? RecipeSnapshot { get; private set; }
     public MatchingCriteria? MatchingCriteria { get; private set; }
+    public MatchingScore? MatchingScore { get; private set; }
     public EAssignmentStatus Status { get; private set; }
     public string? FailureReason { get; private set; }
     public int RetryCount { get; private set; }
@@ -24,7 +25,8 @@ public class ServiceAssignment : BaseAggregateRoot
         RequestId requestId,
         TechnicianId technicianId,
         RecipeSnapshot recipeSnapshot,
-        MatchingCriteria matchingCriteria)
+        MatchingCriteria matchingCriteria,
+        MatchingScore matchingScore)
     {
         var assignment = new ServiceAssignment
         {
@@ -33,6 +35,7 @@ public class ServiceAssignment : BaseAggregateRoot
             TechnicianId     = technicianId,
             RecipeSnapshot   = recipeSnapshot,
             MatchingCriteria = matchingCriteria,
+            MatchingScore    = matchingScore,
             Status           = EAssignmentStatus.Assigned,
             RetryCount       = 0,
         };

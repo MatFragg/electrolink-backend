@@ -22,6 +22,10 @@ public static class ModelBuilderExtensions
 
         builder.Entity<User>()
             .Property(u => u.PasswordHash)
+            .HasConversion(
+                ph => ph.Value,
+                value => HashedPassword.FromHash(value))
+            .HasColumnName("PasswordHash")
             .IsRequired();
 
         builder.Entity<User>()

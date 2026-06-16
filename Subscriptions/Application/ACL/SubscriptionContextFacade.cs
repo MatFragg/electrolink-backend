@@ -10,23 +10,6 @@ public class SubscriptionContextFacade(
     ISubscriptionCommandService subscriptionCommandService)
     : ISubscriptionContextFacade
 {
-    public async Task<bool> RecordServiceRequestUsageAsync(int ownerUserId)
-    {
-        try
-        {
-            await subscriptionCommandService.Handle(new IncrementMonthlyRequestCounterCommand(ownerUserId.ToString()));
-            return true;
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-    }
-
     public async Task<bool> CanCreateRequestAsync(string homeownerId)
         => (await subscriptionQueryService.Handle(new GetRequestEligibilityQuery(homeownerId))).CanRequest;
 

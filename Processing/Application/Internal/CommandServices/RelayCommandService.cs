@@ -1,0 +1,130 @@
+using Hampcoders.Electrolink.API.Processing.Domain.Model.Aggregates;
+using Hampcoders.Electrolink.API.Processing.Domain.Model.Commands;
+using Hampcoders.Electrolink.API.Processing.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Processing.Domain.Repositories;
+using Hampcoders.Electrolink.API.Processing.Domain.Services;
+using Hampcoders.Electrolink.API.Processing.Application.Internal.OutboundServices;
+using Hampcoders.Electrolink.API.Shared.Domain.Model.ValueObjects;
+using Hampcoders.Electrolink.API.Shared.Domain.Repositories;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Hampcoders.Electrolink.API.Processing.Application.Internal.CommandServices;
+
+public class RelayCommandService(
+    IRelayControlCommandRepository relayRepository,
+    IDeviceReadingStreamRepository streamRepository,
+    IAssetsContextFacade           assetsFacade,
+    IProfilesContextFacade         profilesFacade,
+    IServiceOperationContextFacade serviceOpFacade,
+    IUnitOfWork                    unitOfWork,
+    IMediator                      mediator,
+    IServiceScopeFactory           scopeFactory,
+    ILogger<RelayCommandService>   logger)
+    : IRelayCommandService
+{
+    public async Task Handle(IssueRelayCommandCommand command)
+    {
+        bool isSystemCommand = command.TechnicianId == "SYSTEM";
+
+        if (!isSystemCommand)
+        {
+            bool isCertified = await profilesFacade.IsTechnicianIoTCertifiedAsync(command.TechnicianId);
+            if (!isCertified)
+                throw new UnauthorizedAccessException(
+                    $"Technician {command.TechnicianId} does not have IoT certification.");
+
+            bool hasActiveService = await serviceOpFacade.HasActiveServiceForPropertyAsync(
+                command.PropertyId, command.TechnicianId);
+            if (!hasActiveService)
+                throw new UnauthorizedAccessException(
+                    $"No active IN_PROGRESS service found for property {command.PropertyId} " +
+                    $"assigned to technician {command.TechnicianId}.");
+        }
+
+        var pending = await relayRepository.FindPendingByDeviceAsync(command.DeviceId);
+        if (pending is not null)
+            throw new InvalidOperationException(
+                $"Device {command.DeviceId} already has a pending relay command ({pending.CommandId.Value}). " +
+                "Wait for it to complete before issuing a new one.");
+
+        RelayControlCommand relayCmd = isSystemCommand
+            ? RelayControlCommand.IssueBySystem(
+                DeviceId.From(command.DeviceId),
+                PropertyId.From(command.PropertyId),
+                Enum.Parse<ERelayTarget>(command.TargetRelayState))
+            : RelayControlCommand.IssueByTechnician(
+                DeviceId.From(command.DeviceId),
+                PropertyId.From(command.PropertyId),
+                Enum.Parse<ERelayTarget>(command.TargetRelayState),
+                TechnicianId.From(command.TechnicianId),
+                ServiceRequestId.From(command.ServiceRequestId));
+
+        await relayRepository.AddAsync(relayCmd);
+        await unitOfWork.CompleteAsync();
+
+        relayCmd.MarkAsSent();
+        await relayRepository.UpdateAsync(relayCmd);
+        await unitOfWork.CompleteAsync();
+
+        foreach (var ev in relayCmd.DomainEvents)
+            await mediator.Publish(ev, CancellationToken.None);
+        relayCmd.ClearDomainEvents();
+
+        logger.LogInformation(
+            "[IoT] RelayCommandIssued — DeviceId: {DeviceId} | Target: {Target} | By: {By}",
+            command.DeviceId, command.TargetRelayState, command.TechnicianId);
+
+        var commandId = relayCmd.CommandId.Value;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IRelayControlCommandRepository>();
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var med = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+                var fresh = await repo.FindByCommandIdAsync(commandId);
+                if (fresh is not null &&
+                    fresh.Status is ERelayCommandStatus.Sent or ERelayCommandStatus.Pending)
+                {
+                    fresh.MarkAsTimeout();
+                    await repo.UpdateAsync(fresh);
+                    await uow.CompleteAsync();
+
+                    foreach (var ev in fresh.DomainEvents)
+                        await med.Publish(ev, CancellationToken.None);
+                    fresh.ClearDomainEvents();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[IoT] RelayTimeout check failed for command {CommandId}", commandId);
+            }
+        });
+    }
+
+    public async Task Handle(AcknowledgeRelayExecutionCommand command)
+    {
+        var relayCmd = await relayRepository.FindByCommandIdAsync(command.CommandId)
+            ?? throw new KeyNotFoundException($"RelayCommand {command.CommandId} not found.");
+
+        if (command.ExecutedSuccessfully)
+            relayCmd.MarkAsExecuted();
+        else
+            relayCmd.MarkAsFailed("Device reported execution failure.");
+
+        await relayRepository.UpdateAsync(relayCmd);
+        await unitOfWork.CompleteAsync();
+
+        foreach (var ev in relayCmd.DomainEvents)
+            await mediator.Publish(ev, CancellationToken.None);
+        relayCmd.ClearDomainEvents();
+
+        logger.LogInformation(
+            "[IoT] RelayCommand {CommandId} → {Status}",
+            command.CommandId, relayCmd.Status);
+    }
+}

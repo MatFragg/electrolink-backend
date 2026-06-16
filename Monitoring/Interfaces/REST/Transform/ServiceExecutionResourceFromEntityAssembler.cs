@@ -30,7 +30,7 @@ public static class ServiceExecutionResourceFromEntityAssembler
         new(
             execution.Id.Value,
             execution.WorkPhotos.Select(p => new PhotoResource(
-                p.Id.Value, p.PhotoType.ToString(), p.PhotoUrl, p.TakenAt, p.Notes)).ToList(),
+                p.Id.Value, p.PhotoType.ToString(), p.PhotoUrl, p.ThumbnailUrl, p.Format, p.SizeBytes, p.TakenAt, p.Notes)).ToList(),
             execution.TechnicalReportContent,
             execution.TechnicalReportFindings,
             execution.TechnicalReportRecommendations,

@@ -17,13 +17,18 @@ using Hampcoders.Electrolink.API.Monitoring.Infrastructure.Interfaces.ASP.Config
 using Hampcoders.Electrolink.API.Planning.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Profiles.Infrastructure.Persistence.JSON;
+using Hampcoders.Electrolink.API.Analytics.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Processing.Application.Internal.CommandServices;
+using Hampcoders.Electrolink.API.Analytics.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+using Hampcoders.Electrolink.API.Processing.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Hampcoders.Electrolink.API.Subscriptions.Application.Internal.CommandServices;
 using Hampcoders.Electrolink.API.Subscriptions.Infrastructure.Interfaces.ASP.Configuration.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Stripe;
 using Npgsql;
 using Hampcoders.Electrolink.API.Shared.Infrastructure;
+using Hampcoders.Electrolink.API.Shared.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,26 +61,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString, o => o.UseNetTopologySuite())
             .LogTo(Console.WriteLine, LogLevel.Error);
 });
-
-var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
-
-if (!string.IsNullOrEmpty(stripeSecretKey))
-{
-    // Configura la clave API globalmente para Stripe.net
-    StripeConfiguration.ApiKey = stripeSecretKey;
-}
-else
-{
-    // Manejo de error si la clave secreta no se encuentra
-    throw new InvalidOperationException("Stripe SecretKey no configurada. No se pueden hacer llamadas de servidor.");
-}
-
-var stripeConfig = builder.Configuration
-                       .GetSection(StripeSettings.SectionName)
-                       .Get<StripeSettings>() 
-                   ?? throw new InvalidOperationException("Stripe configuration is missing");
-
-// Removed validate call as it was not defined
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -152,10 +137,13 @@ builder.AddAssetsContextService();
 builder.AddPlanningContextService();
 builder.AddMonitoringServices();
 builder.AddSubscriptionServices();
+builder.AddAnalyticsContextServices();
+builder.AddProcessingContextServices();
 builder.Services.AddExternalProviders(builder.Configuration);
 
-builder.Services.AddScoped<IIntegrationEventPublisher, IntegrationEventPublisher>();
+builder.Services.AddScoped<IOrphanedFileRepository, OrphanedFileRepository>();
 builder.Services.AddHostedService<OutboxProcessorBackgroundService>();
+builder.Services.AddHostedService<CleanupOrphanedFilesJob>();
 
 
 // Add Cortex Mediator for Event Handling
@@ -181,9 +169,21 @@ builder.Services.AddAuthentication(options =>
             ClockSkew = TimeSpan.Zero // No permite desviación del reloj para la expiración
         };
     });
-//builder.Services.AddMediatR(cfg => { }, assemblies);
 
-builder.Services.AddMediatR(typeof(SubscriptionCommandService).Assembly);
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("PremiumOnly", policy =>
+        policy.Requirements.Add(new SubscriptionTierRequirement("PREMIUM", "ENTERPRISE")));
+    options.AddPolicy("EnterpriseOnly", policy =>
+        policy.Requirements.Add(new SubscriptionTierRequirement("ENTERPRISE")));
+});
+
+builder.Services.AddMediatR(
+    typeof(SubscriptionCommandService).Assembly,
+    typeof(ConsumptionDashboardCommandService).Assembly,
+    typeof(DeviceReadingStreamCommandService).Assembly);
+
+builder.Services.AddScoped<IAuthorizationHandler, SubscriptionTierHandler>();
 
 var app = builder.Build();
 
